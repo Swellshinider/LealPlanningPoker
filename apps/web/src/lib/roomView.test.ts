@@ -1,0 +1,77 @@
+import { describe, expect, it } from "vitest";
+import type { RoomSnapshot } from "@lealplanningpoker/shared";
+import { buildRoomViewModel } from "./roomView";
+
+const votingSnapshot: RoomSnapshot = {
+  roomId: "ROOM01",
+  hostName: "Mina",
+  story: "Improve onboarding",
+  phase: "voting",
+  updatedAt: "2026-06-11T12:00:00.000Z",
+  viewer: {
+    participantId: "ANA_PARTICIPANT",
+    isHost: false
+  },
+  participants: [
+    {
+      id: "HOST_PARTICIPANT",
+      name: "Mina",
+      isHost: true,
+      connected: true,
+      vote: "8",
+      hasVoted: true,
+      joinedAt: "2026-06-11T12:00:00.000Z",
+      updatedAt: "2026-06-11T12:00:00.000Z"
+    },
+    {
+      id: "ANA_PARTICIPANT",
+      name: "Ana",
+      isHost: false,
+      connected: true,
+      vote: "3",
+      hasVoted: true,
+      joinedAt: "2026-06-11T12:00:00.000Z",
+      updatedAt: "2026-06-11T12:00:00.000Z"
+    }
+  ],
+  history: []
+};
+
+const revealedSnapshot: RoomSnapshot = {
+  ...votingSnapshot,
+  phase: "revealed",
+  viewer: {
+    participantId: "HOST_PARTICIPANT",
+    isHost: true
+  }
+};
+
+describe("buildRoomViewModel", () => {
+  it("hides other votes while voting and keeps host actions constrained", () => {
+    const model = buildRoomViewModel(votingSnapshot);
+
+    expect(model.phaseLabel).toBe("Voting");
+    expect(model.voteSummary).toEqual([]);
+    expect(model.canReveal).toBe(false);
+    expect(model.canFinalize).toBe(false);
+    expect(model.canReset).toBe(false);
+    expect(model.canSetStory).toBe(false);
+    expect(model.participants[0].visibleVote).toBeNull();
+    expect(model.participants[1].visibleVote).toBe("3");
+  });
+
+  it("reveals vote summaries and host actions once the round is revealed", () => {
+    const model = buildRoomViewModel(revealedSnapshot);
+
+    expect(model.phaseLabel).toBe("Revealed");
+    expect(model.voteSummary).toEqual([
+      { card: "3", count: 1 },
+      { card: "8", count: 1 }
+    ]);
+    expect(model.canReveal).toBe(false);
+    expect(model.canFinalize).toBe(true);
+    expect(model.canReset).toBe(true);
+    expect(model.canSetStory).toBe(false);
+    expect(model.participants.every((participant) => participant.visibleVote !== null)).toBe(true);
+  });
+});

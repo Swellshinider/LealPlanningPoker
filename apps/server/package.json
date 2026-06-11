@@ -1,0 +1,18 @@
+{
+  "name": "@lealplanningpoker/server",
+  "private": true,
+  "type": "module",
+  "main": "./dist/main.js",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsup src/main.ts --format esm --platform node --target node20 --out-dir dist --clean --sourcemap",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@fastify/static": "^7.0.4",
+    "@lealplanningpoker/shared": "workspace:*",
+    "fastify": "^4.28.1",
+    "socket.io": "^4.7.5"
+  }
+}
