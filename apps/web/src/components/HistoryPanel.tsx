@@ -1,4 +1,5 @@
 import type { RoomHistoryEntry } from "@lealplanningpoker/shared";
+import { formatVoteLabel } from "../lib/uiText";
 
 export interface HistoryPanelProps {
   history: RoomHistoryEntry[];
@@ -15,13 +16,13 @@ export function HistoryPanel({ history }: HistoryPanelProps) {
   const orderedHistory = [...history].reverse();
 
   return (
-    <section className="panel panel--history">
-      <div className="panel__heading">
+    <section className="workspace-panel history-panel">
+      <div className="panel-heading">
         <div>
-          <p className="eyebrow">Archive</p>
+          <p className="section-label">Archive</p>
           <h2>Recent stories</h2>
         </div>
-        <span className="chip chip--quiet">{history.length} finalizations</span>
+        <span className="phase-chip phase-chip--quiet">{history.length} finalizations</span>
       </div>
 
       {orderedHistory.length === 0 ? (
@@ -31,7 +32,7 @@ export function HistoryPanel({ history }: HistoryPanelProps) {
       ) : (
         <div className="history-list">
           {orderedHistory.map((entry) => (
-            <article className="history-card" key={entry.id}>
+            <article className="history-row" key={entry.id}>
               <div className="history-card__header">
                 <strong>{entry.story}</strong>
                 <time dateTime={entry.finalizedAt}>{formatTimestamp(entry.finalizedAt)}</time>
@@ -39,11 +40,11 @@ export function HistoryPanel({ history }: HistoryPanelProps) {
 
               <div className="history-card__summary">
                 {entry.voteSummary.length === 0 ? (
-                  <span className="chip chip--quiet">No votes recorded</span>
+                  <span className="phase-chip phase-chip--quiet">No votes recorded</span>
                 ) : (
                   entry.voteSummary.map((item) => (
-                    <span className="chip" key={`${entry.id}-${item.card}`}>
-                      {item.card} x {item.count}
+                    <span className="phase-chip" key={`${entry.id}-${item.card}`}>
+                      {formatVoteLabel(item.card)} x {item.count}
                     </span>
                   ))
                 )}
@@ -53,7 +54,7 @@ export function HistoryPanel({ history }: HistoryPanelProps) {
                 {entry.votes.map((vote) => (
                   <li key={`${entry.id}-${vote.participantId}`}>
                     <span>{vote.name}</span>
-                    <strong>{vote.vote ?? "—"}</strong>
+                    <strong>{vote.vote ? formatVoteLabel(vote.vote) : "-"}</strong>
                   </li>
                 ))}
               </ul>

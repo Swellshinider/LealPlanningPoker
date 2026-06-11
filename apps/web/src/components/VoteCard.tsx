@@ -1,4 +1,5 @@
 import type { VoteCard as VoteValue } from "@lealplanningpoker/shared";
+import { formatVoteLabel } from "../lib/uiText";
 
 export interface VoteCardProps {
   value: VoteValue;
@@ -15,7 +16,7 @@ export function VoteCard({
   revealed = false,
   onSelect
 }: VoteCardProps) {
-  const label = value === "coffee" ? "coffee" : value;
+  const label = formatVoteLabel(value);
 
   return (
     <button
@@ -32,7 +33,7 @@ export function VoteCard({
       aria-pressed={selected}
     >
       <span className="vote-card__front">{label}</span>
-      <span className="vote-card__back">reveal</span>
+      <span className="vote-card__back">Selected</span>
     </button>
   );
 }
