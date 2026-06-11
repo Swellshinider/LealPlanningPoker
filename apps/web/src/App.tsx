@@ -567,7 +567,6 @@ export function App() {
     <main className="app-shell app-shell--room">
       <RoomBoard
         busy={busy}
-        connectionState={connectionState}
         displayName={displayName}
         history={snapshot.history}
         notice={bannerText}

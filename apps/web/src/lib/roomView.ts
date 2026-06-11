@@ -1,6 +1,5 @@
 import type {
   RoomParticipantSnapshot,
-  RoomPhase,
   RoomSnapshot,
   VoteSummaryEntry
 } from "@lealplanningpoker/shared";
@@ -14,48 +13,29 @@ export interface RoomParticipantView {
   hasVoted: boolean;
   vote: RoomParticipantSnapshot["vote"];
   visibleVote: RoomParticipantSnapshot["vote"];
+  tableVote: RoomParticipantSnapshot["vote"];
   joinedAt: string;
   updatedAt: string;
 }
 
 export interface RoomViewModel {
-  phaseLabel: string;
-  phaseCopy: string;
   roomId: string;
   hostName: string;
   story: string;
-  connectedCount: number;
-  votedCount: number;
-  totalParticipants: number;
+  canVote: boolean;
   canReveal: boolean;
   canReset: boolean;
   canFinalize: boolean;
   canSetStory: boolean;
+  isFinalized: boolean;
   participants: RoomParticipantView[];
   voteSummary: VoteSummaryEntry[];
-  isLiveReveal: boolean;
 }
-
-const PHASE_LABELS: Record<RoomPhase, string> = {
-  lobby: "Lobby",
-  voting: "Voting",
-  revealed: "Revealed",
-  finalized: "Finalized"
-};
-
-const PHASE_COPY: Record<RoomPhase, string> = {
-  lobby: "Share the room code and wait for the team to join.",
-  voting: "Vote privately. The host will reveal the cards when ready.",
-  revealed: "Everyone can see the votes now.",
-  finalized: "This story is archived. Start the next one when you are ready."
-};
 
 export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
   const participants = snapshot.participants.map((participant) =>
     toParticipantView(snapshot, participant)
   );
-  const connectedCount = snapshot.participants.filter((participant) => participant.connected).length;
-  const votedCount = snapshot.participants.filter((participant) => participant.hasVoted).length;
   const isHost = snapshot.viewer.isHost;
   const isVoting = snapshot.phase === "voting";
   const isRevealed = snapshot.phase === "revealed";
@@ -67,21 +47,17 @@ export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
       (isVoting && snapshot.participants.every((participant) => !participant.hasVoted)));
 
   return {
-    phaseLabel: PHASE_LABELS[snapshot.phase],
-    phaseCopy: PHASE_COPY[snapshot.phase],
     roomId: snapshot.roomId,
     hostName: snapshot.hostName,
     story: snapshot.story,
-    connectedCount,
-    votedCount,
-    totalParticipants: snapshot.participants.length,
+    canVote: isVoting,
     canReveal: isHost && isVoting,
     canReset: isHost && (isRevealed || isFinalized),
     canFinalize: isHost && isRevealed,
     canSetStory,
+    isFinalized,
     participants,
-    voteSummary: isRevealed || isFinalized ? summarizeVotes(snapshot.participants.map((participant) => participant.vote)) : [],
-    isLiveReveal: isRevealed
+    voteSummary: isRevealed || isFinalized ? summarizeVotes(snapshot.participants.map((participant) => participant.vote)) : []
   };
 }
 
@@ -96,6 +72,7 @@ function toParticipantView(
   })
     ? participant.vote
     : null;
+  const tableVote = snapshot.phase === "revealed" || snapshot.phase === "finalized" ? participant.vote : null;
 
   return {
     id: participant.id,
@@ -105,6 +82,7 @@ function toParticipantView(
     hasVoted: participant.hasVoted,
     vote: participant.vote,
     visibleVote,
+    tableVote,
     joinedAt: participant.joinedAt,
     updatedAt: participant.updatedAt
   };

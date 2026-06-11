@@ -1,6 +1,6 @@
 import type { RoomHistoryEntry, VoteCard as VoteValue } from "@lealplanningpoker/shared";
 import type { RoomViewModel } from "../lib/roomView";
-import { getParticipantVoteLabel } from "../lib/uiText";
+import { formatVoteLabel } from "../lib/uiText";
 import { HistoryPanel } from "./HistoryPanel";
 import { VoteCard } from "./VoteCard";
 
@@ -10,7 +10,6 @@ export interface RoomBoardProps {
   displayName: string;
   storyDraft: string;
   selectedVote: VoteValue | null;
-  connectionState: string;
   notice: string | null;
   roomLink: string;
   busy?: boolean;
@@ -33,7 +32,6 @@ export function RoomBoard({
   displayName,
   storyDraft,
   selectedVote,
-  connectionState,
   notice,
   roomLink,
   busy = false,
@@ -47,12 +45,6 @@ export function RoomBoard({
   onFinalize,
   onCopyLink
 }: RoomBoardProps) {
-  const roomCanVote = viewModel.phaseLabel === "Voting";
-  const voteProgress =
-    viewModel.totalParticipants > 0
-      ? Math.round((viewModel.votedCount / viewModel.totalParticipants) * 100)
-      : 0;
-
   return (
     <div className="room-workspace">
       <header className="workspace-topbar">
@@ -65,10 +57,6 @@ export function RoomBoard({
         </div>
 
         <div className="topbar-actions">
-          <div className={`status-pill status-pill--${connectionState}`}>
-            <span className="status-pill__dot" />
-            <span>{connectionState}</span>
-          </div>
           <button className="button button--quiet" type="button" onClick={onCopyLink}>
             Copy link
           </button>
@@ -77,46 +65,21 @@ export function RoomBoard({
 
       {notice ? <p className="notice notice--inline">{notice}</p> : null}
 
-      <section className="room-hero workspace-panel">
+      <section className="room-hero">
         <div className="room-hero__copy">
           <p className="section-label">Room {viewModel.roomId}</p>
-          <h1>{viewModel.story || "Waiting for the story"}</h1>
-          <p>{viewModel.phaseCopy}</p>
-        </div>
-
-        <div className="metrics-strip">
-          <div className="metric">
-            <span>Connected</span>
-            <strong>
-              {viewModel.connectedCount}/{viewModel.totalParticipants}
-            </strong>
-          </div>
-          <div className="metric">
-            <span>Voted</span>
-            <strong>
-              {viewModel.votedCount}/{viewModel.totalParticipants}
-            </strong>
-          </div>
-          <div className="metric">
-            <span>Phase</span>
-            <strong>{viewModel.phaseLabel}</strong>
-          </div>
-        </div>
-
-        <div className="progress-track" aria-label={`${voteProgress}% of participants have voted`}>
-          <span style={{ width: `${voteProgress}%` }} />
+          <h1>{viewModel.story || `Room ${viewModel.roomId}`}</h1>
         </div>
       </section>
 
-      <div className="workspace-grid">
-        <main className="workspace-main">
+      <main className="workspace-main">
+        <div className="workspace-controls">
           <section className="workspace-panel story-panel">
             <div className="panel-heading">
               <div>
                 <p className="section-label">Story</p>
                 <h2>{viewModel.canSetStory ? "Set the next round" : "Story locked"}</h2>
               </div>
-              <span className="phase-chip">{viewModel.phaseLabel}</span>
             </div>
 
             <label className="field">
@@ -138,65 +101,11 @@ export function RoomBoard({
                 type="button"
                 onClick={onSaveStory}
               >
-                {viewModel.phaseLabel === "Finalized" ? "Start next round" : "Start voting"}
+                {viewModel.isFinalized ? "Start next round" : "Start voting"}
               </button>
             </div>
           </section>
 
-          <section className="workspace-panel vote-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="section-label">Vote cards</p>
-                <h2>Pick privately</h2>
-              </div>
-              <span className="phase-chip phase-chip--quiet">{selectedVote ?? "None"}</span>
-            </div>
-
-            <div className="vote-grid">
-              {DECK.map((vote) => (
-                <VoteCard
-                  key={vote}
-                  disabled={busy || !roomCanVote}
-                  revealed={viewModel.isLiveReveal}
-                  selected={selectedVote === vote}
-                  value={vote}
-                  onSelect={() => onVote(vote)}
-                />
-              ))}
-            </div>
-
-            <div className="action-row action-row--split">
-              <button
-                className="button button--primary"
-                disabled={busy || !viewModel.canReveal}
-                type="button"
-                onClick={onReveal}
-              >
-                Reveal votes
-              </button>
-              <button
-                className="button button--quiet"
-                disabled={busy || !viewModel.canReset}
-                type="button"
-                onClick={onReset}
-              >
-                Reset
-              </button>
-              <button
-                className="button button--secondary"
-                disabled={busy || !viewModel.canFinalize}
-                type="button"
-                onClick={onFinalize}
-              >
-                Finalize
-              </button>
-            </div>
-          </section>
-
-          <HistoryPanel history={history} />
-        </main>
-
-        <aside className="workspace-side">
           <section className="workspace-panel profile-panel">
             <div className="panel-heading">
               <div>
@@ -230,36 +139,103 @@ export function RoomBoard({
             </div>
             <input className="field__input" readOnly value={roomLink} />
           </section>
+        </div>
 
-          <section className="workspace-panel participants-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="section-label">Participants</p>
-                <h2>{viewModel.participants.length} people</h2>
-              </div>
+        <section className="workspace-panel poker-table-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="section-label">Vote table</p>
+              <h2>{viewModel.participants.length} players</h2>
+            </div>
+          </div>
+
+          <div className="poker-table" aria-label="Planning poker table">
+            <div className="poker-table__felt">
+              <span>LEAL</span>
             </div>
 
-            <div className="participant-list">
-              {viewModel.participants.map((participant) => (
-                <article className="participant-row" key={participant.id}>
-                  <div>
+            <div className="seat-grid">
+              {viewModel.participants.map((participant) => {
+                const hasFaceDownCard = participant.hasVoted && !participant.tableVote;
+                const hasFaceUpCard = Boolean(participant.tableVote);
+
+                return (
+                  <article
+                    className={[
+                      "table-seat",
+                      hasFaceUpCard ? "has-face-up-card" : "",
+                      hasFaceDownCard ? "has-face-down-card" : ""
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    key={participant.id}
+                  >
                     <strong>{participant.name}</strong>
-                    <span>
-                      {participant.isHost ? "Host" : "Member"} · {participant.connected ? "Connected" : "Away"}
-                    </span>
-                  </div>
-                  <span className={participant.visibleVote ? "vote-bubble" : "vote-bubble vote-bubble--quiet"}>
-                    {getParticipantVoteLabel({
-                      hasVoted: participant.hasVoted,
-                      visibleVote: participant.visibleVote
-                    })}
-                  </span>
-                </article>
-              ))}
+                    <div className="table-card-slot" aria-label={`${participant.name} card`}>
+                      {hasFaceUpCard && participant.tableVote ? (
+                        <span className="table-card table-card--front">
+                          {formatVoteLabel(participant.tableVote)}
+                        </span>
+                      ) : hasFaceDownCard ? (
+                        <span className="table-card table-card--back" aria-hidden="true" />
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          </section>
-        </aside>
-      </div>
+          </div>
+
+          <div className="action-row action-row--table">
+            <button
+              className="button button--primary"
+              disabled={busy || !viewModel.canReveal}
+              type="button"
+              onClick={onReveal}
+            >
+              Reveal votes
+            </button>
+            <button
+              className="button button--quiet"
+              disabled={busy || !viewModel.canReset}
+              type="button"
+              onClick={onReset}
+            >
+              Reset
+            </button>
+            <button
+              className="button button--secondary"
+              disabled={busy || !viewModel.canFinalize}
+              type="button"
+              onClick={onFinalize}
+            >
+              Finalize
+            </button>
+          </div>
+        </section>
+
+        <HistoryPanel history={history} />
+      </main>
+
+      <footer className="vote-dock" aria-label="Vote cards">
+        <div className="vote-dock__inner">
+          <div className="vote-dock__summary">
+            <span className="section-label">Vote</span>
+            <strong>{selectedVote ? formatVoteLabel(selectedVote) : "Pick a card"}</strong>
+          </div>
+          <div className="vote-grid">
+            {DECK.map((vote) => (
+              <VoteCard
+                key={vote}
+                disabled={busy || !viewModel.canVote}
+                selected={selectedVote === vote}
+                value={vote}
+                onSelect={() => onVote(vote)}
+              />
+            ))}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
