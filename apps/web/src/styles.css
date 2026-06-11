@@ -99,7 +99,6 @@ textarea:focus-visible {
 
 .brand-lockup,
 .topbar-actions,
-.status-pill,
 .panel-heading,
 .action-row,
 .inline-form,
@@ -187,11 +186,10 @@ textarea:focus-visible {
     var(--surface);
 }
 
-.landing-intro h1,
-.room-hero h1 {
+.landing-intro h1 {
   max-width: 13ch;
   margin: 8px 0 0;
-  font-size: clamp(2.25rem, 4vw, 4.8rem);
+  font-size: clamp(1.9rem, 4vw, 3.8rem);
   font-weight: 760;
   line-height: 0.98;
   letter-spacing: 0;
@@ -329,49 +327,6 @@ textarea:focus-visible {
   background: var(--surface-soft);
 }
 
-.status-pill {
-  gap: 8px;
-  min-height: 34px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--surface-soft);
-  color: var(--muted);
-  font-size: 0.82rem;
-  font-weight: 680;
-  text-transform: capitalize;
-}
-
-.status-pill__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--success);
-}
-
-.status-pill--connecting .status-pill__dot {
-  background: var(--warning);
-}
-
-.status-pill--disconnected .status-pill__dot,
-.status-pill--reconnecting .status-pill__dot {
-  background: var(--danger);
-}
-
-.notice {
-  margin: 18px 0 0;
-  padding: 11px 12px;
-  border: 1px solid #c8daf7;
-  border-radius: 7px;
-  background: var(--accent-soft);
-  color: #16447f;
-  font-size: 0.9rem;
-}
-
-.notice--inline {
-  margin: 0;
-}
-
 .room-hero {
   width: min(100%, 1180px);
   margin: 0 auto;
@@ -386,6 +341,16 @@ textarea:focus-visible {
   max-width: 24ch;
   margin-top: 6px;
   font-size: clamp(1.9rem, 4vw, 3.8rem);
+  font-weight: 760;
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.room-hero__room-id {
+  color: var(--muted);
+  font-size: clamp(1.2rem, 2vw, 1.7rem);
+  font-weight: 720;
+  line-height: 1.15;
 }
 
 .workspace-main,
@@ -816,18 +781,20 @@ textarea:focus-visible {
 
 .floating-banner {
   position: fixed;
-  left: 50%;
-  bottom: 18px;
+  top: 16px;
+  right: 16px;
   z-index: 20;
-  max-width: min(92vw, 560px);
-  transform: translateX(-50%);
+  width: min(92vw, 360px);
   border: 1px solid var(--line-strong);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: var(--shadow);
+  box-shadow: 0 16px 40px rgba(16, 24, 40, 0.14);
   color: var(--text);
   padding: 12px 14px;
-  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-align: left;
+  animation: toastIn 180ms ease-out;
 }
 
 .floating-banner--error {
@@ -840,6 +807,18 @@ textarea:focus-visible {
 
 .floating-banner--info {
   border-color: rgba(23, 105, 224, 0.35);
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 1180px) {
@@ -915,6 +894,10 @@ textarea:focus-visible {
   .room-hero h1 {
     max-width: none;
     font-size: clamp(2rem, 11vw, 3rem);
+  }
+
+  .room-hero__room-id {
+    font-size: 1.3rem;
   }
 
   .poker-table {

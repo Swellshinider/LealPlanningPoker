@@ -22,6 +22,8 @@ describe("normalizeVoteCard", () => {
   it("accepts built-in cards and custom whole numbers", () => {
     expect(normalizeVoteCard("coffee")).toBe("coffee");
     expect(normalizeVoteCard(" 34 ")).toBe("34");
+    expect(normalizeVoteCard("004")).toBe("4");
+    expect(normalizeVoteCard("000")).toBe("0");
     expect(normalizeVoteCard("0")).toBe("0");
   });
 

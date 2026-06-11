@@ -17,7 +17,6 @@ export interface RoomBoardProps {
   displayName: string;
   storyDraft: string;
   selectedVote: VoteValue | null;
-  notice: string | null;
   busy?: boolean;
   onDisplayNameChange: (value: string) => void;
   onRename: () => void;
@@ -39,7 +38,6 @@ export function RoomBoard({
   displayName,
   storyDraft,
   selectedVote,
-  notice,
   busy = false,
   onDisplayNameChange,
   onRename,
@@ -86,11 +84,11 @@ export function RoomBoard({
         </div>
       </header>
 
-      {notice ? <p className="notice notice--inline">{notice}</p> : null}
-
       <section className="room-hero">
         <div className="room-hero__copy">
-          <h1>{viewModel.story || `Room ${viewModel.roomId}`}</h1>
+          <h1 className={viewModel.story ? undefined : "room-hero__room-id"}>
+            {viewModel.story || `Room ${viewModel.roomId}`}
+          </h1>
         </div>
       </section>
 

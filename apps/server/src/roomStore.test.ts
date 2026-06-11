@@ -67,6 +67,36 @@ describe("RoomStore", () => {
     ]);
   });
 
+  it("creates compact room codes by default", () => {
+    const defaultStore = new RoomStore({
+      now: () => new Date("2026-06-11T12:00:00.000Z")
+    });
+
+    const result = defaultStore.createRoom({ hostName: "Mina" });
+
+    expect(result.roomId).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+  });
+
+  it("can inject room ids separately from participant and token ids", () => {
+    const ids = ["HOST_PARTICIPANT", "HOST_TOKEN"];
+    const injectedStore = new RoomStore({
+      roomIdFactory: () => "ABCD-2345",
+      idFactory: () => {
+        const id = ids.shift();
+        if (!id) {
+          throw new Error("No more ids");
+        }
+        return id;
+      },
+      now: () => new Date("2026-06-11T12:00:00.000Z")
+    });
+
+    const result = injectedStore.createRoom({ hostName: "Mina" });
+
+    expect(result.roomId).toBe("ABCD-2345");
+    expect(result.hostToken).toBe("HOST_TOKEN");
+  });
+
   it("lets participants join, rename themselves, and reconnect with the same token", () => {
     const created = store.createRoom({ hostName: "Mina" });
     const joined = store.joinRoom({
@@ -193,12 +223,25 @@ describe("RoomStore", () => {
       story: "Improve onboarding"
     });
 
+    try {
+      store.submitVote({
+        roomId: created.roomId,
+        participantToken: created.hostToken,
+        vote: "1.5"
+      });
+      throw new Error("Expected the store to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(RoomStoreError);
+      expect((error as RoomStoreError).code).toBe("INVALID_VOTE");
+      expect((error as RoomStoreError).message).toBe("Use a deck card or a whole-number custom vote.");
+    }
+
     expectRoomError(
       () =>
         store.submitVote({
           roomId: created.roomId,
           participantToken: created.hostToken,
-          vote: "1.5"
+          vote: "small"
         }),
       "INVALID_VOTE"
     );

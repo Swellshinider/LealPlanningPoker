@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
 import {
   type RoomHistoryEntry,
   type RoomParticipantSnapshot,
@@ -41,6 +41,7 @@ export class RoomStoreError extends Error {
 export interface RoomStoreOptions {
   now?: () => Date;
   idFactory?: () => string;
+  roomIdFactory?: () => string;
   roomTtlMs?: number;
 }
 
@@ -131,11 +132,14 @@ export class RoomStore {
 
   private readonly idFactory: () => string;
 
+  private readonly roomIdFactory: () => string;
+
   private readonly rooms = new Map<string, RoomRecord>();
 
   constructor(options: RoomStoreOptions = {}) {
     this.now = options.now ?? (() => new Date());
     this.idFactory = options.idFactory ?? (() => randomUUID());
+    this.roomIdFactory = options.roomIdFactory ?? options.idFactory ?? createRoomCode;
     this.roomTtlMs = options.roomTtlMs ?? 1000 * 60 * 60 * 4;
   }
 
@@ -284,7 +288,7 @@ export class RoomStore {
 
     const vote = normalizeVoteCard(input.vote);
     if (!vote) {
-      throw new RoomStoreError("INVALID_VOTE", "That vote card is not part of the deck.");
+      throw new RoomStoreError("INVALID_VOTE", "Use a deck card or a whole-number custom vote.");
     }
 
     const now = this.nowIso();
@@ -504,7 +508,7 @@ export class RoomStore {
 
   private createUniqueRoomId(): string {
     for (let attempt = 0; attempt < 10; attempt += 1) {
-      const candidate = this.nextId();
+      const candidate = this.nextRoomId();
       if (!this.rooms.has(candidate)) {
         return candidate;
       }
@@ -517,7 +521,18 @@ export class RoomStore {
     return this.idFactory();
   }
 
+  private nextRoomId(): string {
+    return this.roomIdFactory();
+  }
+
   private nowIso(): string {
     return this.now().toISOString();
   }
+}
+
+const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function createRoomCode(): string {
+  const characters = Array.from({ length: 8 }, () => ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)]);
+  return `${characters.slice(0, 4).join("")}-${characters.slice(4).join("")}`;
 }

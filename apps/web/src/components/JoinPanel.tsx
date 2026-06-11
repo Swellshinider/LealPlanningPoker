@@ -2,8 +2,6 @@ export interface JoinPanelProps {
   displayName: string;
   roomCode: string;
   busy?: boolean;
-  connectionState: string;
-  notice: string | null;
   onDisplayNameChange: (value: string) => void;
   onRoomCodeChange: (value: string) => void;
   onCreateRoom: () => void;
@@ -14,8 +12,6 @@ export function JoinPanel({
   displayName,
   roomCode,
   busy = false,
-  connectionState,
-  notice,
   onDisplayNameChange,
   onRoomCodeChange,
   onCreateRoom,
@@ -31,11 +27,6 @@ export function JoinPanel({
             <span>Anonymous estimation rooms</span>
           </div>
         </div>
-
-        <div className={`status-pill status-pill--${connectionState}`}>
-          <span className="status-pill__dot" />
-          <span>{connectionState}</span>
-        </div>
       </header>
 
       <div className="landing-grid">
@@ -46,7 +37,6 @@ export function JoinPanel({
             Create a room, share the code, vote privately, reveal together, and archive the result
             without accounts or setup overhead.
           </p>
-          {notice ? <p className="notice">{notice}</p> : null}
         </section>
 
         <section className="workspace-panel join-panel">
@@ -85,7 +75,8 @@ export function JoinPanel({
             <span className="field__label">Room code</span>
             <input
               className="field__input field__input--code"
-              placeholder="ROOM42"
+              maxLength={9}
+              placeholder="ABCD-2345"
               value={roomCode}
               onChange={(event) => onRoomCodeChange(event.target.value.toUpperCase())}
             />

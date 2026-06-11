@@ -85,6 +85,7 @@ function asRoomSocketError(error: unknown): RoomSocketError {
 
 export function App() {
   const socketRef = useRef<Socket | null>(null);
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousSnapshotRef = useRef<RoomSnapshot | null>(null);
   const displayNameRef = useRef("");
   const activeSessionRef = useRef({
@@ -124,6 +125,8 @@ export function App() {
     writeStorage("hostToken", hostToken);
   }, [displayName, hostToken, participantToken, roomCode]);
 
+  useEffect(() => () => clearNoticeTimer(), []);
+
   useEffect(() => {
     const socket = createRoomSocket();
     socketRef.current = socket;
@@ -149,15 +152,12 @@ export function App() {
           setDisplayName(selfParticipant.name);
         }
       });
-      setNotice(null);
+      clearNotice();
       setConnectionState("connected");
     };
 
     const handleClosed = (payload: { roomId: string; error: { code: string; message: string } }) => {
-      setNotice({
-        tone: "error",
-        text: payload.error.message
-      });
+      showNotice("error", payload.error.message);
       setSnapshot(null);
       setRoomCode("");
       setParticipantToken("");
@@ -166,10 +166,7 @@ export function App() {
     };
 
     const handleRoomError = (payload: { code: string; message: string }) => {
-      setNotice({
-        tone: "error",
-        text: payload.message
-      });
+      showNotice("error", payload.message);
     };
 
     const handleConnect = () => {
@@ -191,10 +188,7 @@ export function App() {
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", () => {
       setConnectionState("disconnected");
-      setNotice({
-        tone: "error",
-        text: "Socket connection failed."
-      });
+      showNotice("error", "Socket connection failed.");
     });
 
     socket.connect();
@@ -209,6 +203,27 @@ export function App() {
     };
   }, []);
 
+  function clearNotice() {
+    clearNoticeTimer();
+    setNotice(null);
+  }
+
+  function clearNoticeTimer() {
+    if (noticeTimerRef.current) {
+      clearTimeout(noticeTimerRef.current);
+      noticeTimerRef.current = null;
+    }
+  }
+
+  function showNotice(tone: NoticeTone, text: string) {
+    clearNoticeTimer();
+    setNotice({ tone, text });
+    noticeTimerRef.current = setTimeout(() => {
+      noticeTimerRef.current = null;
+      setNotice(null);
+    }, 4_000);
+  }
+
   async function syncStoredSession(socket: Socket, room: string, token: string) {
     try {
       await ensureSocketConnected(socket);
@@ -217,16 +232,10 @@ export function App() {
         participantToken: token
       });
       handleSnapshotResponse(response.snapshot);
-      setNotice({
-        tone: "info",
-        text: "Session restored."
-      });
+      showNotice("info", "Session restored.");
     } catch (error) {
       const roomError = asRoomSocketError(error);
-      setNotice({
-        tone: "error",
-        text: roomError.message
-      });
+      showNotice("error", roomError.message);
     }
   }
 
@@ -270,16 +279,10 @@ export function App() {
       setHostToken(response.hostToken);
       handleSnapshotResponse(response.snapshot);
       setDisplayName(extractRoomParticipant(response.snapshot)?.name ?? displayName);
-      setNotice({
-        tone: "success",
-        text: "Room created."
-      });
+      showNotice("success", "Room created.");
     } catch (error) {
       const roomError = asRoomSocketError(error);
-      setNotice({
-        tone: "error",
-        text: roomError.message
-      });
+      showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
@@ -308,16 +311,10 @@ export function App() {
       setHostToken(response.participantToken);
       handleSnapshotResponse(response.snapshot);
       setDisplayName(extractRoomParticipant(response.snapshot)?.name ?? displayName);
-      setNotice({
-        tone: "success",
-        text: "Joined room."
-      });
+      showNotice("success", "Joined room.");
     } catch (error) {
       const roomError = asRoomSocketError(error);
-      setNotice({
-        tone: "error",
-        text: roomError.message
-      });
+      showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
@@ -344,16 +341,10 @@ export function App() {
 
       handleSnapshotResponse(response.snapshot);
       setDisplayName(extractRoomParticipant(response.snapshot)?.name ?? displayName);
-      setNotice({
-        tone: "success",
-        text: "Name saved."
-      });
+      showNotice("success", "Name saved.");
     } catch (error) {
       const roomError = asRoomSocketError(error);
-      setNotice({
-        tone: "error",
-        text: roomError.message
-      });
+      showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
@@ -379,16 +370,10 @@ export function App() {
       });
 
       handleSnapshotResponse(response.snapshot);
-      setNotice({
-        tone: "success",
-        text: "Story saved."
-      });
+      showNotice("success", "Story saved.");
     } catch (error) {
       const roomError = asRoomSocketError(error);
-      setNotice({
-        tone: "error",
-        text: roomError.message
-      });
+      showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
@@ -419,10 +404,7 @@ export function App() {
     } catch (error) {
       setSelectedVote(previousVote);
       const roomError = asRoomSocketError(error);
-      setNotice({
-        tone: "error",
-        text: roomError.message
-      });
+      showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
@@ -447,16 +429,10 @@ export function App() {
       });
 
       handleSnapshotResponse(response.snapshot);
-      setNotice({
-        tone: "success",
-        text: "Votes revealed."
-      });
+      showNotice("success", "Votes revealed.");
     } catch (error) {
       const roomError = asRoomSocketError(error);
-      setNotice({
-        tone: "error",
-        text: roomError.message
-      });
+      showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
@@ -482,16 +458,10 @@ export function App() {
 
       handleSnapshotResponse(response.snapshot);
       setSelectedVote(null);
-      setNotice({
-        tone: "success",
-        text: "Round reset."
-      });
+      showNotice("success", "Round reset.");
     } catch (error) {
       const roomError = asRoomSocketError(error);
-      setNotice({
-        tone: "error",
-        text: roomError.message
-      });
+      showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
@@ -516,16 +486,10 @@ export function App() {
       });
 
       handleSnapshotResponse(response.snapshot);
-      setNotice({
-        tone: "success",
-        text: "Story finalized."
-      });
+      showNotice("success", "Story finalized.");
     } catch (error) {
       const roomError = asRoomSocketError(error);
-      setNotice({
-        tone: "error",
-        text: roomError.message
-      });
+      showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
@@ -539,15 +503,9 @@ export function App() {
 
     try {
       await navigator.clipboard.writeText(link);
-      setNotice({
-        tone: "success",
-        text: "Room link copied."
-      });
+      showNotice("success", "Room link copied.");
     } catch {
-      setNotice({
-        tone: "info",
-        text: link
-      });
+      showNotice("info", link);
     }
   }
 
@@ -565,7 +523,7 @@ export function App() {
     setHostToken("");
     setStoryDraft("");
     setSelectedVote(null);
-    setNotice(null);
+    clearNotice();
     writeStorage("roomCode", "");
     writeStorage("participantToken", "");
     writeStorage("hostToken", "");
@@ -586,9 +544,7 @@ export function App() {
       <main className="app-shell">
         <JoinPanel
           busy={busy}
-          connectionState={connectionState}
           displayName={displayName}
-          notice={bannerText}
           roomCode={roomCode}
           onCreateRoom={() => void createRoom()}
           onDisplayNameChange={setDisplayName}
@@ -606,7 +562,6 @@ export function App() {
         busy={busy}
         displayName={displayName}
         history={snapshot.history}
-        notice={bannerText}
         selectedVote={selectedVote}
         storyDraft={storyDraft}
         viewModel={viewModel}
