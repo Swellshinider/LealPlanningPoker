@@ -1,4 +1,11 @@
-import type { RoomHistoryEntry, VoteCard as VoteValue } from "@lealplanningpoker/shared";
+import { useMemo, useState } from "react";
+import {
+  FIBONACCI_DECK,
+  isBuiltInVoteCard,
+  normalizeVoteCard,
+  type RoomHistoryEntry,
+  type VoteCard as VoteValue
+} from "@lealplanningpoker/shared";
 import type { RoomViewModel } from "../lib/roomView";
 import { formatVoteLabel } from "../lib/uiText";
 import { HistoryPanel } from "./HistoryPanel";
@@ -11,7 +18,6 @@ export interface RoomBoardProps {
   storyDraft: string;
   selectedVote: VoteValue | null;
   notice: string | null;
-  roomLink: string;
   busy?: boolean;
   onDisplayNameChange: (value: string) => void;
   onRename: () => void;
@@ -22,9 +28,10 @@ export interface RoomBoardProps {
   onReset: () => void;
   onFinalize: () => void;
   onCopyLink: () => void;
+  onNewRoom: () => void;
 }
 
-const DECK: VoteValue[] = ["0", "1", "2", "3", "5", "8", "13", "21", "?", "coffee"];
+const DECK: VoteValue[] = [...FIBONACCI_DECK];
 
 export function RoomBoard({
   viewModel,
@@ -33,7 +40,6 @@ export function RoomBoard({
   storyDraft,
   selectedVote,
   notice,
-  roomLink,
   busy = false,
   onDisplayNameChange,
   onRename,
@@ -43,8 +49,22 @@ export function RoomBoard({
   onReveal,
   onReset,
   onFinalize,
-  onCopyLink
+  onCopyLink,
+  onNewRoom
 }: RoomBoardProps) {
+  const [customVoteDraft, setCustomVoteDraft] = useState("");
+  const normalizedCustomVote = useMemo(() => normalizeVoteCard(customVoteDraft), [customVoteDraft]);
+  const customVote = normalizedCustomVote && /^\d+$/.test(normalizedCustomVote) ? normalizedCustomVote : null;
+  const isCustomSelected = Boolean(selectedVote && !isBuiltInVoteCard(selectedVote));
+
+  function submitCustomVote() {
+    if (!customVote) {
+      return;
+    }
+
+    onVote(customVote);
+  }
+
   return (
     <div className="room-workspace">
       <header className="workspace-topbar">
@@ -60,6 +80,9 @@ export function RoomBoard({
           <button className="button button--quiet" type="button" onClick={onCopyLink}>
             Copy link
           </button>
+          <button className="button button--quiet" type="button" onClick={onNewRoom}>
+            New room
+          </button>
         </div>
       </header>
 
@@ -67,7 +90,6 @@ export function RoomBoard({
 
       <section className="room-hero">
         <div className="room-hero__copy">
-          <p className="section-label">Room {viewModel.roomId}</p>
           <h1>{viewModel.story || `Room ${viewModel.roomId}`}</h1>
         </div>
       </section>
@@ -84,11 +106,10 @@ export function RoomBoard({
 
             <label className="field">
               <span className="field__label">Story / ticket</span>
-              <textarea
-                className="field__textarea"
+              <input
+                className="field__input"
                 disabled={!viewModel.canSetStory}
                 placeholder="Improve onboarding flow"
-                rows={3}
                 value={storyDraft}
                 onChange={(event) => onStoryChange(event.target.value)}
               />
@@ -130,15 +151,6 @@ export function RoomBoard({
             </div>
           </section>
 
-          <section className="workspace-panel room-link-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="section-label">Invite</p>
-                <h2>Share room</h2>
-              </div>
-            </div>
-            <input className="field__input" readOnly value={roomLink} />
-          </section>
         </div>
 
         <section className="workspace-panel poker-table-panel">
@@ -233,6 +245,31 @@ export function RoomBoard({
                 onSelect={() => onVote(vote)}
               />
             ))}
+            <div className={["custom-vote-card", isCustomSelected ? "is-selected" : ""].filter(Boolean).join(" ")}>
+              <label className="custom-vote-card__field">
+                <span>Custom</span>
+                <input
+                  disabled={busy || !viewModel.canVote}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="No."
+                  value={customVoteDraft}
+                  onChange={(event) => setCustomVoteDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      submitCustomVote();
+                    }
+                  }}
+                />
+              </label>
+              <button
+                disabled={busy || !viewModel.canVote || !customVote}
+                type="button"
+                onClick={submitCustomVote}
+              >
+                Vote
+              </button>
+            </div>
           </div>
         </div>
       </footer>

@@ -1,4 +1,4 @@
-import { FIBONACCI_DECK, type VoteCard } from "./deck";
+import { FIBONACCI_DECK, isBuiltInVoteCard, type VoteCard } from "./deck";
 
 export type RoomPhase = "lobby" | "voting" | "revealed" | "finalized";
 
@@ -62,10 +62,17 @@ export function summarizeVotes(
     counts.set(vote, (counts.get(vote) ?? 0) + 1);
   }
 
-  return FIBONACCI_DECK.flatMap((card) => {
+  const builtInSummary = FIBONACCI_DECK.flatMap((card) => {
     const count = counts.get(card);
     return count ? [{ card, count }] : [];
   });
+
+  const customSummary = [...counts.entries()]
+    .filter(([card]) => !isBuiltInVoteCard(card))
+    .sort(([left], [right]) => Number(left) - Number(right))
+    .map(([card, count]) => ({ card, count }));
+
+  return [...builtInSummary, ...customSummary];
 }
 
 export function shouldRevealVoteForViewer(options: {

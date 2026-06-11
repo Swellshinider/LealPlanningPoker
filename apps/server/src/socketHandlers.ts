@@ -1,5 +1,5 @@
 import type { Server, Socket } from "socket.io";
-import { type RoomSnapshot, type VoteCard } from "../../../packages/shared/src";
+import { type RoomSnapshot, type VoteCard } from "@lealplanningpoker/shared";
 import { RoomStore, RoomStoreError } from "./roomStore";
 
 interface SocketSession {

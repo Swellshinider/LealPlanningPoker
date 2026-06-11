@@ -60,6 +60,16 @@ function buildRoomLink(roomCode: string): string {
   return url.toString();
 }
 
+function clearRoomQuery(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete("room");
+  window.history.replaceState(null, "", url.toString());
+}
+
 function extractRoomParticipant(snapshot: RoomSnapshot) {
   return snapshot.participants.find((participant) => participant.id === snapshot.viewer.participantId) ?? null;
 }
@@ -541,6 +551,33 @@ export function App() {
     }
   }
 
+  function startNewRoom() {
+    const socket = socketRef.current;
+    activeSessionRef.current = {
+      roomCode: "",
+      participantToken: "",
+      hostToken: ""
+    };
+    previousSnapshotRef.current = null;
+    setSnapshot(null);
+    setRoomCode("");
+    setParticipantToken("");
+    setHostToken("");
+    setStoryDraft("");
+    setSelectedVote(null);
+    setNotice(null);
+    writeStorage("roomCode", "");
+    writeStorage("participantToken", "");
+    writeStorage("hostToken", "");
+    clearRoomQuery();
+
+    if (socket) {
+      setConnectionState("connecting");
+      socket.disconnect();
+      socket.connect();
+    }
+  }
+
   const bannerText = notice ? notice.text : null;
   const bannerTone = notice?.tone ?? "info";
 
@@ -570,13 +607,13 @@ export function App() {
         displayName={displayName}
         history={snapshot.history}
         notice={bannerText}
-        roomLink={roomLink}
         selectedVote={selectedVote}
         storyDraft={storyDraft}
         viewModel={viewModel}
         onCopyLink={() => void copyRoomLink()}
         onDisplayNameChange={setDisplayName}
         onFinalize={() => void finalizeStory()}
+        onNewRoom={startNewRoom}
         onRename={() => void renameSelf()}
         onReset={() => void resetVotes()}
         onReveal={() => void revealVotes()}

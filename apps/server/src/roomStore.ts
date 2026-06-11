@@ -5,10 +5,11 @@ import {
   type RoomPhase,
   type RoomSnapshot,
   type VoteCard,
+  normalizeVoteCard,
   normalizeDisplayName,
   shouldRevealVoteForViewer,
   summarizeVotes
-} from "../../../packages/shared/src";
+} from "@lealplanningpoker/shared";
 
 export class RoomStoreError extends Error {
   readonly code:
@@ -281,12 +282,13 @@ export class RoomStore {
       throw new RoomStoreError("VOTES_LOCKED", "Votes can only change while the room is voting.");
     }
 
-    if (!this.isVoteCard(input.vote)) {
+    const vote = normalizeVoteCard(input.vote);
+    if (!vote) {
       throw new RoomStoreError("INVALID_VOTE", "That vote card is not part of the deck.");
     }
 
     const now = this.nowIso();
-    participant.vote = input.vote;
+    participant.vote = vote;
     participant.updatedAt = now;
     room.updatedAt = now;
 
@@ -517,9 +519,5 @@ export class RoomStore {
 
   private nowIso(): string {
     return this.now().toISOString();
-  }
-
-  private isVoteCard(value: string): value is VoteCard {
-    return ["0", "1", "2", "3", "5", "8", "13", "21", "?", "coffee"].includes(value);
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FIBONACCI_DECK } from "./deck";
+import { FIBONACCI_DECK, normalizeVoteCard } from "./deck";
 
 describe("FIBONACCI_DECK", () => {
   it("exports the planning poker deck in the expected order", () => {
@@ -15,5 +15,21 @@ describe("FIBONACCI_DECK", () => {
       "?",
       "coffee"
     ]);
+  });
+});
+
+describe("normalizeVoteCard", () => {
+  it("accepts built-in cards and custom whole numbers", () => {
+    expect(normalizeVoteCard("coffee")).toBe("coffee");
+    expect(normalizeVoteCard(" 34 ")).toBe("34");
+    expect(normalizeVoteCard("0")).toBe("0");
+  });
+
+  it("rejects decimals, signs, text, and empty values", () => {
+    expect(normalizeVoteCard("1.5")).toBeNull();
+    expect(normalizeVoteCard("-1")).toBeNull();
+    expect(normalizeVoteCard("+1")).toBeNull();
+    expect(normalizeVoteCard("small")).toBeNull();
+    expect(normalizeVoteCard(" ")).toBeNull();
   });
 });

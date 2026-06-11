@@ -9,11 +9,13 @@ describe("normalizeDisplayName", () => {
 });
 
 describe("summarizeVotes", () => {
-  it("counts votes in deck order and ignores empty selections", () => {
-    expect(summarizeVotes(["3", "1", "3", null, "coffee", undefined, "1"])).toEqual([
+  it("counts built-in votes in deck order, custom votes numerically, and ignores empty selections", () => {
+    expect(summarizeVotes(["10", "3", "1", "3", null, "coffee", "4", undefined, "1"])).toEqual([
       { card: "1", count: 2 },
       { card: "3", count: 2 },
-      { card: "coffee", count: 1 }
+      { card: "coffee", count: 1 },
+      { card: "4", count: 1 },
+      { card: "10", count: 1 }
     ]);
   });
 });

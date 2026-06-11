@@ -166,6 +166,44 @@ describe("RoomStore", () => {
     expect(revealedSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.vote).toBe("3");
   });
 
+  it("accepts custom whole-number votes and normalizes whitespace", () => {
+    const created = store.createRoom({ hostName: "Mina" });
+
+    store.setStory({
+      roomId: created.roomId,
+      hostToken: created.hostToken,
+      story: "Improve onboarding"
+    });
+
+    const snapshot = store.submitVote({
+      roomId: created.roomId,
+      participantToken: created.hostToken,
+      vote: " 34 "
+    });
+
+    expect(snapshot.participants.find((participant) => participant.id === "HOST_PARTICIPANT")?.vote).toBe("34");
+  });
+
+  it("rejects invalid custom votes", () => {
+    const created = store.createRoom({ hostName: "Mina" });
+
+    store.setStory({
+      roomId: created.roomId,
+      hostToken: created.hostToken,
+      story: "Improve onboarding"
+    });
+
+    expectRoomError(
+      () =>
+        store.submitVote({
+          roomId: created.roomId,
+          participantToken: created.hostToken,
+          vote: "1.5"
+        }),
+      "INVALID_VOTE"
+    );
+  });
+
   it("rejects participant tokens for host-only actions and blocks votes after reveal", () => {
     const created = store.createRoom({ hostName: "Mina" });
     const joined = store.joinRoom({
@@ -253,6 +291,45 @@ describe("RoomStore", () => {
     expect(reset.phase).toBe("voting");
     expect(reset.history).toHaveLength(1);
     expect(reset.participants.every((participant) => participant.vote === null)).toBe(true);
+  });
+
+  it("finalizes custom votes into history summaries", () => {
+    const created = store.createRoom({ hostName: "Mina" });
+    const joined = store.joinRoom({
+      roomId: created.roomId,
+      displayName: "Ana"
+    });
+
+    store.setStory({
+      roomId: created.roomId,
+      hostToken: created.hostToken,
+      story: "Improve onboarding"
+    });
+    store.submitVote({
+      roomId: created.roomId,
+      participantToken: created.hostToken,
+      vote: "13"
+    });
+    store.submitVote({
+      roomId: created.roomId,
+      participantToken: joined.participantToken,
+      vote: "10"
+    });
+    store.revealVotes({
+      roomId: created.roomId,
+      hostToken: created.hostToken
+    });
+
+    const finalized = store.finalizeStory({
+      roomId: created.roomId,
+      hostToken: created.hostToken
+    });
+
+    expect(finalized.history[0].voteSummary).toEqual([
+      { card: "13", count: 1 },
+      { card: "10", count: 1 }
+    ]);
+    expect(finalized.history[0].votes.find((vote) => vote.participantId === "ANA_PARTICIPANT")?.vote).toBe("10");
   });
 
   it("expires stale rooms", () => {
