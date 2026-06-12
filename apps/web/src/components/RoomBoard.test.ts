@@ -35,6 +35,7 @@ function createProps(viewModelOverrides: Partial<RoomBoardProps["viewModel"]> = 
       canSetStory: false,
       isFinalized: false,
       participants: [],
+      resultStats: null,
       voteSummary: [],
       ...viewModelOverrides
     },
@@ -123,5 +124,29 @@ describe("RoomBoard", () => {
     expect(markup.match(/table-seat--ring/g)).toHaveLength(12);
     expect(markup.match(/table-seat--bench/g)).toHaveLength(2);
     expect(markup).toContain("2 overflow players");
+  });
+
+  it("renders round result stats after reveal", () => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        RoomBoard,
+        createProps({
+          resultStats: {
+            average: 4.5,
+            confidence: 67,
+            numericVoteCount: 3,
+            unknownVoteCount: 1
+          }
+        })
+      )
+    );
+
+    expect(markup).toContain('aria-label="Round result"');
+    expect(markup).toContain("Average");
+    expect(markup).toContain(">4.5</strong>");
+    expect(markup).toContain("Confidence");
+    expect(markup).toContain(">67%</strong>");
+    expect(markup.indexOf("LEAL")).toBeLessThan(markup.indexOf('aria-label="Round result"'));
+    expect(markup.indexOf('aria-label="Round result"')).toBeLessThan(markup.indexOf("Planning Poker"));
   });
 });

@@ -38,8 +38,6 @@ type SeatStyle = CSSProperties & {
   "--seat-x": string;
   "--seat-y": string;
   "--seat-delay": string;
-  "--card-shift-x": string;
-  "--card-shift-y": string;
 };
 
 interface SeatGeometry {
@@ -72,9 +70,7 @@ function getSeatGeometry(index: number, total: number): SeatGeometry {
     style: {
       "--seat-x": `${(x * 42).toFixed(3)}%`,
       "--seat-y": `${(y * 38).toFixed(3)}%`,
-      "--seat-delay": `${index * 42}ms`,
-      "--card-shift-x": `${(-x * 46).toFixed(1)}px`,
-      "--card-shift-y": `${(-y * 46).toFixed(1)}px`
+      "--seat-delay": `${index * 42}ms`
     },
     zoneClass
   };
@@ -92,6 +88,18 @@ function getPlayerInitials(name: string): string {
 function getPlayerStatus(participant: RoomParticipantView): string {
   const role = participant.isHost ? "Host" : "Player";
   return `${role}, ${participant.connected ? "online" : "offline"}`;
+}
+
+function formatAverage(value: number | null): string {
+  if (value === null) {
+    return "-";
+  }
+
+  return Number.isInteger(value) ? value.toString() : value.toFixed(1);
+}
+
+function formatConfidence(value: number | null): string {
+  return value === null ? "-" : `${value}%`;
 }
 
 function PlayerSeat({ participant, variant, geometry }: PlayerSeatProps) {
@@ -284,9 +292,21 @@ export function RoomBoard({
           </div>
 
           <div className="poker-table" aria-label="Planning poker table">
-            <div className="poker-table__surface" aria-hidden="true">
+            <div className="poker-table__surface">
               <div className="poker-table__felt">
-                <span>LEAL</span>
+                <span className="poker-table__brand">LEAL</span>
+                {viewModel.resultStats ? (
+                  <div className="table-results table-results--felt" aria-label="Round result" aria-live="polite">
+                    <div className="table-result">
+                      <span>Average</span>
+                      <strong>{formatAverage(viewModel.resultStats.average)}</strong>
+                    </div>
+                    <div className="table-result">
+                      <span>Confidence</span>
+                      <strong>{formatConfidence(viewModel.resultStats.confidence)}</strong>
+                    </div>
+                  </div>
+                ) : null}
                 <small>Planning Poker</small>
               </div>
             </div>

@@ -1,9 +1,14 @@
 import type {
   RoomParticipantSnapshot,
   RoomSnapshot,
+  VoteResultStats,
   VoteSummaryEntry
 } from "@lealplanningpoker/shared";
-import { shouldRevealVoteForViewer, summarizeVotes } from "@lealplanningpoker/shared";
+import {
+  calculateVoteResultStats,
+  shouldRevealVoteForViewer,
+  summarizeVotes
+} from "@lealplanningpoker/shared";
 
 export interface RoomParticipantView {
   id: string;
@@ -30,6 +35,7 @@ export interface RoomViewModel {
   canSetStory: boolean;
   isFinalized: boolean;
   participants: RoomParticipantView[];
+  resultStats: VoteResultStats | null;
   voteSummary: VoteSummaryEntry[];
 }
 
@@ -41,6 +47,8 @@ export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
   const isVoting = snapshot.phase === "voting";
   const isRevealed = snapshot.phase === "revealed";
   const isFinalized = snapshot.phase === "finalized";
+  const shouldShowResults = isRevealed || isFinalized;
+  const resultVotes = snapshot.participants.map((participant) => participant.vote);
   const canSetStory =
     isHost &&
     (snapshot.phase === "lobby" ||
@@ -59,7 +67,8 @@ export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
     canSetStory,
     isFinalized,
     participants,
-    voteSummary: isRevealed || isFinalized ? summarizeVotes(snapshot.participants.map((participant) => participant.vote)) : []
+    resultStats: shouldShowResults ? calculateVoteResultStats(resultVotes) : null,
+    voteSummary: shouldShowResults ? summarizeVotes(resultVotes) : []
   };
 }
 

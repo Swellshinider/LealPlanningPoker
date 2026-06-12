@@ -57,6 +57,7 @@ describe("buildRoomViewModel", () => {
     expect(model.canFinalize).toBe(false);
     expect(model.canReset).toBe(false);
     expect(model.canSetStory).toBe(false);
+    expect(model.resultStats).toBeNull();
     expect(model.participants[0].visibleVote).toBeNull();
     expect(model.participants[1].visibleVote).toBe("3");
     expect(model.participants[0].tableVote).toBeNull();
@@ -76,6 +77,12 @@ describe("buildRoomViewModel", () => {
     expect(model.canFinalize).toBe(true);
     expect(model.canReset).toBe(true);
     expect(model.canSetStory).toBe(false);
+    expect(model.resultStats).toEqual({
+      average: 5.5,
+      confidence: 50,
+      numericVoteCount: 2,
+      unknownVoteCount: 0
+    });
     expect(model.participants.every((participant) => participant.visibleVote !== null)).toBe(true);
     expect(model.participants.map((participant) => participant.tableVote)).toEqual(["8", "3"]);
   });
