@@ -50,6 +50,7 @@ describe("buildRoomViewModel", () => {
   it("hides other votes while voting and keeps host actions constrained", () => {
     const model = buildRoomViewModel(votingSnapshot);
 
+    expect(model.isHost).toBe(false);
     expect(model.canVote).toBe(true);
     expect(model.voteSummary).toEqual([]);
     expect(model.canReveal).toBe(false);
@@ -65,6 +66,7 @@ describe("buildRoomViewModel", () => {
   it("reveals vote summaries and host actions once the round is revealed", () => {
     const model = buildRoomViewModel(revealedSnapshot);
 
+    expect(model.isHost).toBe(true);
     expect(model.canVote).toBe(false);
     expect(model.voteSummary).toEqual([
       { card: "3", count: 1 },

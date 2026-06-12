@@ -2,7 +2,7 @@ import { startTransition, useEffect, useRef, useState } from "react";
 import type { RoomSnapshot, VoteCard as VoteValue } from "@lealplanningpoker/shared";
 import { buildRoomViewModel } from "./lib/roomView";
 import { createRoomSocket, ensureSocketConnected, emitWithAck, type RoomSocketError } from "./lib/socket";
-import { resolveHostTokenAfterJoin } from "./lib/session";
+import { resolveHostTokenAfterJoin, shouldRestoreStoredSessionTokens } from "./lib/session";
 import { JoinPanel } from "./components/JoinPanel";
 import { RoomBoard } from "./components/RoomBoard";
 import type { Socket } from "socket.io-client";
@@ -89,6 +89,15 @@ export function App() {
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousSnapshotRef = useRef<RoomSnapshot | null>(null);
   const displayNameRef = useRef("");
+  const initialRoomQuery = readRoomQuery();
+  const storedRoomCode = readStorage("roomCode");
+  const storedParticipantToken = readStorage("participantToken");
+  const storedHostToken = readStorage("hostToken");
+  const shouldRestoreStoredSession = shouldRestoreStoredSessionTokens(
+    initialRoomQuery,
+    storedRoomCode,
+    storedParticipantToken
+  );
   const activeSessionRef = useRef({
     roomCode: "",
     participantToken: "",
@@ -98,9 +107,11 @@ export function App() {
   const [connectionState, setConnectionState] = useState<ConnectionState>("connecting");
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
   const [displayName, setDisplayName] = useState(() => readStorage("displayName") || "");
-  const [roomCode, setRoomCode] = useState(() => readRoomQuery() || readStorage("roomCode") || "");
-  const [participantToken, setParticipantToken] = useState(() => readStorage("participantToken") || "");
-  const [hostToken, setHostToken] = useState(() => readStorage("hostToken") || "");
+  const [roomCode, setRoomCode] = useState(() => initialRoomQuery || storedRoomCode || "");
+  const [participantToken, setParticipantToken] = useState(() =>
+    shouldRestoreStoredSession ? storedParticipantToken : ""
+  );
+  const [hostToken, setHostToken] = useState(() => (shouldRestoreStoredSession ? storedHostToken : ""));
   const [storyDraft, setStoryDraft] = useState("");
   const [selectedVote, setSelectedVote] = useState<VoteValue | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -172,7 +183,7 @@ export function App() {
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", () => {
       setConnectionState("disconnected");
-      showNotice("error", "Socket connection failed.");
+      showNotice("error", "Connection lost, check your internet.");
     });
 
     socket.connect();

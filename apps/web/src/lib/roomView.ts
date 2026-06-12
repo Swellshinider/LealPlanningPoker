@@ -22,6 +22,7 @@ export interface RoomViewModel {
   roomId: string;
   hostName: string;
   story: string;
+  isHost: boolean;
   canVote: boolean;
   canReveal: boolean;
   canReset: boolean;
@@ -50,6 +51,7 @@ export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
     roomId: snapshot.roomId,
     hostName: snapshot.hostName,
     story: snapshot.story,
+    isHost,
     canVote: isVoting,
     canReveal: isHost && isVoting,
     canReset: isHost && (isRevealed || isFinalized),

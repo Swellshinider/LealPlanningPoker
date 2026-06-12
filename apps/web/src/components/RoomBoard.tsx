@@ -94,37 +94,46 @@ export function RoomBoard({
       </section>
 
       <main className="workspace-main">
-        <div className="workspace-controls">
-          <section className="workspace-panel story-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="section-label">Story</p>
-                <h2>{viewModel.canSetStory ? "Set the next round" : "Story locked"}</h2>
+        <div
+          className={[
+            "workspace-controls",
+            viewModel.isHost ? "" : "workspace-controls--profile-only"
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
+          {viewModel.isHost ? (
+            <section className="workspace-panel story-panel">
+              <div className="panel-heading">
+                <div>
+                  <p className="section-label">Story</p>
+                  <h2>{viewModel.canSetStory ? "Set the next round" : "Story locked"}</h2>
+                </div>
               </div>
-            </div>
 
-            <label className="field">
-              <span className="field__label">Story / ticket</span>
-              <input
-                className="field__input"
-                disabled={!viewModel.canSetStory}
-                placeholder="Improve onboarding flow"
-                value={storyDraft}
-                onChange={(event) => onStoryChange(event.target.value)}
-              />
-            </label>
+              <label className="field">
+                <span className="field__label">Story / ticket</span>
+                <input
+                  className="field__input"
+                  disabled={!viewModel.canSetStory}
+                  placeholder="Improve onboarding flow"
+                  value={storyDraft}
+                  onChange={(event) => onStoryChange(event.target.value)}
+                />
+              </label>
 
-            <div className="action-row">
-              <button
-                className="button button--secondary"
-                disabled={busy || !viewModel.canSetStory}
-                type="button"
-                onClick={onSaveStory}
-              >
-                {viewModel.isFinalized ? "Start next round" : "Start voting"}
-              </button>
-            </div>
-          </section>
+              <div className="action-row">
+                <button
+                  className="button button--secondary"
+                  disabled={busy || !viewModel.canSetStory}
+                  type="button"
+                  onClick={onSaveStory}
+                >
+                  {viewModel.isFinalized ? "Start next round" : "Start voting"}
+                </button>
+              </div>
+            </section>
+          ) : null}
 
           <section className="workspace-panel profile-panel">
             <div className="panel-heading">

@@ -64,7 +64,6 @@ textarea:focus-visible {
 
 .app-shell {
   min-height: 100vh;
-  padding: 16px;
 }
 
 .app-shell--room {
@@ -73,9 +72,13 @@ textarea:focus-visible {
 
 .landing-workspace,
 .room-workspace {
-  min-height: calc(100vh - 32px);
+  min-height: 100vh;
   display: grid;
   gap: 16px;
+}
+
+.landing-workspace {
+  padding: 16px;
 }
 
 .room-workspace {
@@ -153,6 +156,10 @@ textarea:focus-visible {
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.topbar-actions--ghost {
+  visibility: hidden;
 }
 
 .workspace-panel {
@@ -370,6 +377,10 @@ textarea:focus-visible {
   grid-template-columns: minmax(300px, 1.2fr) minmax(260px, 0.8fr);
   gap: 16px;
   align-items: stretch;
+}
+
+.workspace-controls--profile-only {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .story-panel,
@@ -846,7 +857,7 @@ textarea:focus-visible {
 
 @media (max-width: 760px) {
 
-  .app-shell,
+  .landing-workspace,
   .room-workspace {
     padding: 10px;
   }
@@ -857,7 +868,7 @@ textarea:focus-visible {
 
   .landing-workspace,
   .room-workspace {
-    min-height: calc(100vh - 20px);
+    min-height: 100vh;
     gap: 10px;
   }
 
