@@ -7,6 +7,13 @@ export interface VoteSummaryEntry {
   count: number;
 }
 
+export interface VoteResultStats {
+  average: number | null;
+  confidence: number | null;
+  numericVoteCount: number;
+  unknownVoteCount: number;
+}
+
 export interface RoomParticipantSnapshot {
   id: string;
   name: string;
@@ -75,6 +82,52 @@ export function summarizeVotes(
   return [...builtInSummary, ...customSummary];
 }
 
+export function calculateVoteResultStats(
+  votes: readonly (VoteCard | null | undefined)[]
+): VoteResultStats {
+  const numericVotes: number[] = [];
+  const numericCounts = new Map<string, number>();
+  let unknownVoteCount = 0;
+
+  for (const vote of votes) {
+    if (!vote || vote === "coffee") {
+      continue;
+    }
+
+    if (vote === "?") {
+      unknownVoteCount += 1;
+      continue;
+    }
+
+    if (!NUMERIC_VOTE_PATTERN.test(vote)) {
+      continue;
+    }
+
+    const normalizedVote = vote.replace(/^0+(?=\d)/, "");
+    numericVotes.push(Number(normalizedVote));
+    numericCounts.set(normalizedVote, (numericCounts.get(normalizedVote) ?? 0) + 1);
+  }
+
+  const average =
+    numericVotes.length > 0
+      ? numericVotes.reduce((total, vote) => total + vote, 0) / numericVotes.length
+      : null;
+  const confidenceDenominator = numericVotes.length + unknownVoteCount;
+  const mostCommonNumericVoteCount =
+    numericCounts.size > 0 ? Math.max(...numericCounts.values()) : 0;
+  const confidence =
+    confidenceDenominator > 0
+      ? Math.round((mostCommonNumericVoteCount / confidenceDenominator) * 100)
+      : null;
+
+  return {
+    average,
+    confidence,
+    numericVoteCount: numericVotes.length,
+    unknownVoteCount
+  };
+}
+
 export function shouldRevealVoteForViewer(options: {
   phase: RoomPhase;
   isSelf: boolean;
@@ -92,3 +145,5 @@ function compareNumericVoteStrings(left: string, right: string): number {
 
   return normalizedLeft.localeCompare(normalizedRight);
 }
+
+const NUMERIC_VOTE_PATTERN = /^\d+$/;

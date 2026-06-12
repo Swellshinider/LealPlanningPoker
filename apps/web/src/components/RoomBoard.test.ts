@@ -3,12 +3,31 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { RoomBoard, type RoomBoardProps } from "./RoomBoard";
 
-function createProps(): RoomBoardProps {
+type Participant = RoomBoardProps["viewModel"]["participants"][number];
+
+function createParticipant(index: number, overrides: Partial<Participant> = {}): Participant {
+  return {
+    id: `PLAYER_${index}`,
+    name: `Player ${index}`,
+    isHost: index === 1,
+    connected: true,
+    hasVoted: false,
+    vote: null,
+    visibleVote: null,
+    tableVote: null,
+    joinedAt: "2026-06-11T12:00:00.000Z",
+    updatedAt: "2026-06-11T12:00:00.000Z",
+    ...overrides
+  };
+}
+
+function createProps(viewModelOverrides: Partial<RoomBoardProps["viewModel"]> = {}): RoomBoardProps {
   return {
     viewModel: {
       roomId: "ROOM01",
       hostName: "Mina",
       story: "Improve onboarding",
+      isHost: false,
       canVote: true,
       canReveal: false,
       canReset: false,
@@ -16,7 +35,9 @@ function createProps(): RoomBoardProps {
       canSetStory: false,
       isFinalized: false,
       participants: [],
-      voteSummary: []
+      resultStats: null,
+      voteSummary: [],
+      ...viewModelOverrides
     },
     history: [],
     displayName: "Mina",
@@ -41,5 +62,91 @@ describe("RoomBoard", () => {
     const markup = renderToStaticMarkup(createElement(RoomBoard, createProps()));
 
     expect(markup).toContain('maxLength="4"');
+  });
+
+  it("hides the story panel for non-host viewers", () => {
+    const markup = renderToStaticMarkup(createElement(RoomBoard, createProps()));
+
+    expect(markup).not.toContain("Story / ticket");
+    expect(markup).not.toContain("Set the next round");
+    expect(markup).toContain("workspace-controls--profile-only");
+  });
+
+  it("keeps the story panel visible for hosts even when editing is locked", () => {
+    const markup = renderToStaticMarkup(
+      createElement(RoomBoard, createProps({ isHost: true, canSetStory: false }))
+    );
+
+    expect(markup).toContain("Story / ticket");
+    expect(markup).toContain("Story locked");
+  });
+
+  it("renders participants as seated players around the table", () => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        RoomBoard,
+        createProps({
+          participants: [
+            createParticipant(1, {
+              name: "Mina Lead",
+              hasVoted: true
+            }),
+            createParticipant(2, {
+              name: "Ana Bell",
+              hasVoted: true,
+              vote: "5",
+              visibleVote: "5",
+              tableVote: "5"
+            }),
+            createParticipant(3, {
+              name: "Kai",
+              connected: false
+            })
+          ]
+        })
+      )
+    );
+
+    expect(markup).toContain("seat-ring");
+    expect(markup).toContain("table-seat--ring");
+    expect(markup).toContain("ML");
+    expect(markup).toContain("Host, online");
+    expect(markup).toContain("Player, offline");
+    expect(markup).toContain("table-card--back");
+    expect(markup).toContain("table-card--front");
+    expect(markup).toContain(">5</span>");
+  });
+
+  it("moves participants beyond twelve into the overflow bench", () => {
+    const participants = Array.from({ length: 14 }, (_, index) => createParticipant(index + 1));
+    const markup = renderToStaticMarkup(createElement(RoomBoard, createProps({ participants })));
+
+    expect(markup.match(/table-seat--ring/g)).toHaveLength(12);
+    expect(markup.match(/table-seat--bench/g)).toHaveLength(2);
+    expect(markup).toContain("2 overflow players");
+  });
+
+  it("renders round result stats after reveal", () => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        RoomBoard,
+        createProps({
+          resultStats: {
+            average: 4.5,
+            confidence: 67,
+            numericVoteCount: 3,
+            unknownVoteCount: 1
+          }
+        })
+      )
+    );
+
+    expect(markup).toContain('aria-label="Round result"');
+    expect(markup).toContain("Average");
+    expect(markup).toContain(">4.5</strong>");
+    expect(markup).toContain("Confidence");
+    expect(markup).toContain(">67%</strong>");
+    expect(markup.indexOf("LEAL")).toBeLessThan(markup.indexOf('aria-label="Round result"'));
+    expect(markup.indexOf('aria-label="Round result"')).toBeLessThan(markup.indexOf("Planning Poker"));
   });
 });

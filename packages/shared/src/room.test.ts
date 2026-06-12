@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { normalizeDisplayName, shouldRevealVoteForViewer, summarizeVotes } from "./room";
+import {
+  calculateVoteResultStats,
+  normalizeDisplayName,
+  shouldRevealVoteForViewer,
+  summarizeVotes
+} from "./room";
 
 describe("normalizeDisplayName", () => {
   it("trims whitespace and falls back to Anonymous", () => {
@@ -24,6 +29,53 @@ describe("summarizeVotes", () => {
       { card: "9007199254740992", count: 1 },
       { card: "9007199254740993", count: 1 }
     ]);
+  });
+});
+
+describe("calculateVoteResultStats", () => {
+  it("averages numeric built-in and custom votes", () => {
+    expect(calculateVoteResultStats(["3", "5", "10"])).toEqual({
+      average: 6,
+      confidence: 33,
+      numericVoteCount: 3,
+      unknownVoteCount: 0
+    });
+  });
+
+  it("ignores coffee votes", () => {
+    expect(calculateVoteResultStats(["coffee", "3", "3", "coffee"])).toEqual({
+      average: 3,
+      confidence: 100,
+      numericVoteCount: 2,
+      unknownVoteCount: 0
+    });
+  });
+
+  it("counts unknown votes as disagreement without changing the average", () => {
+    expect(calculateVoteResultStats(["3", "3", "5", "?"])).toEqual({
+      average: 11 / 3,
+      confidence: 50,
+      numericVoteCount: 3,
+      unknownVoteCount: 1
+    });
+  });
+
+  it("reports no average and zero confidence when only unknown votes are counted", () => {
+    expect(calculateVoteResultStats(["?", "?"])).toEqual({
+      average: null,
+      confidence: 0,
+      numericVoteCount: 0,
+      unknownVoteCount: 2
+    });
+  });
+
+  it("reports unavailable stats when no result votes are counted", () => {
+    expect(calculateVoteResultStats(["coffee", null, undefined])).toEqual({
+      average: null,
+      confidence: null,
+      numericVoteCount: 0,
+      unknownVoteCount: 0
+    });
   });
 });
 

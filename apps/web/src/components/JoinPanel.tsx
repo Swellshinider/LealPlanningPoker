@@ -27,6 +27,15 @@ export function JoinPanel({
             <span>Anonymous estimation rooms</span>
           </div>
         </div>
+
+        <div className="topbar-actions topbar-actions--ghost" aria-hidden="true">
+          <button className="button button--quiet" tabIndex={-1} type="button">
+            Copy link
+          </button>
+          <button className="button button--quiet" tabIndex={-1} type="button">
+            New room
+          </button>
+        </div>
       </header>
 
       <div className="landing-grid">

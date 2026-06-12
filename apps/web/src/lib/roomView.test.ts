@@ -50,12 +50,14 @@ describe("buildRoomViewModel", () => {
   it("hides other votes while voting and keeps host actions constrained", () => {
     const model = buildRoomViewModel(votingSnapshot);
 
+    expect(model.isHost).toBe(false);
     expect(model.canVote).toBe(true);
     expect(model.voteSummary).toEqual([]);
     expect(model.canReveal).toBe(false);
     expect(model.canFinalize).toBe(false);
     expect(model.canReset).toBe(false);
     expect(model.canSetStory).toBe(false);
+    expect(model.resultStats).toBeNull();
     expect(model.participants[0].visibleVote).toBeNull();
     expect(model.participants[1].visibleVote).toBe("3");
     expect(model.participants[0].tableVote).toBeNull();
@@ -65,6 +67,7 @@ describe("buildRoomViewModel", () => {
   it("reveals vote summaries and host actions once the round is revealed", () => {
     const model = buildRoomViewModel(revealedSnapshot);
 
+    expect(model.isHost).toBe(true);
     expect(model.canVote).toBe(false);
     expect(model.voteSummary).toEqual([
       { card: "3", count: 1 },
@@ -74,6 +77,12 @@ describe("buildRoomViewModel", () => {
     expect(model.canFinalize).toBe(true);
     expect(model.canReset).toBe(true);
     expect(model.canSetStory).toBe(false);
+    expect(model.resultStats).toEqual({
+      average: 5.5,
+      confidence: 50,
+      numericVoteCount: 2,
+      unknownVoteCount: 0
+    });
     expect(model.participants.every((participant) => participant.visibleVote !== null)).toBe(true);
     expect(model.participants.map((participant) => participant.tableVote)).toEqual(["8", "3"]);
   });
