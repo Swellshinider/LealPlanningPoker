@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import {
   FIBONACCI_DECK,
   MAX_CUSTOM_VOTE_DIGITS,
@@ -7,7 +7,7 @@ import {
   type RoomHistoryEntry,
   type VoteCard as VoteValue
 } from "@lealplanningpoker/shared";
-import type { RoomViewModel } from "../lib/roomView";
+import type { RoomParticipantView, RoomViewModel } from "../lib/roomView";
 import { formatVoteLabel } from "../lib/uiText";
 import { HistoryPanel } from "./HistoryPanel";
 import { VoteCard } from "./VoteCard";
@@ -32,6 +32,115 @@ export interface RoomBoardProps {
 }
 
 const DECK: VoteValue[] = [...FIBONACCI_DECK];
+const MAX_TABLE_SEATS = 12;
+
+type SeatStyle = CSSProperties & {
+  "--seat-x": string;
+  "--seat-y": string;
+  "--seat-delay": string;
+  "--card-shift-x": string;
+  "--card-shift-y": string;
+};
+
+interface SeatGeometry {
+  style: SeatStyle;
+  zoneClass: string;
+}
+
+interface PlayerSeatProps {
+  participant: RoomParticipantView;
+  variant: "ring" | "bench";
+  geometry?: SeatGeometry;
+}
+
+function getSeatGeometry(index: number, total: number): SeatGeometry {
+  const angle = total === 1 ? 90 : -90 + (360 / total) * index;
+  const radians = (angle * Math.PI) / 180;
+  const x = Math.cos(radians);
+  const y = Math.sin(radians);
+  const normalizedAngle = ((angle % 360) + 360) % 360;
+  const zoneClass =
+    normalizedAngle >= 45 && normalizedAngle <= 135
+      ? "table-seat--lower"
+      : normalizedAngle >= 225 && normalizedAngle <= 315
+        ? "table-seat--upper"
+        : normalizedAngle > 135 && normalizedAngle < 225
+          ? "table-seat--left"
+          : "table-seat--right";
+
+  return {
+    style: {
+      "--seat-x": `${(x * 42).toFixed(3)}%`,
+      "--seat-y": `${(y * 38).toFixed(3)}%`,
+      "--seat-delay": `${index * 42}ms`,
+      "--card-shift-x": `${(-x * 46).toFixed(1)}px`,
+      "--card-shift-y": `${(-y * 46).toFixed(1)}px`
+    },
+    zoneClass
+  };
+}
+
+function getPlayerInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const initials = words.length > 1
+    ? `${words[0]?.[0] ?? ""}${words[1]?.[0] ?? ""}`
+    : (words[0] ?? "").slice(0, 2);
+
+  return initials.toUpperCase() || "?";
+}
+
+function getPlayerStatus(participant: RoomParticipantView): string {
+  const role = participant.isHost ? "Host" : "Player";
+  return `${role}, ${participant.connected ? "online" : "offline"}`;
+}
+
+function PlayerSeat({ participant, variant, geometry }: PlayerSeatProps) {
+  const hasFaceDownCard = participant.hasVoted && !participant.tableVote;
+  const hasFaceUpCard = Boolean(participant.tableVote);
+
+  return (
+    <article
+      className={[
+        "table-seat",
+        variant === "ring" ? "table-seat--ring" : "table-seat--bench",
+        geometry?.zoneClass ?? "",
+        participant.isHost ? "table-seat--host" : "",
+        participant.connected ? "" : "table-seat--offline",
+        hasFaceUpCard ? "has-face-up-card" : "",
+        hasFaceDownCard ? "has-face-down-card" : ""
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={geometry?.style}
+      aria-label={`${participant.name} seat`}
+    >
+      <div className="player-seat__person" aria-hidden="true">
+        <span className="player-seat__shadow" />
+        <span className="player-seat__body" />
+        <span className="player-seat__head">
+          <span>{getPlayerInitials(participant.name)}</span>
+        </span>
+      </div>
+
+      <div className="player-seat__plate">
+        <strong>{participant.name}</strong>
+        <span>{getPlayerStatus(participant)}</span>
+      </div>
+
+      <div className="table-card-slot" aria-label={`${participant.name} card`}>
+        {hasFaceUpCard && participant.tableVote ? (
+          <span className="table-card table-card--front">
+            {formatVoteLabel(participant.tableVote)}
+          </span>
+        ) : hasFaceDownCard ? (
+          <span className="table-card table-card--back" aria-hidden="true" />
+        ) : (
+          <span className="table-card-placeholder" aria-hidden="true" />
+        )}
+      </div>
+    </article>
+  );
+}
 
 export function RoomBoard({
   viewModel,
@@ -55,6 +164,8 @@ export function RoomBoard({
   const normalizedCustomVote = useMemo(() => normalizeVoteCard(customVoteDraft), [customVoteDraft]);
   const customVote = normalizedCustomVote && /^\d+$/.test(normalizedCustomVote) ? normalizedCustomVote : null;
   const isCustomSelected = Boolean(selectedVote && !isBuiltInVoteCard(selectedVote));
+  const tableParticipants = viewModel.participants.slice(0, MAX_TABLE_SEATS);
+  const overflowParticipants = viewModel.participants.slice(MAX_TABLE_SEATS);
 
   function submitCustomVote() {
     if (!customVote) {
@@ -167,44 +278,44 @@ export function RoomBoard({
               <p className="section-label">Vote table</p>
               <h2>{viewModel.participants.length} players</h2>
             </div>
+            <span className="phase-chip phase-chip--quiet">
+              {tableParticipants.length} at table
+            </span>
           </div>
 
           <div className="poker-table" aria-label="Planning poker table">
-            <div className="poker-table__felt">
-              <span>LEAL</span>
+            <div className="poker-table__surface" aria-hidden="true">
+              <div className="poker-table__felt">
+                <span>LEAL</span>
+                <small>Planning Poker</small>
+              </div>
             </div>
 
-            <div className="seat-grid">
-              {viewModel.participants.map((participant) => {
-                const hasFaceDownCard = participant.hasVoted && !participant.tableVote;
-                const hasFaceUpCard = Boolean(participant.tableVote);
-
-                return (
-                  <article
-                    className={[
-                      "table-seat",
-                      hasFaceUpCard ? "has-face-up-card" : "",
-                      hasFaceDownCard ? "has-face-down-card" : ""
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    key={participant.id}
-                  >
-                    <strong>{participant.name}</strong>
-                    <div className="table-card-slot" aria-label={`${participant.name} card`}>
-                      {hasFaceUpCard && participant.tableVote ? (
-                        <span className="table-card table-card--front">
-                          {formatVoteLabel(participant.tableVote)}
-                        </span>
-                      ) : hasFaceDownCard ? (
-                        <span className="table-card table-card--back" aria-hidden="true" />
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
+            <div className="seat-ring">
+              {tableParticipants.map((participant, index) => (
+                <PlayerSeat
+                  key={participant.id}
+                  geometry={getSeatGeometry(index, tableParticipants.length)}
+                  participant={participant}
+                  variant="ring"
+                />
+              ))}
             </div>
           </div>
+
+          {overflowParticipants.length > 0 ? (
+            <div className="overflow-bench" aria-label="Overflow players">
+              <div className="overflow-bench__header">
+                <span className="section-label">Bench</span>
+                <strong>{overflowParticipants.length} overflow players</strong>
+              </div>
+              <div className="overflow-bench__list">
+                {overflowParticipants.map((participant) => (
+                  <PlayerSeat key={participant.id} participant={participant} variant="bench" />
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="action-row action-row--table">
             <button
