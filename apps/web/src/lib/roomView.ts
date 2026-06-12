@@ -67,7 +67,6 @@ function toParticipantView(
 ): RoomParticipantView {
   const visibleVote = shouldRevealVoteForViewer({
     phase: snapshot.phase,
-    isHost: snapshot.viewer.isHost,
     isSelf: participant.id === snapshot.viewer.participantId
   })
     ? participant.vote

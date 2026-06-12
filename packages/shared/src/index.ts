@@ -1,2 +1,2 @@
-export * from "./deck";
-export * from "./room";
+export * from "./deck.js";
+export * from "./room.js";

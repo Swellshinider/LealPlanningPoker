@@ -176,7 +176,8 @@ describe("RoomStore", () => {
 
     expect(hostSnapshot.phase).toBe("voting");
     expect(hostSnapshot.participants.find((participant) => participant.id === "HOST_PARTICIPANT")?.vote).toBe("8");
-    expect(hostSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.vote).toBe("3");
+    expect(hostSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.vote).toBeNull();
+    expect(hostSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.hasVoted).toBe(true);
 
     expect(participantSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.vote).toBe("3");
     expect(participantSnapshot.participants.find((participant) => participant.id === "HOST_PARTICIPANT")?.vote).toBe(null);
@@ -242,6 +243,16 @@ describe("RoomStore", () => {
           roomId: created.roomId,
           participantToken: created.hostToken,
           vote: "small"
+        }),
+      "INVALID_VOTE"
+    );
+
+    expectRoomError(
+      () =>
+        store.submitVote({
+          roomId: created.roomId,
+          participantToken: created.hostToken,
+          vote: "10000"
         }),
       "INVALID_VOTE"
     );
@@ -393,5 +404,87 @@ describe("RoomStore", () => {
         }),
       "ROOM_NOT_FOUND"
     );
+  });
+
+  it("rejects joins after the room reaches the participant limit", () => {
+    const ids = Array.from({ length: 120 }, (_, index) => `ID_${index.toString().padStart(3, "0")}`);
+    const limitedStore = new RoomStore({
+      roomIdFactory: () => "ABCD-2345",
+      idFactory: () => {
+        const id = ids.shift();
+        if (!id) {
+          throw new Error("No more ids");
+        }
+        return id;
+      },
+      now: () => new Date("2026-06-11T12:00:00.000Z")
+    });
+
+    const created = limitedStore.createRoom({ hostName: "Mina" });
+
+    for (let index = 0; index < 49; index += 1) {
+      limitedStore.joinRoom({
+        roomId: created.roomId,
+        displayName: `Participant ${index}`
+      });
+    }
+
+    expectRoomError(
+      () =>
+        limitedStore.joinRoom({
+          roomId: created.roomId,
+          displayName: "Overflow"
+        }),
+      "ROOM_FULL"
+    );
+  });
+
+  it("keeps only the latest finalized history entries", () => {
+    const ids = Array.from({ length: 400 }, (_, index) => `ITEM_${index.toString().padStart(3, "0")}`);
+    let currentTime = new Date("2026-06-11T12:00:00.000Z");
+    const historyStore = new RoomStore({
+      roomIdFactory: () => "ABCD-2345",
+      idFactory: () => {
+        const id = ids.shift();
+        if (!id) {
+          throw new Error("No more ids");
+        }
+        return id;
+      },
+      now: () => new Date(currentTime)
+    });
+
+    const created = historyStore.createRoom({ hostName: "Mina" });
+
+    for (let index = 0; index < 105; index += 1) {
+      currentTime = new Date(currentTime.getTime() + 1_000);
+      historyStore.setStory({
+        roomId: created.roomId,
+        hostToken: created.hostToken,
+        story: `Story ${index}`
+      });
+      historyStore.submitVote({
+        roomId: created.roomId,
+        participantToken: created.hostToken,
+        vote: "5"
+      });
+      historyStore.revealVotes({
+        roomId: created.roomId,
+        hostToken: created.hostToken
+      });
+      historyStore.finalizeStory({
+        roomId: created.roomId,
+        hostToken: created.hostToken
+      });
+    }
+
+    const snapshot = historyStore.getSnapshot({
+      roomId: created.roomId,
+      participantToken: created.hostToken
+    });
+
+    expect(snapshot.history).toHaveLength(100);
+    expect(snapshot.history[0]?.story).toBe("Story 5");
+    expect(snapshot.history.at(-1)?.story).toBe("Story 104");
   });
 });

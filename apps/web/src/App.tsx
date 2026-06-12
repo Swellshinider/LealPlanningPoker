@@ -2,6 +2,7 @@ import { startTransition, useEffect, useRef, useState } from "react";
 import type { RoomSnapshot, VoteCard as VoteValue } from "@lealplanningpoker/shared";
 import { buildRoomViewModel } from "./lib/roomView";
 import { createRoomSocket, ensureSocketConnected, emitWithAck, type RoomSocketError } from "./lib/socket";
+import { resolveHostTokenAfterJoin } from "./lib/session";
 import { JoinPanel } from "./components/JoinPanel";
 import { RoomBoard } from "./components/RoomBoard";
 import type { Socket } from "socket.io-client";
@@ -133,24 +134,7 @@ export function App() {
 
     const handleSnapshot = (nextSnapshot: RoomSnapshot) => {
       startTransition(() => {
-        const previous = previousSnapshotRef.current;
-        previousSnapshotRef.current = nextSnapshot;
-        setSnapshot(nextSnapshot);
-        setRoomCode(nextSnapshot.roomId);
-
-        const nextViewModel = buildRoomViewModel(nextSnapshot);
-        const selfParticipant = nextViewModel.participants.find(
-          (participant) => participant.id === nextSnapshot.viewer.participantId
-        );
-        setSelectedVote(selfParticipant?.visibleVote ?? null);
-
-        if (!previous || previous.roomId !== nextSnapshot.roomId || previous.story !== nextSnapshot.story) {
-          setStoryDraft(nextSnapshot.story);
-        }
-
-        if (!displayNameRef.current && selfParticipant?.name) {
-          setDisplayName(selfParticipant.name);
-        }
+        handleSnapshotResponse(nextSnapshot, activeSessionRef.current.participantToken);
       });
       clearNotice();
       setConnectionState("connected");
@@ -231,7 +215,7 @@ export function App() {
         roomId: room,
         participantToken: token
       });
-      handleSnapshotResponse(response.snapshot);
+      handleSnapshotResponse(response.snapshot, token);
       showNotice("info", "Session restored.");
     } catch (error) {
       const roomError = asRoomSocketError(error);
@@ -239,7 +223,7 @@ export function App() {
     }
   }
 
-  function handleSnapshotResponse(nextSnapshot: RoomSnapshot) {
+  function handleSnapshotResponse(nextSnapshot: RoomSnapshot, nextParticipantToken = activeSessionRef.current.participantToken) {
     const previous = previousSnapshotRef.current;
     previousSnapshotRef.current = nextSnapshot;
     setSnapshot(nextSnapshot);
@@ -255,6 +239,8 @@ export function App() {
     if (!displayNameRef.current && selfParticipant?.name) {
       setDisplayName(selfParticipant.name);
     }
+
+    setHostToken(resolveHostTokenAfterJoin(nextSnapshot.viewer.isHost, nextParticipantToken));
   }
 
   async function createRoom() {
@@ -277,7 +263,7 @@ export function App() {
 
       setParticipantToken(response.participantToken);
       setHostToken(response.hostToken);
-      handleSnapshotResponse(response.snapshot);
+      handleSnapshotResponse(response.snapshot, response.participantToken);
       setDisplayName(extractRoomParticipant(response.snapshot)?.name ?? displayName);
       showNotice("success", "Room created.");
     } catch (error) {
@@ -308,8 +294,8 @@ export function App() {
       });
 
       setParticipantToken(response.participantToken);
-      setHostToken(response.participantToken);
-      handleSnapshotResponse(response.snapshot);
+      setHostToken(resolveHostTokenAfterJoin(response.snapshot.viewer.isHost, response.participantToken));
+      handleSnapshotResponse(response.snapshot, response.participantToken);
       setDisplayName(extractRoomParticipant(response.snapshot)?.name ?? displayName);
       showNotice("success", "Joined room.");
     } catch (error) {

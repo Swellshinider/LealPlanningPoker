@@ -13,9 +13,10 @@ export const FIBONACCI_DECK = [
 
 export type BuiltInVoteCard = (typeof FIBONACCI_DECK)[number];
 export type VoteCard = string;
+export const MAX_CUSTOM_VOTE_DIGITS = 4;
 
 const BUILT_IN_VOTE_CARDS = new Set<string>(FIBONACCI_DECK);
-const CUSTOM_WHOLE_NUMBER_PATTERN = /^\d+$/;
+const CUSTOM_WHOLE_NUMBER_PATTERN = new RegExp(`^\\d{1,${MAX_CUSTOM_VOTE_DIGITS}}$`);
 
 export function isBuiltInVoteCard(value: string): value is BuiltInVoteCard {
   return BUILT_IN_VOTE_CARDS.has(value);
