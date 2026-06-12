@@ -26,8 +26,18 @@ export class RoomSocketError extends Error {
   }
 }
 
+function getDevSocketServerUrl(): string | undefined {
+  if (!import.meta.env.DEV || typeof window === "undefined") {
+    return undefined;
+  }
+
+  return `${window.location.protocol}//${window.location.hostname}:3000`;
+}
+
 export function createRoomSocket(): Socket {
-  return io({
+  const devSocketServerUrl = getDevSocketServerUrl();
+
+  return io(devSocketServerUrl, {
     autoConnect: false,
     path: "/socket.io",
     transports: ["websocket", "polling"]

@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
-import { Server } from "socket.io";
+import { Server, type ServerOptions } from "socket.io";
 import { RoomStore } from "./roomStore";
 import { buildHttpApp } from "./http";
 import { registerSocketHandlers } from "./socketHandlers";
@@ -20,6 +20,21 @@ export interface ServerRuntime {
   close: () => Promise<void>;
 }
 
+const DEVELOPMENT_SOCKET_ORIGINS = [
+  /^http:\/\/localhost(?::\d+)?$/,
+  /^http:\/\/127\.0\.0\.1(?::\d+)?$/,
+  /^http:\/\/\[::1\](?::\d+)?$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+(?::\d+)?$/,
+  /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(?::\d+)?$/,
+  /^http:\/\/192\.168\.\d+\.\d+(?::\d+)?$/
+];
+
+function shouldAllowDevelopmentSocketOrigins(): boolean {
+  const runtimeArgs = [...process.execArgv, ...process.argv];
+
+  return process.env.NODE_ENV === "development" || runtimeArgs.includes("--conditions=development");
+}
+
 export async function createServerRuntime(options: ServerRuntimeOptions = {}): Promise<ServerRuntime> {
   const staticRoot =
     options.staticRoot ?? resolve(fileURLToPath(new URL("../../web/dist", import.meta.url)));
@@ -28,9 +43,17 @@ export async function createServerRuntime(options: ServerRuntimeOptions = {}): P
     logger: options.logger,
     staticRoot
   });
-  const io = new Server(app.server, {
+  const socketOptions: Partial<ServerOptions> = {
     path: "/socket.io"
-  });
+  };
+
+  if (shouldAllowDevelopmentSocketOrigins()) {
+    socketOptions.cors = {
+      origin: DEVELOPMENT_SOCKET_ORIGINS
+    };
+  }
+
+  const io = new Server(app.server, socketOptions);
 
   const socketHandlers = registerSocketHandlers(io, store);
   const expiryInterval = setInterval(() => {

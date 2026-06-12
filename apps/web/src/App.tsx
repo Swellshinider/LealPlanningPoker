@@ -3,6 +3,15 @@ import type { RoomSnapshot, VoteCard as VoteValue } from "@lealplanningpoker/sha
 import { buildRoomViewModel } from "./lib/roomView";
 import { createRoomSocket, ensureSocketConnected, emitWithAck, type RoomSocketError } from "./lib/socket";
 import { resolveHostTokenAfterJoin, shouldRestoreStoredSessionTokens } from "./lib/session";
+import {
+  DARK_THEME_MEDIA_QUERY,
+  THEME_STORAGE_KEY,
+  getSystemTheme,
+  getThemeToggleTarget,
+  parseThemeMode,
+  resolveThemeMode,
+  type ThemeMode
+} from "./lib/theme";
 import { JoinPanel } from "./components/JoinPanel";
 import { RoomBoard } from "./components/RoomBoard";
 import type { Socket } from "socket.io-client";
@@ -40,6 +49,30 @@ function writeStorage(key: keyof typeof STORAGE_KEYS, value: string): void {
   } catch {
     // Ignore storage errors in private browsing modes.
   }
+}
+
+function readStoredTheme(): ThemeMode | null {
+  try {
+    return parseThemeMode(window.localStorage.getItem(THEME_STORAGE_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredTheme(theme: ThemeMode): void {
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // Ignore storage errors in private browsing modes.
+  }
+}
+
+function readSystemTheme(): ThemeMode {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return "light";
+  }
+
+  return getSystemTheme(window.matchMedia(DARK_THEME_MEDIA_QUERY).matches);
 }
 
 function readRoomQuery(): string {
@@ -93,6 +126,7 @@ export function App() {
   const storedRoomCode = readStorage("roomCode");
   const storedParticipantToken = readStorage("participantToken");
   const storedHostToken = readStorage("hostToken");
+  const storedTheme = readStoredTheme();
   const shouldRestoreStoredSession = shouldRestoreStoredSessionTokens(
     initialRoomQuery,
     storedRoomCode,
@@ -116,6 +150,8 @@ export function App() {
   const [selectedVote, setSelectedVote] = useState<VoteValue | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [busy, setBusy] = useState(false);
+  const [themePreference, setThemePreference] = useState<ThemeMode | null>(() => storedTheme);
+  const [theme, setTheme] = useState<ThemeMode>(() => resolveThemeMode(storedTheme, readSystemTheme()));
 
   const viewModel = snapshot ? buildRoomViewModel(snapshot) : null;
   const roomLink = snapshot ? buildRoomLink(snapshot.roomId) : buildRoomLink(roomCode);
@@ -136,6 +172,29 @@ export function App() {
     writeStorage("participantToken", participantToken);
     writeStorage("hostToken", hostToken);
   }, [displayName, hostToken, participantToken, roomCode]);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.dataset.theme = theme;
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    if (themePreference || typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(DARK_THEME_MEDIA_QUERY);
+    const handleThemeChange = (event: MediaQueryListEvent) => {
+      setTheme(getSystemTheme(event.matches));
+    };
+
+    mediaQuery.addEventListener("change", handleThemeChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleThemeChange);
+    };
+  }, [themePreference]);
 
   useEffect(() => () => clearNoticeTimer(), []);
 
@@ -217,6 +276,13 @@ export function App() {
       noticeTimerRef.current = null;
       setNotice(null);
     }, 4_000);
+  }
+
+  function toggleTheme() {
+    const nextTheme = getThemeToggleTarget(theme);
+    setThemePreference(nextTheme);
+    setTheme(nextTheme);
+    writeStoredTheme(nextTheme);
   }
 
   async function syncStoredSession(socket: Socket, room: string, token: string) {
@@ -543,10 +609,12 @@ export function App() {
           busy={busy}
           displayName={displayName}
           roomCode={roomCode}
+          theme={theme}
           onCreateRoom={() => void createRoom()}
           onDisplayNameChange={setDisplayName}
           onJoinRoom={() => void joinRoom()}
           onRoomCodeChange={setRoomCode}
+          onToggleTheme={toggleTheme}
         />
         {bannerText ? <div className={`floating-banner floating-banner--${bannerTone}`}>{bannerText}</div> : null}
       </main>
@@ -561,6 +629,7 @@ export function App() {
         history={snapshot.history}
         selectedVote={selectedVote}
         storyDraft={storyDraft}
+        theme={theme}
         viewModel={viewModel}
         onCopyLink={() => void copyRoomLink()}
         onDisplayNameChange={setDisplayName}
@@ -571,6 +640,7 @@ export function App() {
         onReveal={() => void revealVotes()}
         onSaveStory={() => void saveStory()}
         onStoryChange={setStoryDraft}
+        onToggleTheme={toggleTheme}
         onVote={(vote) => void submitVote(vote)}
       />
       {bannerText ? <div className={`floating-banner floating-banner--${bannerTone}`}>{bannerText}</div> : null}

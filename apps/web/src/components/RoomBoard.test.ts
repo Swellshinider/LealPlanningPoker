@@ -43,6 +43,7 @@ function createProps(viewModelOverrides: Partial<RoomBoardProps["viewModel"]> = 
     displayName: "Mina",
     storyDraft: "Improve onboarding",
     selectedVote: null,
+    theme: "light",
     busy: false,
     onDisplayNameChange: () => undefined,
     onRename: () => undefined,
@@ -53,7 +54,8 @@ function createProps(viewModelOverrides: Partial<RoomBoardProps["viewModel"]> = 
     onReset: () => undefined,
     onFinalize: () => undefined,
     onCopyLink: () => undefined,
-    onNewRoom: () => undefined
+    onNewRoom: () => undefined,
+    onToggleTheme: () => undefined
   };
 }
 
@@ -62,6 +64,13 @@ describe("RoomBoard", () => {
     const markup = renderToStaticMarkup(createElement(RoomBoard, createProps()));
 
     expect(markup).toContain('maxLength="4"');
+  });
+
+  it("renders the theme toggle in the room header", () => {
+    const markup = renderToStaticMarkup(createElement(RoomBoard, createProps()));
+
+    expect(markup).toContain('aria-label="Switch to dark theme"');
+    expect(markup).toContain('class="button button--quiet theme-toggle"');
   });
 
   it("hides the story panel for non-host viewers", () => {

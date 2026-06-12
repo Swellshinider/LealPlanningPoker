@@ -1,21 +1,28 @@
+import type { ThemeMode } from "../lib/theme";
+import { ThemeToggleButton } from "./ThemeToggleButton";
+
 export interface JoinPanelProps {
   displayName: string;
   roomCode: string;
+  theme: ThemeMode;
   busy?: boolean;
   onDisplayNameChange: (value: string) => void;
   onRoomCodeChange: (value: string) => void;
   onCreateRoom: () => void;
   onJoinRoom: () => void;
+  onToggleTheme: () => void;
 }
 
 export function JoinPanel({
   displayName,
   roomCode,
+  theme,
   busy = false,
   onDisplayNameChange,
   onRoomCodeChange,
   onCreateRoom,
-  onJoinRoom
+  onJoinRoom,
+  onToggleTheme
 }: JoinPanelProps) {
   return (
     <section className="landing-workspace">
@@ -28,13 +35,8 @@ export function JoinPanel({
           </div>
         </div>
 
-        <div className="topbar-actions topbar-actions--ghost" aria-hidden="true">
-          <button className="button button--quiet" tabIndex={-1} type="button">
-            Copy link
-          </button>
-          <button className="button button--quiet" tabIndex={-1} type="button">
-            New room
-          </button>
+        <div className="topbar-actions">
+          <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
         </div>
       </header>
 

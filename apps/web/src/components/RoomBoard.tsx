@@ -8,8 +8,10 @@ import {
   type VoteCard as VoteValue
 } from "@lealplanningpoker/shared";
 import type { RoomParticipantView, RoomViewModel } from "../lib/roomView";
+import type { ThemeMode } from "../lib/theme";
 import { formatVoteLabel } from "../lib/uiText";
 import { HistoryPanel } from "./HistoryPanel";
+import { ThemeToggleButton } from "./ThemeToggleButton";
 import { VoteCard } from "./VoteCard";
 
 export interface RoomBoardProps {
@@ -18,6 +20,7 @@ export interface RoomBoardProps {
   displayName: string;
   storyDraft: string;
   selectedVote: VoteValue | null;
+  theme: ThemeMode;
   busy?: boolean;
   onDisplayNameChange: (value: string) => void;
   onRename: () => void;
@@ -29,6 +32,7 @@ export interface RoomBoardProps {
   onFinalize: () => void;
   onCopyLink: () => void;
   onNewRoom: () => void;
+  onToggleTheme: () => void;
 }
 
 const DECK: VoteValue[] = [...FIBONACCI_DECK];
@@ -156,6 +160,7 @@ export function RoomBoard({
   displayName,
   storyDraft,
   selectedVote,
+  theme,
   busy = false,
   onDisplayNameChange,
   onRename,
@@ -166,7 +171,8 @@ export function RoomBoard({
   onReset,
   onFinalize,
   onCopyLink,
-  onNewRoom
+  onNewRoom,
+  onToggleTheme
 }: RoomBoardProps) {
   const [customVoteDraft, setCustomVoteDraft] = useState("");
   const normalizedCustomVote = useMemo(() => normalizeVoteCard(customVoteDraft), [customVoteDraft]);
@@ -195,6 +201,7 @@ export function RoomBoard({
         </div>
 
         <div className="topbar-actions">
+          <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
           <button className="button button--quiet" type="button" onClick={onCopyLink}>
             Copy link
           </button>
