@@ -19,7 +19,8 @@ export class RoomStoreError extends Error {
     | "VOTES_LOCKED"
     | "ROUND_LOCKED"
     | "INVALID_VOTE"
-    | "INVALID_STORY";
+    | "INVALID_STORY"
+    | "ROOM_FULL";
 
   constructor(
     code:
@@ -29,7 +30,8 @@ export class RoomStoreError extends Error {
       | "VOTES_LOCKED"
       | "ROUND_LOCKED"
       | "INVALID_VOTE"
-      | "INVALID_STORY",
+      | "INVALID_STORY"
+      | "ROOM_FULL",
     message: string
   ) {
     super(message);
@@ -68,6 +70,9 @@ interface RoomRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+const MAX_PARTICIPANTS_PER_ROOM = 50;
+const MAX_HISTORY_ENTRIES_PER_ROOM = 100;
 
 export interface CreateRoomInput {
   hostName: string;
@@ -358,6 +363,7 @@ export class RoomStore {
     };
 
     room.history = [...room.history, historyEntry];
+    room.history = room.history.slice(-MAX_HISTORY_ENTRIES_PER_ROOM);
     room.phase = "finalized";
     room.updatedAt = now;
 
@@ -412,7 +418,6 @@ export class RoomStore {
   ): RoomParticipantSnapshot {
     const visible = shouldRevealVoteForViewer({
       phase: room.phase,
-      isHost: viewer.isHost,
       isSelf: participant.id === viewer.id
     });
 
@@ -453,6 +458,10 @@ export class RoomStore {
   }
 
   private createParticipant(room: RoomRecord, name: string, now: string): RoomParticipantRecord {
+    if (room.participants.size >= MAX_PARTICIPANTS_PER_ROOM) {
+      throw new RoomStoreError("ROOM_FULL", "This room is full.");
+    }
+
     const participantId = this.nextId();
     const participantToken = this.nextId();
     const participant: RoomParticipantRecord = {

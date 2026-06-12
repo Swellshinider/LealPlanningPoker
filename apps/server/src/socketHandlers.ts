@@ -61,10 +61,22 @@ interface FailureEnvelope {
 
 type ActionAck<T extends object> = (response: SuccessEnvelope<T> | FailureEnvelope) => void;
 
-export function registerSocketHandlers(io: Server, store: RoomStore): void {
+class SocketHandlerError extends Error {
+  constructor(readonly code: "INVALID_PAYLOAD" | "RATE_LIMITED", message: string) {
+    super(message);
+    this.name = "SocketHandlerError";
+  }
+}
+
+export interface SocketHandlerController {
+  notifyRoomClosed: (roomId: string, error: SocketErrorPayload) => void;
+}
+
+export function registerSocketHandlers(io: Server, store: RoomStore): SocketHandlerController {
   const sessionBySocketId = new Map<string, SocketSession>();
   const socketsByRoomId = new Map<string, Set<string>>();
   const socketsByToken = new Map<string, Set<string>>();
+  const eventTimestampsBySocketId = new Map<string, number[]>();
 
   io.on("connection", (socket) => {
     socket.on("room:create", (payload: CreateRoomPayload, ack?: ActionAck<{
@@ -73,8 +85,8 @@ export function registerSocketHandlers(io: Server, store: RoomStore): void {
       hostToken: string;
       snapshot: RoomSnapshot;
     }>) => {
-      respond(ack, () => {
-        const result = store.createRoom({ hostName: payload.hostName });
+      respond(socket, ack, () => {
+        const result = store.createRoom({ hostName: requireStringField(payload, "hostName") });
         switchSession(socket, result.roomId, result.participantToken);
         broadcastRoom(result.roomId, socket.id);
         return {
@@ -91,11 +103,11 @@ export function registerSocketHandlers(io: Server, store: RoomStore): void {
       participantToken: string;
       snapshot: RoomSnapshot;
     }>) => {
-      respond(ack, () => {
+      respond(socket, ack, () => {
         const result = store.joinRoom({
-          roomId: payload.roomId,
-          displayName: payload.displayName,
-          participantToken: payload.participantToken
+          roomId: requireStringField(payload, "roomId"),
+          displayName: requireStringField(payload, "displayName"),
+          participantToken: requireOptionalStringField(payload, "participantToken")
         });
         switchSession(socket, result.roomId, result.participantToken);
         broadcastRoom(result.roomId, socket.id);
@@ -108,10 +120,12 @@ export function registerSocketHandlers(io: Server, store: RoomStore): void {
     });
 
     socket.on("room:sync", (payload: SyncRoomPayload, ack?: ActionAck<{ snapshot: RoomSnapshot }>) => {
-      respond(ack, () => {
-        const snapshot = store.syncRoom(payload);
-        switchSession(socket, payload.roomId, payload.participantToken);
-        broadcastRoom(payload.roomId, socket.id);
+      respond(socket, ack, () => {
+        const roomId = requireStringField(payload, "roomId");
+        const participantToken = requireStringField(payload, "participantToken");
+        const snapshot = store.syncRoom({ roomId, participantToken });
+        switchSession(socket, roomId, participantToken);
+        broadcastRoom(roomId, socket.id);
         return { snapshot };
       });
     });
@@ -119,18 +133,24 @@ export function registerSocketHandlers(io: Server, store: RoomStore): void {
     socket.on(
       "participant:rename",
       (payload: RenameParticipantPayload, ack?: ActionAck<{ snapshot: RoomSnapshot }>) => {
-        respond(ack, () => {
-          const snapshot = store.renameParticipant(payload);
-          broadcastRoom(payload.roomId, socket.id);
+        respond(socket, ack, () => {
+          const roomId = requireStringField(payload, "roomId");
+          const participantToken = requireStringField(payload, "participantToken");
+          const displayName = requireStringField(payload, "displayName");
+          const snapshot = store.renameParticipant({ roomId, participantToken, displayName });
+          broadcastRoom(roomId, socket.id);
           return { snapshot };
         });
       }
     );
 
     socket.on("vote:submit", (payload: VotePayload, ack?: ActionAck<{ snapshot: RoomSnapshot }>) => {
-      respond(ack, () => {
-        const snapshot = store.submitVote(payload);
-        broadcastRoom(payload.roomId, socket.id);
+      respond(socket, ack, () => {
+        const roomId = requireStringField(payload, "roomId");
+        const participantToken = requireStringField(payload, "participantToken");
+        const vote = requireStringField(payload, "vote") as VoteCard;
+        const snapshot = store.submitVote({ roomId, participantToken, vote });
+        broadcastRoom(roomId, socket.id);
         return { snapshot };
       });
     });
@@ -138,9 +158,12 @@ export function registerSocketHandlers(io: Server, store: RoomStore): void {
     socket.on(
       "host:story:set",
       (payload: StoryPayload, ack?: ActionAck<{ snapshot: RoomSnapshot }>) => {
-        respond(ack, () => {
-          const snapshot = store.setStory(payload);
-          broadcastRoom(payload.roomId, socket.id);
+        respond(socket, ack, () => {
+          const roomId = requireStringField(payload, "roomId");
+          const hostToken = requireStringField(payload, "hostToken");
+          const story = requireStringField(payload, "story");
+          const snapshot = store.setStory({ roomId, hostToken, story });
+          broadcastRoom(roomId, socket.id);
           return { snapshot };
         });
       }
@@ -149,45 +172,57 @@ export function registerSocketHandlers(io: Server, store: RoomStore): void {
     socket.on(
       "host:reveal",
       (payload: HostRoomPayload, ack?: ActionAck<{ snapshot: RoomSnapshot }>) => {
-        respond(ack, () => {
-          const snapshot = store.revealVotes(payload);
-          broadcastRoom(payload.roomId, socket.id);
+        respond(socket, ack, () => {
+          const roomId = requireStringField(payload, "roomId");
+          const hostToken = requireStringField(payload, "hostToken");
+          const snapshot = store.revealVotes({ roomId, hostToken });
+          broadcastRoom(roomId, socket.id);
           return { snapshot };
         });
       }
     );
 
     socket.on("host:reset", (payload: HostRoomPayload, ack?: ActionAck<{ snapshot: RoomSnapshot }>) => {
-      respond(ack, () => {
-        const snapshot = store.resetVotes(payload);
-        broadcastRoom(payload.roomId, socket.id);
+      respond(socket, ack, () => {
+        const roomId = requireStringField(payload, "roomId");
+        const hostToken = requireStringField(payload, "hostToken");
+        const snapshot = store.resetVotes({ roomId, hostToken });
+        broadcastRoom(roomId, socket.id);
         return { snapshot };
       });
     });
 
     socket.on("host:finalize", (payload: HostRoomPayload, ack?: ActionAck<{ snapshot: RoomSnapshot }>) => {
-      respond(ack, () => {
-        const snapshot = store.finalizeStory(payload);
-        broadcastRoom(payload.roomId, socket.id);
+      respond(socket, ack, () => {
+        const roomId = requireStringField(payload, "roomId");
+        const hostToken = requireStringField(payload, "hostToken");
+        const snapshot = store.finalizeStory({ roomId, hostToken });
+        broadcastRoom(roomId, socket.id);
         return { snapshot };
       });
     });
 
     socket.on("disconnect", () => {
       detachSocket(socket);
+      eventTimestampsBySocketId.delete(socket.id);
     });
   });
 
-  function respond<T extends object>(ack: ActionAck<T> | undefined, action: () => T): void {
-    if (!ack) {
-      action();
-      return;
-    }
-
+  function respond<T extends object>(socket: Socket, ack: ActionAck<T> | undefined, action: () => T): void {
     try {
-      ack({ ok: true, ...action() } as SuccessEnvelope<T>);
+      assertWithinRateLimit(socket.id);
+      const result = action();
+      if (ack) {
+        ack({ ok: true, ...result } as SuccessEnvelope<T>);
+      }
     } catch (error) {
-      ack({ ok: false, error: toSocketError(error) });
+      const payload = toSocketError(error);
+      if (ack) {
+        ack({ ok: false, error: payload });
+        return;
+      }
+
+      socket.emit("room:error", payload);
     }
   }
 
@@ -202,7 +237,7 @@ export function registerSocketHandlers(io: Server, store: RoomStore): void {
     addToBucket(socketsByToken, participantToken, socket.id);
   }
 
-  function detachSocket(socket: Socket, session = sessionBySocketId.get(socket.id)): void {
+  function detachSocket(socket: Socket, session = sessionBySocketId.get(socket.id), shouldLeaveRoom = true): void {
     if (!session) {
       return;
     }
@@ -221,6 +256,9 @@ export function registerSocketHandlers(io: Server, store: RoomStore): void {
     }
 
     socketsByToken.delete(session.participantToken);
+    if (!shouldLeaveRoom) {
+      return;
+    }
 
     try {
       store.leaveRoom({
@@ -296,6 +334,38 @@ export function registerSocketHandlers(io: Server, store: RoomStore): void {
       bucket.delete(key);
     }
   }
+
+  function assertWithinRateLimit(socketId: string): void {
+    const now = Date.now();
+    const recent = (eventTimestampsBySocketId.get(socketId) ?? []).filter((timestamp) => now - timestamp < 10_000);
+    recent.push(now);
+    eventTimestampsBySocketId.set(socketId, recent);
+
+    if (recent.length > 60) {
+      throw new SocketHandlerError("RATE_LIMITED", "Too many requests. Try again shortly.");
+    }
+  }
+
+  return {
+    notifyRoomClosed(roomId, error) {
+      const socketIds = socketsByRoomId.get(roomId);
+      if (!socketIds) {
+        return;
+      }
+
+      for (const socketId of [...socketIds]) {
+        const targetSocket = io.sockets.sockets.get(socketId);
+        if (!targetSocket) {
+          removeFromBucket(socketsByRoomId, roomId, socketId);
+          continue;
+        }
+
+        targetSocket.emit("room:closed", { roomId, error });
+        detachSocket(targetSocket, sessionBySocketId.get(targetSocket.id), false);
+        eventTimestampsBySocketId.delete(targetSocket.id);
+      }
+    }
+  };
 }
 
 function isRoomNotFound(error: unknown): boolean {
@@ -303,16 +373,9 @@ function isRoomNotFound(error: unknown): boolean {
 }
 
 function toSocketError(error: unknown): SocketErrorPayload {
-  if (error instanceof RoomStoreError) {
+  if (error instanceof RoomStoreError || error instanceof SocketHandlerError) {
     return {
       code: error.code,
-      message: error.message
-    };
-  }
-
-  if (error instanceof Error) {
-    return {
-      code: "UNKNOWN_ERROR",
       message: error.message
     };
   }
@@ -321,4 +384,32 @@ function toSocketError(error: unknown): SocketErrorPayload {
     code: "UNKNOWN_ERROR",
     message: "Unexpected server error."
   };
+}
+
+function requireStringField(payload: unknown, field: string): string {
+  const value =
+    typeof payload === "object" && payload !== null && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>)[field]
+      : undefined;
+  if (typeof value !== "string") {
+    throw new SocketHandlerError("INVALID_PAYLOAD", `Invalid ${field}.`);
+  }
+
+  return value;
+}
+
+function requireOptionalStringField(payload: unknown, field: string): string | undefined {
+  const value =
+    typeof payload === "object" && payload !== null && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>)[field]
+      : undefined;
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "string") {
+    throw new SocketHandlerError("INVALID_PAYLOAD", `Invalid ${field}.`);
+  }
+
+  return value;
 }

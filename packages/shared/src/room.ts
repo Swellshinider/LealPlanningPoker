@@ -1,4 +1,4 @@
-import { FIBONACCI_DECK, isBuiltInVoteCard, type VoteCard } from "./deck";
+import { FIBONACCI_DECK, isBuiltInVoteCard, type VoteCard } from "./deck.js";
 
 export type RoomPhase = "lobby" | "voting" | "revealed" | "finalized";
 
@@ -69,7 +69,7 @@ export function summarizeVotes(
 
   const customSummary = [...counts.entries()]
     .filter(([card]) => !isBuiltInVoteCard(card))
-    .sort(([left], [right]) => Number(left) - Number(right))
+    .sort(([left], [right]) => compareNumericVoteStrings(left, right))
     .map(([card, count]) => ({ card, count }));
 
   return [...builtInSummary, ...customSummary];
@@ -77,8 +77,18 @@ export function summarizeVotes(
 
 export function shouldRevealVoteForViewer(options: {
   phase: RoomPhase;
-  isHost: boolean;
   isSelf: boolean;
 }): boolean {
-  return options.isHost || options.isSelf || options.phase !== "voting";
+  return options.isSelf || options.phase === "revealed" || options.phase === "finalized";
+}
+
+function compareNumericVoteStrings(left: string, right: string): number {
+  const normalizedLeft = left.replace(/^0+(?=\d)/, "");
+  const normalizedRight = right.replace(/^0+(?=\d)/, "");
+
+  if (normalizedLeft.length !== normalizedRight.length) {
+    return normalizedLeft.length - normalizedRight.length;
+  }
+
+  return normalizedLeft.localeCompare(normalizedRight);
 }

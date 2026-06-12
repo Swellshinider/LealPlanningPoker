@@ -18,14 +18,20 @@ describe("summarizeVotes", () => {
       { card: "10", count: 1 }
     ]);
   });
+
+  it("sorts large custom numeric strings without losing precision", () => {
+    expect(summarizeVotes(["9007199254740993", "9007199254740992"])).toEqual([
+      { card: "9007199254740992", count: 1 },
+      { card: "9007199254740993", count: 1 }
+    ]);
+  });
 });
 
 describe("shouldRevealVoteForViewer", () => {
-  it("reveals votes to the host, the owner, and everyone after reveal", () => {
-    expect(shouldRevealVoteForViewer({ phase: "voting", isHost: true, isSelf: false })).toBe(true);
-    expect(shouldRevealVoteForViewer({ phase: "voting", isHost: false, isSelf: true })).toBe(true);
-    expect(shouldRevealVoteForViewer({ phase: "voting", isHost: false, isSelf: false })).toBe(false);
-    expect(shouldRevealVoteForViewer({ phase: "revealed", isHost: false, isSelf: false })).toBe(true);
-    expect(shouldRevealVoteForViewer({ phase: "finalized", isHost: false, isSelf: false })).toBe(true);
+  it("reveals votes to the owner during voting and to everyone after reveal", () => {
+    expect(shouldRevealVoteForViewer({ phase: "voting", isSelf: true })).toBe(true);
+    expect(shouldRevealVoteForViewer({ phase: "voting", isSelf: false })).toBe(false);
+    expect(shouldRevealVoteForViewer({ phase: "revealed", isSelf: false })).toBe(true);
+    expect(shouldRevealVoteForViewer({ phase: "finalized", isSelf: false })).toBe(true);
   });
 });

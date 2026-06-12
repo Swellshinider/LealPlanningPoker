@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FIBONACCI_DECK, normalizeVoteCard } from "./deck";
+import { FIBONACCI_DECK, MAX_CUSTOM_VOTE_DIGITS, normalizeVoteCard } from "./deck";
 
 describe("FIBONACCI_DECK", () => {
   it("exports the planning poker deck in the expected order", () => {
@@ -33,5 +33,11 @@ describe("normalizeVoteCard", () => {
     expect(normalizeVoteCard("+1")).toBeNull();
     expect(normalizeVoteCard("small")).toBeNull();
     expect(normalizeVoteCard(" ")).toBeNull();
+  });
+
+  it("rejects custom vote values longer than the configured digit limit", () => {
+    expect(MAX_CUSTOM_VOTE_DIGITS).toBe(4);
+    expect(normalizeVoteCard("9999")).toBe("9999");
+    expect(normalizeVoteCard("10000")).toBeNull();
   });
 });

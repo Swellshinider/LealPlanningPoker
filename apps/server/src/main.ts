@@ -32,13 +32,27 @@ export async function createServerRuntime(options: ServerRuntimeOptions = {}): P
     path: "/socket.io"
   });
 
-  registerSocketHandlers(io, store);
+  const socketHandlers = registerSocketHandlers(io, store);
+  const expiryInterval = setInterval(() => {
+    const expiredRoomIds = store.expireRooms();
+    for (const roomId of expiredRoomIds) {
+      socketHandlers.notifyRoomClosed(roomId, {
+        code: "ROOM_NOT_FOUND",
+        message: `Room ${roomId} expired.`
+      });
+    }
+  }, Math.min(store.roomTtlMs, 60_000));
+
+  if (typeof expiryInterval.unref === "function") {
+    expiryInterval.unref();
+  }
 
   return {
     app,
     io,
     store,
     close: async () => {
+      clearInterval(expiryInterval);
       io.close();
       await app.close();
     }

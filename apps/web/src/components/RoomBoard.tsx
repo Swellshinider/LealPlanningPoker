@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   FIBONACCI_DECK,
+  MAX_CUSTOM_VOTE_DIGITS,
   isBuiltInVoteCard,
   normalizeVoteCard,
   type RoomHistoryEntry,
@@ -249,6 +250,7 @@ export function RoomBoard({
                 <input
                   disabled={busy || !viewModel.canVote}
                   inputMode="numeric"
+                  maxLength={MAX_CUSTOM_VOTE_DIGITS}
                   pattern="[0-9]*"
                   placeholder="No."
                   value={customVoteDraft}
