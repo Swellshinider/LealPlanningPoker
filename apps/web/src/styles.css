@@ -376,6 +376,13 @@ textarea:focus-visible {
   background: var(--surface-soft);
 }
 
+.button--compact {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 0.78rem;
+  align-self: center;
+}
+
 .room-hero {
   width: min(100%, 1180px);
   margin: 0 auto;
@@ -1034,6 +1041,13 @@ textarea:focus-visible {
   font-size: 0.95rem;
 }
 
+.vote-dock__clear {
+  min-height: 28px;
+  margin-top: 4px;
+  padding: 0 10px;
+  font-size: 0.76rem;
+}
+
 .vote-grid {
   display: grid;
   grid-template-columns: repeat(10, minmax(54px, 1fr)) minmax(120px, 1.45fr);
@@ -1602,6 +1616,65 @@ textarea:focus-visible {
     align-items: flex-start;
     flex-direction: column;
   }
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  animation: fadeIn 160ms ease-out;
+}
+
+.modal-panel {
+  width: min(90vw, 340px);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.modal-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.modal-panel__header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 720;
+}
+
+.modal-panel__body {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+}
+
+.modal-panel__url {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  word-break: break-all;
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+:root[data-theme="dark"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="dark"] .floating-banner {
+  background: rgba(10, 15, 21, 0.96);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -6,6 +6,7 @@ export interface JoinPanelProps {
   roomCode: string;
   theme: ThemeMode;
   busy?: boolean;
+  autoFocusName?: boolean;
   onDisplayNameChange: (value: string) => void;
   onRoomCodeChange: (value: string) => void;
   onCreateRoom: () => void;
@@ -18,6 +19,7 @@ export function JoinPanel({
   roomCode,
   theme,
   busy = false,
+  autoFocusName = false,
   onDisplayNameChange,
   onRoomCodeChange,
   onCreateRoom,
@@ -31,7 +33,7 @@ export function JoinPanel({
           <span className="brand-mark">LP</span>
           <div>
             <strong>LealPlanningPoker</strong>
-            <span>Anonymous estimation rooms</span>
+            <span>Real-time estimation rooms</span>
           </div>
         </div>
 
@@ -58,20 +60,24 @@ export function JoinPanel({
             </div>
           </div>
 
-          <label className="field">
-            <span className="field__label">Display name</span>
-            <input
-              className="field__input"
-              maxLength={32}
-              placeholder="Alex Morgan"
-              value={displayName}
-              onChange={(event) => onDisplayNameChange(event.target.value)}
-            />
-          </label>
+          <form onSubmit={(event) => { event.preventDefault(); if (!busy) onCreateRoom(); }}>
+            <label className="field">
+              <span className="field__label">Display name</span>
+              <input
+                className="field__input"
+                maxLength={32}
+                placeholder="Alex Morgan"
+                required
+                value={displayName}
+                autoFocus={autoFocusName}
+                onChange={(event) => onDisplayNameChange(event.target.value)}
+              />
+            </label>
 
-          <button className="button button--primary button--full" disabled={busy} type="button" onClick={onCreateRoom}>
-            Create room
-          </button>
+            <button className="button button--primary button--full" disabled={busy} type="submit">
+              Create room
+            </button>
+          </form>
         </section>
 
         <section className="workspace-panel join-panel">
@@ -82,20 +88,23 @@ export function JoinPanel({
             </div>
           </div>
 
-          <label className="field">
-            <span className="field__label">Room code</span>
-            <input
-              className="field__input field__input--code"
-              maxLength={9}
-              placeholder="ABCD-2345"
-              value={roomCode}
-              onChange={(event) => onRoomCodeChange(event.target.value.toUpperCase())}
-            />
-          </label>
+          <form onSubmit={(event) => { event.preventDefault(); if (!busy) onJoinRoom(); }}>
+            <label className="field">
+              <span className="field__label">Room code</span>
+              <input
+                className="field__input field__input--code"
+                maxLength={9}
+                placeholder="ABCD-2345"
+                required
+                value={roomCode}
+                onChange={(event) => onRoomCodeChange(event.target.value.toUpperCase())}
+              />
+            </label>
 
-          <button className="button button--secondary button--full" disabled={busy} type="button" onClick={onJoinRoom}>
-            Join room
-          </button>
+            <button className="button button--secondary button--full" disabled={busy} type="submit">
+              Join room
+            </button>
+          </form>
         </section>
       </div>
     </section>

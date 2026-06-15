@@ -7,9 +7,9 @@ import {
 } from "./room";
 
 describe("normalizeDisplayName", () => {
-  it("trims whitespace and falls back to Anonymous", () => {
+  it("trims whitespace and collapses spaces", () => {
     expect(normalizeDisplayName("   Alex   Morgan  ")).toBe("Alex Morgan");
-    expect(normalizeDisplayName("   ")).toBe("Anonymous");
+    expect(normalizeDisplayName("   ")).toBe("");
   });
 });
 

@@ -53,7 +53,7 @@ export interface RoomSnapshot {
 
 export function normalizeDisplayName(value: string): string {
   const collapsed = value.trim().replace(/\s+/g, " ");
-  return collapsed.length > 0 ? collapsed.slice(0, 32) : "Anonymous";
+  return collapsed.slice(0, 32);
 }
 
 export function summarizeVotes(

@@ -103,7 +103,7 @@ export async function submitVote(roomId: string, participantToken: string, paylo
     compatPath: `/api/compat/rooms/${encodeURIComponent(roomId)}/votes`,
     body: payload,
     compatQuery: {
-      vote: payload.vote
+      vote: payload.vote ?? undefined
     },
     headers: {
       "x-participant-token": participantToken

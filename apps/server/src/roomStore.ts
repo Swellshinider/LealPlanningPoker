@@ -20,6 +20,7 @@ export class RoomStoreError extends Error {
     | "ROUND_LOCKED"
     | "INVALID_VOTE"
     | "INVALID_STORY"
+    | "INVALID_DISPLAY_NAME"
     | "ROOM_FULL";
 
   constructor(
@@ -31,6 +32,7 @@ export class RoomStoreError extends Error {
       | "ROUND_LOCKED"
       | "INVALID_VOTE"
       | "INVALID_STORY"
+      | "INVALID_DISPLAY_NAME"
       | "ROOM_FULL",
     message: string
   ) {
@@ -117,7 +119,7 @@ export interface StoryInput {
 export interface VoteInput {
   roomId: string;
   participantToken: string;
-  vote: VoteCard;
+  vote: VoteCard | null;
 }
 
 export interface HostActionInput {
@@ -154,6 +156,10 @@ export class RoomStore {
     const hostParticipantId = this.nextId();
     const hostToken = this.nextId();
     const hostName = normalizeDisplayName(input.hostName);
+
+    if (!hostName) {
+      throw new RoomStoreError("INVALID_DISPLAY_NAME", "Display name is required.");
+    }
 
     const hostParticipant: RoomParticipantRecord = {
       id: hostParticipantId,
@@ -193,6 +199,10 @@ export class RoomStore {
     const room = this.getRoomOrThrow(input.roomId);
     const now = this.nowIso();
     const normalizedName = normalizeDisplayName(input.displayName);
+
+    if (!normalizedName) {
+      throw new RoomStoreError("INVALID_DISPLAY_NAME", "Display name is required.");
+    }
 
     const existingParticipantId = input.participantToken
       ? room.participantTokens.get(input.participantToken)
@@ -236,6 +246,10 @@ export class RoomStore {
     const participant = this.getParticipantByTokenOrThrow(room, input.participantToken);
     const now = this.nowIso();
     const name = normalizeDisplayName(input.displayName);
+
+    if (!name) {
+      throw new RoomStoreError("INVALID_DISPLAY_NAME", "Display name is required.");
+    }
 
     participant.name = name;
     participant.updatedAt = now;
@@ -289,6 +303,14 @@ export class RoomStore {
 
     if (room.phase !== "voting") {
       throw new RoomStoreError("VOTES_LOCKED", "Votes can only change while the room is voting.");
+    }
+
+    if (input.vote === null) {
+      const now = this.nowIso();
+      participant.vote = null;
+      participant.updatedAt = now;
+      room.updatedAt = now;
+      return this.buildSnapshot(room, participant.id);
     }
 
     const vote = normalizeVoteCard(input.vote);

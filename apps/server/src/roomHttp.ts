@@ -139,7 +139,7 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       const snapshot = store.submitVote({
         roomId,
         participantToken,
-        vote: requireBodyString(body, "vote")
+        vote: requireNullableBodyString(body, "vote")
       });
       notifyRoomChanged(roomId);
       return { snapshot };
@@ -264,7 +264,7 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       const snapshot = store.submitVote({
         roomId,
         participantToken,
-        vote: requireQueryString(request, "vote")
+        vote: requireOptionalQueryString(request, "vote") ?? null
       });
       notifyRoomChanged(roomId);
       return { snapshot };
@@ -391,6 +391,19 @@ function requireOptionalBodyString(payload: object, field: string): string | und
   throw new RoomActionError("INVALID_PAYLOAD", `Invalid ${field}.`);
 }
 
+function requireNullableBodyString(payload: object, field: string): string | null {
+  const value = (payload as Record<string, unknown>)[field];
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  throw new RoomActionError("INVALID_PAYLOAD", `Invalid ${field}.`);
+}
+
 function requireHeaderString(request: FastifyRequest, name: string): string {
   const value = request.headers[name];
   if (typeof value === "string" && value.length > 0) {
@@ -475,6 +488,7 @@ function toRoomError(error: unknown): RoomErrorPayload {
 function statusForErrorCode(code: string): number {
   switch (code) {
     case "INVALID_PAYLOAD":
+    case "INVALID_DISPLAY_NAME":
       return 400;
     case "PARTICIPANT_NOT_FOUND":
     case "NOT_HOST":

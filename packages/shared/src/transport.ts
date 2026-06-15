@@ -31,7 +31,7 @@ export interface RenameParticipantRequest {
 }
 
 export interface VoteRequest {
-  vote: VoteCard;
+  vote: VoteCard | null;
 }
 
 export interface StoryRequest {

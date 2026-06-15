@@ -11,6 +11,7 @@ import type { RoomParticipantView, RoomViewModel } from "../lib/roomView";
 import type { ThemeMode } from "../lib/theme";
 import { formatVoteLabel } from "../lib/uiText";
 import { HistoryPanel } from "./HistoryPanel";
+import { QrCodeModal } from "./QrCodeModal";
 import { ThemeToggleButton } from "./ThemeToggleButton";
 import { VoteCard } from "./VoteCard";
 
@@ -21,12 +22,14 @@ export interface RoomBoardProps {
   storyDraft: string;
   selectedVote: VoteValue | null;
   theme: ThemeMode;
+  roomLink: string;
   busy?: boolean;
   onDisplayNameChange: (value: string) => void;
   onRename: () => void;
   onStoryChange: (value: string) => void;
   onSaveStory: () => void;
   onVote: (vote: VoteValue) => void;
+  onClearVote: () => void;
   onReveal: () => void;
   onReset: () => void;
   onFinalize: () => void;
@@ -161,12 +164,14 @@ export function RoomBoard({
   storyDraft,
   selectedVote,
   theme,
+  roomLink,
   busy = false,
   onDisplayNameChange,
   onRename,
   onStoryChange,
   onSaveStory,
   onVote,
+  onClearVote,
   onReveal,
   onReset,
   onFinalize,
@@ -174,6 +179,7 @@ export function RoomBoard({
   onNewRoom,
   onToggleTheme
 }: RoomBoardProps) {
+  const [qrModalOpen, setQrModalOpen] = useState(false);
   const [customVoteDraft, setCustomVoteDraft] = useState("");
   const normalizedCustomVote = useMemo(() => normalizeVoteCard(customVoteDraft), [customVoteDraft]);
   const customVote = normalizedCustomVote && /^\d+$/.test(normalizedCustomVote) ? normalizedCustomVote : null;
@@ -198,6 +204,9 @@ export function RoomBoard({
             <strong>LealPlanningPoker</strong>
             <span>Room {viewModel.roomId}</span>
           </div>
+          <button className="button button--quiet button--compact" type="button" onClick={onNewRoom}>
+            New room
+          </button>
         </div>
 
         <div className="topbar-actions">
@@ -205,8 +214,8 @@ export function RoomBoard({
           <button className="button button--quiet" type="button" onClick={onCopyLink}>
             Copy link
           </button>
-          <button className="button button--quiet" type="button" onClick={onNewRoom}>
-            New room
+          <button className="button button--quiet" type="button" onClick={() => setQrModalOpen(true)}>
+            QR
           </button>
         </div>
       </header>
@@ -380,6 +389,16 @@ export function RoomBoard({
           <div className="vote-dock__summary">
             <span className="section-label">Vote</span>
             <strong>{selectedVote ? formatVoteLabel(selectedVote) : "Pick a card"}</strong>
+            {selectedVote ? (
+              <button
+                className="button button--quiet vote-dock__clear"
+                disabled={busy || !viewModel.canVote}
+                type="button"
+                onClick={onClearVote}
+              >
+                Clear
+              </button>
+            ) : null}
           </div>
           <div className="vote-grid">
             {DECK.map((vote) => (
@@ -420,6 +439,7 @@ export function RoomBoard({
           </div>
         </div>
       </footer>
+      <QrCodeModal url={roomLink} open={qrModalOpen} onClose={() => setQrModalOpen(false)} />
     </div>
   );
 }

@@ -251,6 +251,19 @@ export function App() {
     };
   }, [participantToken, roomCode, shouldRestoreStoredSession]);
 
+  useEffect(() => {
+    if (!initialRoomQuery || shouldRestoreStoredSession) {
+      return;
+    }
+
+    const storedName = readStorage("displayName");
+    if (!storedName) {
+      return;
+    }
+
+    void joinPlanningRoom();
+  }, []);
+
   function startRoomSubscription(nextRoomId: string, nextParticipantToken: string) {
     subscriptionRef.current?.close();
     subscriptionRef.current = subscribeToRoom({
@@ -332,10 +345,15 @@ export function App() {
   }
 
   async function createPlanningRoom() {
+    if (!displayName.trim()) {
+      showNotice("error", "Please enter a display name.");
+      return;
+    }
+
     setBusy(true);
     try {
       const response = await createRoom({
-        hostName: displayName || "Anonymous"
+        hostName: displayName
       });
 
       setParticipantToken(response.participantToken);
@@ -357,10 +375,15 @@ export function App() {
       return;
     }
 
+    if (!displayName.trim()) {
+      showNotice("error", "Please enter a display name.");
+      return;
+    }
+
     setBusy(true);
     try {
       const response = await joinRoom(roomCode.trim().toUpperCase(), {
-        displayName: displayName || "Anonymous",
+        displayName,
         participantToken: participantToken || undefined
       });
 
@@ -383,10 +406,15 @@ export function App() {
       return;
     }
 
+    if (!displayName.trim()) {
+      showNotice("error", "Please enter a display name.");
+      return;
+    }
+
     setBusy(true);
     try {
       const response = await renameParticipant(snapshot.roomId, participantToken, {
-        displayName: displayName || "Anonymous"
+        displayName
       });
 
       handleSnapshotResponse(response.snapshot);
@@ -434,6 +462,28 @@ export function App() {
         vote
       });
 
+      handleSnapshotResponse(response.snapshot);
+    } catch (error) {
+      setSelectedVote(previousVote);
+      const roomError = asRoomRequestError(error);
+      showNotice("error", roomError.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function clearVote() {
+    if (!snapshot || !participantToken) {
+      return;
+    }
+
+    const previousVote = selectedVote;
+    setSelectedVote(null);
+    setBusy(true);
+    try {
+      const response = await submitVote(snapshot.roomId, participantToken, {
+        vote: null
+      });
       handleSnapshotResponse(response.snapshot);
     } catch (error) {
       setSelectedVote(previousVote);
@@ -546,6 +596,7 @@ export function App() {
           displayName={displayName}
           roomCode={roomCode}
           theme={theme}
+          autoFocusName={Boolean(roomCode) && !displayName.trim()}
           onCreateRoom={() => void createPlanningRoom()}
           onDisplayNameChange={setDisplayName}
           onJoinRoom={() => void joinPlanningRoom()}
@@ -566,6 +617,7 @@ export function App() {
         selectedVote={selectedVote}
         storyDraft={storyDraft}
         theme={theme}
+        roomLink={roomLink}
         viewModel={viewModel}
         onCopyLink={() => void copyRoomLink()}
         onDisplayNameChange={setDisplayName}
@@ -578,6 +630,7 @@ export function App() {
         onStoryChange={setStoryDraft}
         onToggleTheme={toggleTheme}
         onVote={(vote) => void castVote(vote)}
+        onClearVote={() => void clearVote()}
       />
       {bannerText ? <div className={`floating-banner floating-banner--${bannerTone}`}>{bannerText}</div> : null}
     </main>
