@@ -1,7 +1,13 @@
 import { startTransition, useEffect, useRef, useState } from "react";
 import type { RoomSnapshot, VoteCard as VoteValue } from "@lealplanningpoker/shared";
 import { buildRoomViewModel } from "./lib/roomView";
-import { createRoomSocket, ensureSocketConnected, emitWithAck, type RoomSocketError } from "./lib/socket";
+import {
+  createRoomSocket,
+  ensureSocketConnected,
+  emitWithAck,
+  getConnectionErrorMessage,
+  type RoomSocketError
+} from "./lib/socket";
 import { resolveHostTokenAfterJoin, shouldRestoreStoredSessionTokens } from "./lib/session";
 import {
   DARK_THEME_MEDIA_QUERY,
@@ -242,7 +248,7 @@ export function App() {
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", () => {
       setConnectionState("disconnected");
-      showNotice("error", "Connection lost, check your internet.");
+      showNotice("error", getConnectionErrorMessage());
     });
 
     socket.connect();

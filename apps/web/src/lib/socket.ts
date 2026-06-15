@@ -26,6 +26,10 @@ export class RoomSocketError extends Error {
   }
 }
 
+export function getConnectionErrorMessage(): string {
+  return "Unable to connect. Your network or corporate proxy may be blocking WebSocket traffic.";
+}
+
 function getSocketServerUrl(): string | undefined {
   if (typeof window === "undefined") {
     return undefined;
@@ -44,8 +48,7 @@ export function createRoomSocket(): Socket {
   return io(socketServerUrl, {
     autoConnect: false,
     path: "/socket.io",
-    transports: ["polling", "websocket"],
-    tryAllTransports: true
+    transports: ["websocket"]
   });
 }
 
