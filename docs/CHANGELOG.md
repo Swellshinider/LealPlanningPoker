@@ -32,3 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `/socket.io` to the backend, and `getApiBaseUrl()` keeps requests
   same-origin in dev. `buildCompatUrl()` resolves relative paths against the
   current origin so the compat fallback still works.
+- Host actions that do not send a payload, including "Reveal votes", no longer
+  fail with `UNKNOWN_ERROR` in dev because the web transport stops advertising
+  an empty JSON body on bodyless POST requests.

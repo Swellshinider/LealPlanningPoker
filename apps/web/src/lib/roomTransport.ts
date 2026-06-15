@@ -259,11 +259,13 @@ interface CompatRequestOptions {
 class CompatFallbackError extends Error {}
 
 async function requestWithCompat<T extends object>(options: CompatRequestOptions): Promise<T> {
+  const hasBody = options.body !== undefined;
+
   try {
     return await requestJson<T>(`${getApiBaseUrl()}${options.path}`, {
-      body: options.body ? JSON.stringify(options.body) : undefined,
+      body: hasBody ? JSON.stringify(options.body) : undefined,
       headers: {
-        "content-type": "application/json",
+        ...(hasBody ? { "content-type": "application/json" } : {}),
         ...options.headers
       },
       method: "POST"
