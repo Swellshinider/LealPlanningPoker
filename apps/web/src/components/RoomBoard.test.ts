@@ -125,7 +125,8 @@ describe("RoomBoard", () => {
     expect(markup).toContain("table-seat--ring");
     expect(markup).toContain("ML");
     expect(markup).toContain("Host, online");
-    expect(markup).toContain("Player, offline");
+    expect(markup).toContain(">offline</span>");
+    expect(markup).not.toContain("Player, offline");
     expect(markup).toContain("table-card--back");
     expect(markup).toContain("table-card--front");
     expect(markup).toContain(">5</span>");
@@ -164,7 +165,7 @@ describe("RoomBoard", () => {
     expect(markup.indexOf('aria-label="Round result"')).toBeLessThan(markup.indexOf("Planning Poker"));
   });
 
-  it("renders Clear votes before Reveal in the split action row", () => {
+  it("shows host round controls only to hosts and keeps their order", () => {
     const markup = renderToStaticMarkup(
       createElement(
         RoomBoard,
@@ -179,8 +180,18 @@ describe("RoomBoard", () => {
 
     expect(markup).toContain("Clear votes");
     expect(markup).toContain("Reveal votes");
+    expect(markup).toContain("Finalize");
     expect(markup.indexOf("Clear votes")).toBeLessThan(markup.indexOf("Reveal votes"));
     expect(markup).toContain("action-row--table-split");
+  });
+
+  it("hides host round controls for non-host players", () => {
+    const markup = renderToStaticMarkup(createElement(RoomBoard, createProps()));
+
+    expect(markup).not.toContain("Clear votes");
+    expect(markup).not.toContain("Reveal votes");
+    expect(markup).not.toContain("Finalize");
+    expect(markup).not.toContain("action-row--table-split");
   });
 
   it("shows reaction triggers only for connected non-self participants and renders the fixed emoji set", () => {

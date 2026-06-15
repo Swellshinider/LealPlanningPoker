@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed the "Reset" action to "Clear votes" and moved it to the left side of
   the host action row so it is visually separated from the centered Reveal and
   Finalize buttons. The toast confirmation now reads "Votes cleared."
+- The host-only round controls now stay hidden for normal players, and non-host
+  player status labels now show only `online` or `offline` while the host keeps
+  the `Host, ...` prefix.
 - Updated the README host-controls bullet to mention clearing votes instead of
   resetting rounds.
 
