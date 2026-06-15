@@ -522,7 +522,11 @@ textarea:focus-visible {
 }
 
 .poker-table-panel {
-  overflow: hidden;
+  overflow: visible;
+}
+
+.reaction-stage {
+  position: relative;
 }
 
 .poker-table {
@@ -685,6 +689,7 @@ textarea:focus-visible {
 .player-seat__head {
   position: absolute;
   top: 4px;
+  left: 50%;
   display: grid;
   width: 43px;
   height: 43px;
@@ -694,6 +699,7 @@ textarea:focus-visible {
   background:
     radial-gradient(circle at 36% 26%, rgba(255, 255, 255, 0.8), transparent 18%),
     linear-gradient(145deg, #ffd9a3, #b86d46);
+  transform: translateX(-50%);
   box-shadow:
     0 10px 20px rgba(64, 38, 22, 0.18),
     inset 0 -6px 12px rgba(92, 47, 24, 0.12);
@@ -704,6 +710,102 @@ textarea:focus-visible {
   font-size: 0.78rem;
   font-weight: 860;
   letter-spacing: 0.03em;
+}
+
+.player-seat__reaction-region {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+}
+
+.player-seat__head-button {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.player-seat__head-button:focus-visible {
+  outline: none;
+}
+
+.player-seat__head-button:focus-visible .player-seat__head {
+  box-shadow:
+    0 0 0 4px var(--focus-ring),
+    0 10px 20px rgba(64, 38, 22, 0.18),
+    inset 0 -6px 12px rgba(92, 47, 24, 0.12);
+}
+
+.player-seat__head--bumped {
+  animation: headBump 220ms ease-out;
+}
+
+.reaction-popover {
+  position: absolute;
+  top: -18px;
+  left: calc(100% + 4px);
+  z-index: 8;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 148px;
+  border: 1px solid rgba(79, 54, 37, 0.16);
+  border-radius: 14px;
+  padding: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 250, 251, 0.98)),
+    var(--surface);
+  box-shadow:
+    0 18px 40px rgba(16, 24, 40, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.reaction-popover[hidden] {
+  display: none;
+}
+
+.reaction-popover__emoji {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  height: 42px;
+  border: 1px solid rgba(203, 213, 223, 0.88);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 1.2rem;
+  line-height: 1;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.reaction-popover__emoji:hover {
+  transform: translateY(-1px) scale(1.03);
+  border-color: rgba(23, 105, 224, 0.34);
+  background: rgba(233, 241, 255, 0.9);
+}
+
+:root[data-theme="dark"] .reaction-popover {
+  border-color: rgba(93, 112, 128, 0.55);
+  background:
+    linear-gradient(180deg, rgba(16, 23, 31, 0.98), rgba(10, 15, 21, 0.98)),
+    var(--surface);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme="dark"] .reaction-popover__emoji {
+  border-color: rgba(61, 76, 91, 0.9);
+  background: rgba(18, 28, 38, 0.96);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .reaction-popover__emoji:hover {
+  border-color: rgba(101, 169, 255, 0.5);
+  background: rgba(28, 48, 72, 0.92);
 }
 
 .table-seat:nth-child(3n + 2) .player-seat__body {
@@ -962,6 +1064,70 @@ textarea:focus-visible {
     linear-gradient(135deg, rgba(244, 255, 247, 0.96), rgba(232, 244, 255, 0.92)),
     var(--surface);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.reaction-stage__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+}
+
+.reaction-overlay__emoji,
+.reaction-overlay__burst,
+.reaction-overlay__linger {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.reaction-overlay__emoji {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.14);
+  font-size: 1.25rem;
+}
+
+.reaction-overlay__emoji--flight {
+  animation: reactionFlightPulse 220ms ease-in-out infinite alternate;
+}
+
+.reaction-overlay__emoji--impact {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 247, 224, 0.98);
+}
+
+.reaction-overlay__burst {
+  width: 84px;
+  height: 84px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255, 247, 224, 0.9) 0 18%, rgba(255, 177, 77, 0.4) 18% 38%, transparent 40%),
+    radial-gradient(circle, rgba(255, 255, 255, 0.64) 0 52%, transparent 54%);
+  animation: reactionBurst 220ms ease-out;
+}
+
+.reaction-overlay__linger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 42px;
+  border: 1px solid rgba(119, 185, 147, 0.48);
+  border-radius: 999px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 34px rgba(16, 24, 40, 0.14);
+  font-size: 1.2rem;
+  animation: reactionLingerFloat 900ms ease-in-out infinite alternate;
+}
+
+.reaction-overlay__linger--fade {
+  animation: none;
 }
 
 .table-results--felt {
@@ -1707,6 +1873,45 @@ textarea:focus-visible {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes headBump {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  45% {
+    transform: translateX(-50%) translateY(-6px) scale(1.03);
+  }
+}
+
+@keyframes reactionFlightPulse {
+  from {
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
+@keyframes reactionBurst {
+  from {
+    opacity: 0.2;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes reactionLingerFloat {
+  from {
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  to {
+    transform: translate(-50%, -50%) translateY(-4px);
+  }
 }
 
 :root[data-theme="dark"] .modal-backdrop {

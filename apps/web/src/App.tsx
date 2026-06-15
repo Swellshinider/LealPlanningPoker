@@ -1,5 +1,9 @@
 import { startTransition, useEffect, useRef, useState } from "react";
-import type { RoomSnapshot, VoteCard as VoteValue } from "@lealplanningpoker/shared";
+import type {
+  RoomSnapshot,
+  ThrowableReactionEmoji,
+  VoteCard as VoteValue
+} from "@lealplanningpoker/shared";
 import { buildRoomViewModel } from "./lib/roomView";
 import {
   createRoom,
@@ -14,6 +18,7 @@ import {
   submitVote,
   subscribeToRoom,
   syncRoom,
+  throwReaction,
   type RoomSubscription
 } from "./lib/roomTransport";
 import { resolveHostTokenAfterJoin, shouldRestoreStoredSessionTokens } from "./lib/session";
@@ -494,6 +499,20 @@ export function App() {
     }
   }
 
+  function sendReaction(targetParticipantId: string, emoji: ThrowableReactionEmoji) {
+    if (!snapshot || !participantToken) {
+      return;
+    }
+
+    void throwReaction(snapshot.roomId, participantToken, {
+      emoji,
+      targetParticipantId
+    }).catch((error) => {
+      const roomError = asRoomRequestError(error);
+      showNotice("error", roomError.message);
+    });
+  }
+
   async function revealRoomVotes() {
     if (!snapshot || !hostToken) {
       return;
@@ -628,6 +647,7 @@ export function App() {
         onReveal={() => void revealRoomVotes()}
         onSaveStory={() => void persistStory()}
         onStoryChange={setStoryDraft}
+        onThrowReaction={sendReaction}
         onToggleTheme={toggleTheme}
         onVote={(vote) => void castVote(vote)}
         onClearVote={() => void clearVote()}

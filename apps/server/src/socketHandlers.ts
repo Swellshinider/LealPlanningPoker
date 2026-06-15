@@ -1,5 +1,9 @@
 import type { Server, Socket } from "socket.io";
-import { type RoomSnapshot, type VoteCard } from "@lealplanningpoker/shared";
+import {
+  type RoomSnapshot,
+  type ThrowableReactionEmoji,
+  type VoteCard
+} from "@lealplanningpoker/shared";
 import { RoomStore, RoomStoreError } from "./roomStore";
 
 interface SocketSession {
@@ -43,6 +47,13 @@ export interface StoryPayload {
   roomId: string;
   hostToken: string;
   story: string;
+}
+
+export interface ThrowReactionPayload {
+  roomId: string;
+  participantToken: string;
+  targetParticipantId: string;
+  emoji: ThrowableReactionEmoji;
 }
 
 export interface HostRoomPayload {
@@ -165,6 +176,27 @@ export function registerSocketHandlers(io: Server, store: RoomStore, options: So
         return { snapshot };
       });
     });
+
+    socket.on(
+      "reaction:throw",
+      (payload: ThrowReactionPayload, ack?: ActionAck<{ snapshot: RoomSnapshot }>) => {
+        respond(socket, ack, () => {
+          const roomId = requireStringField(payload, "roomId");
+          const participantToken = requireStringField(payload, "participantToken");
+          const targetParticipantId = requireStringField(payload, "targetParticipantId");
+          const emoji = requireStringField(payload, "emoji") as ThrowableReactionEmoji;
+          const snapshot = store.throwReaction({
+            roomId,
+            participantToken,
+            targetParticipantId,
+            emoji
+          });
+          broadcastRoom(roomId, socket.id);
+          options.onRoomChanged?.(roomId);
+          return { snapshot };
+        });
+      }
+    );
 
     socket.on(
       "host:story:set",

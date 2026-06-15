@@ -6,6 +6,7 @@ import type {
   RoomActionEnvelope,
   RoomErrorPayload,
   StoryRequest,
+  ThrowReactionRequest,
   VoteRequest
 } from "@lealplanningpoker/shared";
 import { RoomStore, RoomStoreError } from "./roomStore";
@@ -146,6 +147,24 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
     })
   );
 
+  app.post("/api/rooms/:roomId/reactions/throw", async (request, reply) =>
+    respond(reply, () => {
+      const roomId = requirePathString(request, "roomId");
+      const participantToken = requireHeaderString(request, "x-participant-token");
+      rateLimiter.assertWithinRateLimit(`participant:${participantToken}`);
+      hub.refreshPresence(roomId, participantToken);
+      const body = requireRecordBody<ThrowReactionRequest>(request);
+      const snapshot = store.throwReaction({
+        roomId,
+        participantToken,
+        emoji: requireBodyString(body, "emoji") as ThrowReactionRequest["emoji"],
+        targetParticipantId: requireBodyString(body, "targetParticipantId")
+      });
+      notifyRoomChanged(roomId);
+      return { snapshot };
+    })
+  );
+
   app.post("/api/rooms/:roomId/story", async (request, reply) =>
     respond(reply, () => {
       const roomId = requirePathString(request, "roomId");
@@ -265,6 +284,24 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
         roomId,
         participantToken,
         vote: requireOptionalQueryString(request, "vote") ?? null
+      });
+      notifyRoomChanged(roomId);
+      return { snapshot };
+    })
+  );
+
+  app.get("/api/compat/rooms/:roomId/reactions/throw", async (request, reply) =>
+    respond(reply, () => {
+      const roomId = requirePathString(request, "roomId");
+      const participantToken = requireHeaderString(request, "x-participant-token");
+      requireCacheBuster(request);
+      rateLimiter.assertWithinRateLimit(`participant:${participantToken}`);
+      hub.refreshPresence(roomId, participantToken);
+      const snapshot = store.throwReaction({
+        roomId,
+        participantToken,
+        emoji: requireQueryString(request, "emoji") as ThrowReactionRequest["emoji"],
+        targetParticipantId: requireQueryString(request, "targetParticipantId")
       });
       notifyRoomChanged(roomId);
       return { snapshot };
@@ -501,6 +538,7 @@ function statusForErrorCode(code: string): number {
     case "VOTES_LOCKED":
     case "ROUND_LOCKED":
     case "INVALID_VOTE":
+    case "INVALID_REACTION":
     case "INVALID_STORY":
       return 409;
     default:

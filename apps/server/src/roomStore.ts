@@ -1,10 +1,13 @@
 import { randomInt, randomUUID } from "node:crypto";
 import {
+  type RoomActiveReactionSnapshot,
   type RoomHistoryEntry,
   type RoomParticipantSnapshot,
   type RoomPhase,
   type RoomSnapshot,
+  type ThrowableReactionEmoji,
   type VoteCard,
+  isThrowableReactionEmoji,
   normalizeVoteCard,
   normalizeDisplayName,
   shouldRevealVoteForViewer,
@@ -19,6 +22,7 @@ export class RoomStoreError extends Error {
     | "VOTES_LOCKED"
     | "ROUND_LOCKED"
     | "INVALID_VOTE"
+    | "INVALID_REACTION"
     | "INVALID_STORY"
     | "INVALID_DISPLAY_NAME"
     | "ROOM_FULL";
@@ -31,6 +35,7 @@ export class RoomStoreError extends Error {
       | "VOTES_LOCKED"
       | "ROUND_LOCKED"
       | "INVALID_VOTE"
+      | "INVALID_REACTION"
       | "INVALID_STORY"
       | "INVALID_DISPLAY_NAME"
       | "ROOM_FULL",
@@ -71,12 +76,15 @@ interface RoomRecord {
   participants: Map<string, RoomParticipantRecord>;
   participantTokens: Map<string, string>;
   history: RoomHistoryEntry[];
+  activeReactions: RoomActiveReactionSnapshot[];
   createdAt: string;
   updatedAt: string;
 }
 
 const MAX_PARTICIPANTS_PER_ROOM = 50;
 const MAX_HISTORY_ENTRIES_PER_ROOM = 100;
+const MAX_ACTIVE_REACTIONS_PER_ROOM = 40;
+const ACTIVE_REACTION_LIFETIME_MS = 4_000;
 
 export interface CreateRoomInput {
   hostName: string;
@@ -122,6 +130,13 @@ export interface VoteInput {
   roomId: string;
   participantToken: string;
   vote: VoteCard | null;
+}
+
+export interface ThrowReactionInput {
+  roomId: string;
+  participantToken: string;
+  targetParticipantId: string;
+  emoji: ThrowableReactionEmoji;
 }
 
 export interface HostActionInput {
@@ -191,6 +206,7 @@ export class RoomStore {
       participants: new Map([[hostParticipantId, hostParticipant]]),
       participantTokens: new Map([[hostToken, hostParticipantId]]),
       history: [],
+      activeReactions: [],
       createdAt: now,
       updatedAt: now
     };
@@ -342,6 +358,42 @@ export class RoomStore {
     return this.buildSnapshot(room, participant.id);
   }
 
+  throwReaction(input: ThrowReactionInput): RoomSnapshot {
+    const room = this.getRoomOrThrow(input.roomId);
+    const thrower = this.getParticipantByTokenOrThrow(room, input.participantToken);
+
+    if (!isThrowableReactionEmoji(input.emoji)) {
+      throw new RoomStoreError("INVALID_REACTION", "Choose one of the available reactions.");
+    }
+
+    if (input.targetParticipantId === thrower.id) {
+      throw new RoomStoreError("INVALID_REACTION", "Pick another player.");
+    }
+
+    const target = this.getParticipantOrThrow(room, input.targetParticipantId);
+    if (!target.connected) {
+      throw new RoomStoreError("INVALID_REACTION", "That player is offline.");
+    }
+
+    const now = this.now();
+    const createdAt = now.toISOString();
+    const expiresAt = new Date(now.getTime() + ACTIVE_REACTION_LIFETIME_MS).toISOString();
+    room.activeReactions = [
+      ...room.activeReactions,
+      {
+        id: this.nextId(),
+        emoji: input.emoji,
+        throwerParticipantId: thrower.id,
+        targetParticipantId: target.id,
+        createdAt,
+        expiresAt
+      }
+    ].slice(-MAX_ACTIVE_REACTIONS_PER_ROOM);
+    room.updatedAt = createdAt;
+
+    return this.buildSnapshot(room, thrower.id);
+  }
+
   revealVotes(input: HostActionInput): RoomSnapshot {
     const room = this.getRoomOrThrow(input.roomId);
     const participant = this.getParticipantByTokenOrThrow(room, input.hostToken);
@@ -486,6 +538,7 @@ export class RoomStore {
       phase: room.phase,
       participants,
       history: room.history,
+      activeReactions: room.activeReactions,
       updatedAt: room.updatedAt,
       viewer: {
         participantId: viewer.id,
@@ -521,7 +574,15 @@ export class RoomStore {
     if (!room) {
       throw new RoomStoreError("ROOM_NOT_FOUND", `Room ${roomId} was not found.`);
     }
+    this.pruneExpiredReactions(room);
     return room;
+  }
+
+  private pruneExpiredReactions(room: RoomRecord): void {
+    const nowMs = this.now().getTime();
+    room.activeReactions = room.activeReactions.filter(
+      (reaction) => new Date(reaction.expiresAt).getTime() > nowMs
+    );
   }
 
   private getParticipantByTokenOrThrow(room: RoomRecord, token: string): RoomParticipantRecord {

@@ -12,13 +12,10 @@ function createStore() {
     "BOB_TOKEN"
   ];
   const now = new Date("2026-06-11T12:00:00.000Z");
+  let extraId = 0;
   return new RoomStore({
     idFactory: () => {
-      const id = ids.shift();
-      if (!id) {
-        throw new Error("No more ids");
-      }
-      return id;
+      return ids.shift() ?? `EXTRA_${(extraId += 1).toString().padStart(3, "0")}`;
     },
     now: () => new Date(now)
   });
@@ -486,6 +483,218 @@ describe("RoomStore", () => {
     expect(snapshot.history).toHaveLength(100);
     expect(snapshot.history[0]?.story).toBe("Story 5");
     expect(snapshot.history.at(-1)?.story).toBe("Story 104");
+  });
+
+  it("keeps live reactions only in the active snapshot window and allows throws in every phase", () => {
+    const now = new Date("2026-06-15T12:00:00.000Z");
+    let nextId = 0;
+    let nextRoom = 0;
+    const timedStore = new RoomStore({
+      idFactory: () => `ID_${(nextId += 1).toString().padStart(3, "0")}`,
+      now: () => new Date(now),
+      roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`
+    });
+
+    const created = timedStore.createRoom({ hostName: "Mina" });
+    const joined = timedStore.joinRoom({
+      roomId: created.roomId,
+      displayName: "Ana"
+    });
+
+    const lobbySnapshot = timedStore.throwReaction({
+      roomId: created.roomId,
+      participantToken: created.participantToken,
+      emoji: "👏",
+      targetParticipantId: "ID_003"
+    });
+    expect(lobbySnapshot.activeReactions).toHaveLength(1);
+
+    timedStore.setStory({
+      roomId: created.roomId,
+      hostToken: created.hostToken,
+      story: "Improve onboarding"
+    });
+    const votingSnapshot = timedStore.throwReaction({
+      roomId: created.roomId,
+      participantToken: joined.participantToken,
+      emoji: "🔥",
+      targetParticipantId: "ID_001"
+    });
+    expect(votingSnapshot.activeReactions).toHaveLength(2);
+
+    timedStore.revealVotes({
+      roomId: created.roomId,
+      hostToken: created.hostToken
+    });
+    timedStore.finalizeStory({
+      roomId: created.roomId,
+      hostToken: created.hostToken
+    });
+    const finalizedSnapshot = timedStore.throwReaction({
+      roomId: created.roomId,
+      participantToken: created.participantToken,
+      emoji: "💯",
+      targetParticipantId: "ID_003"
+    });
+    expect(finalizedSnapshot.activeReactions).toHaveLength(3);
+
+    now.setSeconds(now.getSeconds() + 5);
+    expect(
+      timedStore.getSnapshot({
+        roomId: created.roomId,
+        participantToken: created.participantToken
+      }).activeReactions
+    ).toEqual([]);
+  });
+
+  it("prunes expired reactions during join, sync, and subsequent throws", () => {
+    const now = new Date("2026-06-15T12:00:00.000Z");
+    let nextId = 0;
+    let nextRoom = 0;
+    const timedStore = new RoomStore({
+      idFactory: () => `ID_${(nextId += 1).toString().padStart(3, "0")}`,
+      now: () => new Date(now),
+      roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`
+    });
+
+    const created = timedStore.createRoom({ hostName: "Mina" });
+    const joined = timedStore.joinRoom({
+      roomId: created.roomId,
+      displayName: "Ana"
+    });
+
+    timedStore.throwReaction({
+      roomId: created.roomId,
+      participantToken: created.participantToken,
+      emoji: "👏",
+      targetParticipantId: "ID_003"
+    });
+
+    now.setSeconds(now.getSeconds() + 5);
+
+    expect(
+      timedStore.joinRoom({
+        roomId: created.roomId,
+        displayName: "Ana Again",
+        participantToken: joined.participantToken
+      }).snapshot.activeReactions
+    ).toEqual([]);
+
+    timedStore.throwReaction({
+      roomId: created.roomId,
+      participantToken: created.participantToken,
+      emoji: "🔥",
+      targetParticipantId: "ID_003"
+    });
+
+    now.setSeconds(now.getSeconds() + 5);
+    expect(
+      timedStore.syncRoom({
+        roomId: created.roomId,
+        participantToken: created.participantToken
+      }).activeReactions
+    ).toEqual([]);
+
+    const latest = timedStore.throwReaction({
+      roomId: created.roomId,
+      participantToken: created.participantToken,
+      emoji: "💀",
+      targetParticipantId: "ID_003"
+    });
+
+    expect(latest.activeReactions).toHaveLength(1);
+    expect(latest.activeReactions[0]?.emoji).toBe("💀");
+  });
+
+  it("rejects invalid reaction targets and emojis", () => {
+    const created = store.createRoom({ hostName: "Mina" });
+    const joined = store.joinRoom({
+      roomId: created.roomId,
+      displayName: "Ana"
+    });
+
+    expectRoomError(
+      () =>
+        store.throwReaction({
+          roomId: created.roomId,
+          participantToken: created.participantToken,
+          emoji: "👏",
+          targetParticipantId: "HOST_PARTICIPANT"
+        }),
+      "INVALID_REACTION"
+    );
+
+    store.leaveRoom({
+      roomId: created.roomId,
+      participantToken: joined.participantToken
+    });
+    expectRoomError(
+      () =>
+        store.throwReaction({
+          roomId: created.roomId,
+          participantToken: created.participantToken,
+          emoji: "🔥",
+          targetParticipantId: "ANA_PARTICIPANT"
+        }),
+      "INVALID_REACTION"
+    );
+
+    expectRoomError(
+      () =>
+        store.throwReaction({
+          roomId: created.roomId,
+          participantToken: created.participantToken,
+          emoji: "🙂" as never,
+          targetParticipantId: "ANA_PARTICIPANT"
+        }),
+      "INVALID_REACTION"
+    );
+
+    expectRoomError(
+      () =>
+        store.throwReaction({
+          roomId: created.roomId,
+          participantToken: created.participantToken,
+          emoji: "👏",
+          targetParticipantId: "MISSING_PARTICIPANT"
+        }),
+      "PARTICIPANT_NOT_FOUND"
+    );
+  });
+
+  it("caps active reactions per room at forty entries and evicts the oldest first", () => {
+    const now = new Date("2026-06-15T12:00:00.000Z");
+    let nextId = 0;
+    let nextRoom = 0;
+    const timedStore = new RoomStore({
+      idFactory: () => `ID_${(nextId += 1).toString().padStart(3, "0")}`,
+      now: () => new Date(now),
+      roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`
+    });
+
+    const created = timedStore.createRoom({ hostName: "Mina" });
+    timedStore.joinRoom({
+      roomId: created.roomId,
+      displayName: "Ana"
+    });
+
+    let latestSnapshot = timedStore.getSnapshot({
+      roomId: created.roomId,
+      participantToken: created.participantToken
+    });
+
+    for (let index = 0; index < 41; index += 1) {
+      latestSnapshot = timedStore.throwReaction({
+        roomId: created.roomId,
+        participantToken: created.participantToken,
+        emoji: "🍅",
+        targetParticipantId: "ID_003"
+      });
+      now.setMilliseconds(now.getMilliseconds() + 50);
+    }
+
+    expect(latestSnapshot.activeReactions).toHaveLength(40);
+    expect(latestSnapshot.activeReactions.some((reaction) => reaction.id === "ID_005")).toBe(false);
   });
 });
 

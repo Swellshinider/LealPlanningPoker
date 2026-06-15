@@ -1,19 +1,29 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   FIBONACCI_DECK,
   MAX_CUSTOM_VOTE_DIGITS,
+  THROWABLE_REACTION_EMOJIS,
   isBuiltInVoteCard,
   normalizeVoteCard,
   type RoomHistoryEntry,
+  type ThrowableReactionEmoji,
   type VoteCard as VoteValue
 } from "@lealplanningpoker/shared";
 import type { RoomParticipantView, RoomViewModel } from "../lib/roomView";
+import {
+  deriveReactionPhase,
+  filterExpiredReactions,
+  getQuadraticPoint,
+  getReactionPanelGeometry
+} from "../lib/reactionOverlay";
 import type { ThemeMode } from "../lib/theme";
 import { formatVoteLabel } from "../lib/uiText";
 import { HistoryPanel } from "./HistoryPanel";
 import { QrCodeModal } from "./QrCodeModal";
 import { ThemeToggleButton } from "./ThemeToggleButton";
 import { VoteCard } from "./VoteCard";
+
+const REACTION_POPOVER_CLOSE_DELAY_MS = 140;
 
 export interface RoomBoardProps {
   viewModel: RoomViewModel;
@@ -33,6 +43,7 @@ export interface RoomBoardProps {
   onReveal: () => void;
   onReset: () => void;
   onFinalize: () => void;
+  onThrowReaction: (targetParticipantId: string, emoji: ThrowableReactionEmoji) => void;
   onCopyLink: () => void;
   onNewRoom: () => void;
   onToggleTheme: () => void;
@@ -56,6 +67,15 @@ interface PlayerSeatProps {
   participant: RoomParticipantView;
   variant: "ring" | "bench";
   geometry?: SeatGeometry;
+  isReactionTarget: boolean;
+  isReactionPopoverOpen: boolean;
+  isHeadBumped: boolean;
+  onCloseReactionPopover: () => void;
+  onOpenReactionPopover: () => void;
+  onThrowReaction: (emoji: ThrowableReactionEmoji) => void;
+  onToggleReactionPopover: () => void;
+  registerHeadElement: (participantId: string, element: HTMLElement | null) => void;
+  registerSeatElement: (participantId: string, element: HTMLElement | null) => void;
 }
 
 function getSeatGeometry(index: number, total: number): SeatGeometry {
@@ -85,9 +105,10 @@ function getSeatGeometry(index: number, total: number): SeatGeometry {
 
 function getPlayerInitials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
-  const initials = words.length > 1
-    ? `${words[0]?.[0] ?? ""}${words[1]?.[0] ?? ""}`
-    : (words[0] ?? "").slice(0, 2);
+  const initials =
+    words.length > 1
+      ? `${words[0]?.[0] ?? ""}${words[1]?.[0] ?? ""}`
+      : (words[0] ?? "").slice(0, 2);
 
   return initials.toUpperCase() || "?";
 }
@@ -109,12 +130,33 @@ function formatConfidence(value: number | null): string {
   return value === null ? "-" : `${value}%`;
 }
 
-function PlayerSeat({ participant, variant, geometry }: PlayerSeatProps) {
+function PlayerSeat({
+  participant,
+  variant,
+  geometry,
+  isReactionTarget,
+  isReactionPopoverOpen,
+  isHeadBumped,
+  onCloseReactionPopover,
+  onOpenReactionPopover,
+  onThrowReaction,
+  onToggleReactionPopover,
+  registerHeadElement,
+  registerSeatElement
+}: PlayerSeatProps) {
   const hasFaceDownCard = participant.hasVoted && !participant.tableVote;
   const hasFaceUpCard = Boolean(participant.tableVote);
+  const initials = getPlayerInitials(participant.name);
+  const headClassName = [
+    "player-seat__head",
+    isHeadBumped ? "player-seat__head--bumped" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <article
+      ref={(element) => registerSeatElement(participant.id, element)}
       className={[
         "table-seat",
         variant === "ring" ? "table-seat--ring" : "table-seat--bench",
@@ -132,9 +174,63 @@ function PlayerSeat({ participant, variant, geometry }: PlayerSeatProps) {
       <div className="player-seat__person" aria-hidden="true">
         <span className="player-seat__shadow" />
         <span className="player-seat__body" />
-        <span className="player-seat__head">
-          <span>{getPlayerInitials(participant.name)}</span>
-        </span>
+        {isReactionTarget ? (
+          <div
+            className="player-seat__reaction-region"
+            data-reaction-region="true"
+            onMouseEnter={onOpenReactionPopover}
+            onMouseLeave={onCloseReactionPopover}
+          >
+            <button
+              aria-expanded={isReactionPopoverOpen}
+              aria-label={`Throw a reaction at ${participant.name}`}
+              className="player-seat__head-button"
+              data-reaction-trigger="true"
+              type="button"
+              onPointerDown={(event) => {
+                if (event.pointerType !== "mouse") {
+                  event.preventDefault();
+                  onToggleReactionPopover();
+                }
+              }}
+            >
+              <span
+                ref={(element) => registerHeadElement(participant.id, element)}
+                className={headClassName}
+              >
+                <span>{initials}</span>
+              </span>
+            </button>
+
+            <div
+              className="reaction-popover"
+              hidden={!isReactionPopoverOpen}
+              role="menu"
+              aria-label={`Reaction choices for ${participant.name}`}
+              onMouseEnter={onOpenReactionPopover}
+              onMouseLeave={onCloseReactionPopover}
+            >
+              {THROWABLE_REACTION_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  aria-label={`Throw ${emoji} at ${participant.name}`}
+                  className="reaction-popover__emoji"
+                  type="button"
+                  onClick={() => onThrowReaction(emoji)}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <span
+            ref={(element) => registerHeadElement(participant.id, element)}
+            className={headClassName}
+          >
+            <span>{initials}</span>
+          </span>
+        )}
       </div>
 
       <div className="player-seat__plate">
@@ -175,17 +271,89 @@ export function RoomBoard({
   onReveal,
   onReset,
   onFinalize,
+  onThrowReaction,
   onCopyLink,
   onNewRoom,
   onToggleTheme
 }: RoomBoardProps) {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [customVoteDraft, setCustomVoteDraft] = useState("");
+  const [activeReactionTargetId, setActiveReactionTargetId] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const reactionCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const headElementsRef = useRef(new Map<string, HTMLElement>());
+  const seatElementsRef = useRef(new Map<string, HTMLElement>());
   const normalizedCustomVote = useMemo(() => normalizeVoteCard(customVoteDraft), [customVoteDraft]);
   const customVote = normalizedCustomVote && /^\d+$/.test(normalizedCustomVote) ? normalizedCustomVote : null;
   const isCustomSelected = Boolean(selectedVote && !isBuiltInVoteCard(selectedVote));
   const tableParticipants = viewModel.participants.slice(0, MAX_TABLE_SEATS);
   const overflowParticipants = viewModel.participants.slice(MAX_TABLE_SEATS);
+  const reactionTargets = viewModel.participants.filter(
+    (participant) => participant.connected && !participant.isSelf
+  );
+  const visibleReactions = filterExpiredReactions(viewModel.activeReactions, nowMs);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || visibleReactions.length === 0) {
+      return undefined;
+    }
+
+    setNowMs(Date.now());
+    const timer = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 50);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [visibleReactions.length, viewModel.activeReactions]);
+
+  useEffect(
+    () => () => {
+      clearReactionCloseTimer();
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!activeReactionTargetId) {
+      return;
+    }
+
+    const targetStillVisible = reactionTargets.some(
+      (participant) => participant.id === activeReactionTargetId
+    );
+    if (!targetStillVisible) {
+      dismissReactionPopover();
+    }
+  }, [activeReactionTargetId, reactionTargets]);
+
+  useEffect(() => {
+    if (!activeReactionTargetId || typeof document === "undefined") {
+      return undefined;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element) || !target.closest("[data-reaction-region='true']")) {
+        dismissReactionPopover();
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        dismissReactionPopover();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activeReactionTargetId]);
 
   function submitCustomVote() {
     if (!customVote) {
@@ -194,6 +362,88 @@ export function RoomBoard({
 
     onVote(customVote);
   }
+
+  function clearReactionCloseTimer() {
+    if (reactionCloseTimerRef.current) {
+      clearTimeout(reactionCloseTimerRef.current);
+      reactionCloseTimerRef.current = null;
+    }
+  }
+
+  function openReactionPopoverFor(targetParticipantId: string) {
+    clearReactionCloseTimer();
+    setActiveReactionTargetId(targetParticipantId);
+  }
+
+  function scheduleReactionPopoverClose(targetParticipantId: string) {
+    clearReactionCloseTimer();
+    reactionCloseTimerRef.current = setTimeout(() => {
+      reactionCloseTimerRef.current = null;
+      setActiveReactionTargetId((current) =>
+        current === targetParticipantId ? null : current
+      );
+    }, REACTION_POPOVER_CLOSE_DELAY_MS);
+  }
+
+  function dismissReactionPopover() {
+    clearReactionCloseTimer();
+    setActiveReactionTargetId(null);
+  }
+
+  function registerSeatElement(participantId: string, element: HTMLElement | null) {
+    if (element) {
+      seatElementsRef.current.set(participantId, element);
+      return;
+    }
+
+    seatElementsRef.current.delete(participantId);
+  }
+
+  function registerHeadElement(participantId: string, element: HTMLElement | null) {
+    if (element) {
+      headElementsRef.current.set(participantId, element);
+      return;
+    }
+
+    headElementsRef.current.delete(participantId);
+  }
+
+  const stageElement = stageRef.current;
+  const renderedReactions = stageElement
+    ? visibleReactions.flatMap((reaction) => {
+        const throwerSeat = seatElementsRef.current.get(reaction.throwerParticipantId);
+        const targetHead = headElementsRef.current.get(reaction.targetParticipantId);
+        if (!throwerSeat || !targetHead) {
+          return [];
+        }
+
+        const phaseState = deriveReactionPhase(reaction, nowMs);
+        if (phaseState.phase === "expired") {
+          return [];
+        }
+
+        const geometry = getReactionPanelGeometry({
+          panelRect: stageElement.getBoundingClientRect(),
+          targetHeadRect: targetHead.getBoundingClientRect(),
+          throwerSeatRect: throwerSeat.getBoundingClientRect()
+        });
+
+        return [
+          {
+            geometry,
+            phaseState,
+            point: getQuadraticPoint(phaseState.progress, geometry),
+            reaction
+          }
+        ];
+      })
+    : [];
+
+  const bumpedTargets = new Set(
+    renderedReactions
+      .filter(({ phaseState }) => phaseState.phase === "impact")
+      .map(({ reaction }) => reaction.targetParticipantId)
+  );
 
   return (
     <div className="room-workspace">
@@ -293,7 +543,6 @@ export function RoomBoard({
               </button>
             </div>
           </section>
-
         </div>
 
         <section className="workspace-panel poker-table-panel">
@@ -302,56 +551,155 @@ export function RoomBoard({
               <p className="section-label">Vote table</p>
               <h2>{viewModel.participants.length} players</h2>
             </div>
-            <span className="phase-chip phase-chip--quiet">
-              {tableParticipants.length} at table
-            </span>
+            <span className="phase-chip phase-chip--quiet">{tableParticipants.length} at table</span>
           </div>
 
-          <div className="poker-table" aria-label="Planning poker table">
-            <div className="poker-table__surface">
-              <div className="poker-table__felt">
-                <span className="poker-table__brand">LEAL</span>
-                {viewModel.resultStats ? (
-                  <div className="table-results table-results--felt" aria-label="Round result" aria-live="polite">
-                    <div className="table-result">
-                      <span>Average</span>
-                      <strong>{formatAverage(viewModel.resultStats.average)}</strong>
+          <div ref={stageRef} className="reaction-stage">
+            <div className="poker-table" aria-label="Planning poker table">
+              <div className="poker-table__surface">
+                <div className="poker-table__felt">
+                  <span className="poker-table__brand">LEAL</span>
+                  {viewModel.resultStats ? (
+                    <div className="table-results table-results--felt" aria-label="Round result" aria-live="polite">
+                      <div className="table-result">
+                        <span>Average</span>
+                        <strong>{formatAverage(viewModel.resultStats.average)}</strong>
+                      </div>
+                      <div className="table-result">
+                        <span>Confidence</span>
+                        <strong>{formatConfidence(viewModel.resultStats.confidence)}</strong>
+                      </div>
                     </div>
-                    <div className="table-result">
-                      <span>Confidence</span>
-                      <strong>{formatConfidence(viewModel.resultStats.confidence)}</strong>
-                    </div>
-                  </div>
-                ) : null}
-                <small>Planning Poker</small>
+                  ) : null}
+                  <small>Planning Poker</small>
+                </div>
               </div>
-            </div>
 
-            <div className="seat-ring">
-              {tableParticipants.map((participant, index) => (
-                <PlayerSeat
-                  key={participant.id}
-                  geometry={getSeatGeometry(index, tableParticipants.length)}
-                  participant={participant}
-                  variant="ring"
-                />
-              ))}
-            </div>
-          </div>
-
-          {overflowParticipants.length > 0 ? (
-            <div className="overflow-bench" aria-label="Overflow players">
-              <div className="overflow-bench__header">
-                <span className="section-label">Bench</span>
-                <strong>{overflowParticipants.length} overflow players</strong>
-              </div>
-              <div className="overflow-bench__list">
-                {overflowParticipants.map((participant) => (
-                  <PlayerSeat key={participant.id} participant={participant} variant="bench" />
+              <div className="seat-ring">
+                {tableParticipants.map((participant, index) => (
+                  <PlayerSeat
+                    key={participant.id}
+                    geometry={getSeatGeometry(index, tableParticipants.length)}
+                    isHeadBumped={bumpedTargets.has(participant.id)}
+                    isReactionPopoverOpen={activeReactionTargetId === participant.id}
+                    isReactionTarget={participant.connected && !participant.isSelf}
+                    participant={participant}
+                    registerHeadElement={registerHeadElement}
+                    registerSeatElement={registerSeatElement}
+                    variant="ring"
+                    onCloseReactionPopover={() => scheduleReactionPopoverClose(participant.id)}
+                    onOpenReactionPopover={() => openReactionPopoverFor(participant.id)}
+                    onThrowReaction={(emoji) => {
+                      dismissReactionPopover();
+                      onThrowReaction(participant.id, emoji);
+                    }}
+                    onToggleReactionPopover={() => {
+                      clearReactionCloseTimer();
+                      setActiveReactionTargetId((current) =>
+                        current === participant.id ? null : participant.id
+                      );
+                    }}
+                  />
                 ))}
               </div>
             </div>
-          ) : null}
+
+            {overflowParticipants.length > 0 ? (
+              <div className="overflow-bench" aria-label="Overflow players">
+                <div className="overflow-bench__header">
+                  <span className="section-label">Bench</span>
+                  <strong>{overflowParticipants.length} overflow players</strong>
+                </div>
+                <div className="overflow-bench__list">
+                  {overflowParticipants.map((participant) => (
+                    <PlayerSeat
+                      key={participant.id}
+                      isHeadBumped={bumpedTargets.has(participant.id)}
+                      isReactionPopoverOpen={activeReactionTargetId === participant.id}
+                      isReactionTarget={participant.connected && !participant.isSelf}
+                      participant={participant}
+                      registerHeadElement={registerHeadElement}
+                      registerSeatElement={registerSeatElement}
+                      variant="bench"
+                      onCloseReactionPopover={() => scheduleReactionPopoverClose(participant.id)}
+                      onOpenReactionPopover={() => openReactionPopoverFor(participant.id)}
+                      onThrowReaction={(emoji) => {
+                        dismissReactionPopover();
+                        onThrowReaction(participant.id, emoji);
+                      }}
+                      onToggleReactionPopover={() => {
+                        clearReactionCloseTimer();
+                        setActiveReactionTargetId((current) =>
+                          current === participant.id ? null : participant.id
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="reaction-stage__overlay" aria-hidden="true">
+              {renderedReactions.map(({ geometry, phaseState, point, reaction }) => {
+                const lingerOpacity = phaseState.phase === "fade" ? 1 - phaseState.progress : 1;
+
+                return (
+                  <div key={reaction.id} className="reaction-overlay">
+                    {phaseState.phase === "flight" ? (
+                      <span
+                        className="reaction-overlay__emoji reaction-overlay__emoji--flight"
+                        style={{
+                          left: `${point.x}px`,
+                          top: `${point.y}px`
+                        }}
+                      >
+                        {reaction.emoji}
+                      </span>
+                    ) : null}
+
+                    {phaseState.phase === "impact" ? (
+                      <>
+                        <span
+                          className="reaction-overlay__emoji reaction-overlay__emoji--impact"
+                          style={{
+                            left: `${geometry.end.x}px`,
+                            top: `${geometry.end.y}px`
+                          }}
+                        >
+                          {reaction.emoji}
+                        </span>
+                        <span
+                          className="reaction-overlay__burst"
+                          style={{
+                            left: `${geometry.end.x}px`,
+                            top: `${geometry.end.y}px`
+                          }}
+                        />
+                      </>
+                    ) : null}
+
+                    {phaseState.phase === "linger" || phaseState.phase === "fade" ? (
+                      <span
+                        className={[
+                          "reaction-overlay__linger",
+                          phaseState.phase === "fade" ? "reaction-overlay__linger--fade" : ""
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        style={{
+                          left: `${geometry.end.x}px`,
+                          opacity: lingerOpacity,
+                          top: `${geometry.end.y - 38}px`
+                        }}
+                      >
+                        {reaction.emoji}
+                      </span>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="action-row action-row--table action-row--table-split">
             <div className="action-row__cell action-row__cell--left">

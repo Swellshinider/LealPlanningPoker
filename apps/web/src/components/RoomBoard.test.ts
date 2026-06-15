@@ -10,6 +10,7 @@ function createParticipant(index: number, overrides: Partial<Participant> = {}):
     id: `PLAYER_${index}`,
     name: `Player ${index}`,
     isHost: index === 1,
+    isSelf: index === 1,
     connected: true,
     hasVoted: false,
     vote: null,
@@ -35,6 +36,7 @@ function createProps(viewModelOverrides: Partial<RoomBoardProps["viewModel"]> = 
       canSetStory: false,
       isFinalized: false,
       participants: [],
+      activeReactions: [],
       resultStats: null,
       voteSummary: [],
       ...viewModelOverrides
@@ -55,6 +57,7 @@ function createProps(viewModelOverrides: Partial<RoomBoardProps["viewModel"]> = 
     onReveal: () => undefined,
     onReset: () => undefined,
     onFinalize: () => undefined,
+    onThrowReaction: () => undefined,
     onCopyLink: () => undefined,
     onNewRoom: () => undefined,
     onToggleTheme: () => undefined
@@ -178,5 +181,31 @@ describe("RoomBoard", () => {
     expect(markup).toContain("Reveal votes");
     expect(markup.indexOf("Clear votes")).toBeLessThan(markup.indexOf("Reveal votes"));
     expect(markup).toContain("action-row--table-split");
+  });
+
+  it("shows reaction triggers only for connected non-self participants and renders the fixed emoji set", () => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        RoomBoard,
+        createProps({
+          participants: [
+            createParticipant(1, { isHost: true, isSelf: true, name: "You" }),
+            createParticipant(2, { isSelf: false, name: "Ana" }),
+            createParticipant(3, { connected: false, isSelf: false, name: "Offline Kai" })
+          ]
+        })
+      )
+    );
+
+    expect(markup.match(/data-reaction-trigger=/g)).toHaveLength(1);
+    expect(markup).toContain("Throw a reaction at Ana");
+    expect(markup).not.toContain("Throw a reaction at You");
+    expect(markup).not.toContain("Throw a reaction at Offline Kai");
+    expect(markup).toContain("👏");
+    expect(markup).toContain("🔥");
+    expect(markup).toContain("💯");
+    expect(markup).toContain("🍅");
+    expect(markup).toContain("👎");
+    expect(markup).toContain("💀");
   });
 });
