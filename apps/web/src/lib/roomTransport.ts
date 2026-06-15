@@ -375,7 +375,10 @@ function parseSseEvent(chunk: string): RoomEventEnvelope | null {
 }
 
 function buildCompatUrl(path: string, query: Record<string, string | undefined> = {}): string {
-  const url = new URL(`${getApiBaseUrl()}${path}`);
+  const baseUrl = getApiBaseUrl();
+  const url = baseUrl
+    ? new URL(`${baseUrl}${path}`)
+    : new URL(path, typeof window !== "undefined" ? window.location.origin : "http://localhost");
   url.searchParams.set("_ts", Date.now().toString());
 
   for (const [key, value] of Object.entries(query)) {
@@ -392,8 +395,10 @@ function getApiBaseUrl(): string {
     return "";
   }
 
+  // In dev, the Vite dev server proxies /api and /socket.io to the backend
+  // (see vite.config.ts), so we keep requests same-origin to avoid CORS.
   if (import.meta.env.DEV) {
-    return `${window.location.protocol}//${window.location.hostname}:3000`;
+    return "";
   }
 
   return window.location.origin;

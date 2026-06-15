@@ -469,6 +469,32 @@ textarea:focus-visible {
   margin-top: 22px;
 }
 
+.action-row--table-split {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.action-row__cell {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.action-row__cell--left {
+  justify-content: flex-start;
+}
+
+.action-row__cell--center {
+  justify-content: center;
+}
+
+.action-row__cell--right {
+  justify-content: flex-end;
+  min-height: 1px;
+}
+
 .inline-form {
   gap: 10px;
   align-items: end;
@@ -1185,6 +1211,11 @@ textarea:focus-visible {
   margin-bottom: 16px;
 }
 
+.history-panel__export {
+  display: flex;
+  gap: 8px;
+}
+
 .history-row {
   display: grid;
   gap: 12px;
@@ -1610,6 +1641,15 @@ textarea:focus-visible {
 
   .action-row--table {
     justify-content: stretch;
+  }
+
+  .action-row--table-split {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .action-row--table-split .action-row__cell {
+    justify-content: center;
   }
 
   .history-card__header {

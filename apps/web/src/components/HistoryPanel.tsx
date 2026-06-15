@@ -1,8 +1,10 @@
 import type { RoomHistoryEntry } from "@lealplanningpoker/shared";
+import { buildHistoryFilename, downloadTextFile, historyToCsv } from "../lib/historyExport";
 import { formatVoteLabel } from "../lib/uiText";
 
 export interface HistoryPanelProps {
   history: RoomHistoryEntry[];
+  roomId: string;
 }
 
 function formatTimestamp(value: string): string {
@@ -12,8 +14,16 @@ function formatTimestamp(value: string): string {
   }).format(new Date(value));
 }
 
-export function HistoryPanel({ history }: HistoryPanelProps) {
+export function HistoryPanel({ history, roomId }: HistoryPanelProps) {
   const orderedHistory = [...history].reverse();
+
+  function handleExportCsv() {
+    downloadTextFile(
+      buildHistoryFilename(roomId, "csv"),
+      historyToCsv(history),
+      "text/csv;charset=utf-8"
+    );
+  }
 
   return (
     <section className="workspace-panel history-panel">
@@ -23,6 +33,17 @@ export function HistoryPanel({ history }: HistoryPanelProps) {
           <h2>Recent stories</h2>
         </div>
         <span className="phase-chip phase-chip--quiet">{history.length} finalizations</span>
+        {history.length > 0 ? (
+          <div className="history-panel__export">
+            <button
+              className="button button--quiet button--compact"
+              type="button"
+              onClick={handleExportCsv}
+            >
+              Export CSV
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {orderedHistory.length === 0 ? (

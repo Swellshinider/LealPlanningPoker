@@ -59,7 +59,7 @@ describe("roomTransport", () => {
       hostName: "Mina"
     });
 
-    expect(fetchMock).toHaveBeenCalledWith("https://poker.erleal.com:3000/api/rooms", expect.objectContaining({
+    expect(fetchMock).toHaveBeenCalledWith("/api/rooms", expect.objectContaining({
       body: JSON.stringify({
         hostName: "Mina"
       }),
@@ -115,7 +115,7 @@ describe("roomTransport", () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      expect.stringContaining("https://poker.erleal.com:3000/api/compat/rooms/create?_ts="),
+      expect.stringContaining("/api/compat/rooms/create?_ts="),
       expect.objectContaining({
         method: "GET"
       })
@@ -154,7 +154,7 @@ describe("roomTransport", () => {
     await syncRoom("ROOM-0001", "TOKEN_1");
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://poker.erleal.com:3000/api/rooms/ROOM-0001/snapshot",
+      "/api/rooms/ROOM-0001/snapshot",
       expect.objectContaining({
         headers: {
           "x-participant-token": "TOKEN_1"

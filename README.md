@@ -10,7 +10,7 @@ Self-hosted planning poker for agile teams. Create a room, share the link, vote,
 
 - **Real-time voting** -- SSE-powered live updates with automatic HTTP polling fallback
 - **Fibonacci deck** -- Standard 0, 1, 2, 3, 5, 8, 13, 21, ?, coffee plus custom numeric votes
-- **Host controls** -- Set stories, reveal votes, reset rounds, finalize and archive results
+- **Host controls** -- Set stories, reveal votes, clear votes, finalize and archive results
 - **Session history** -- Finalized rounds are archived with vote summaries and confidence scores
 - **Room sharing** -- Share a link or QR code to invite participants instantly
 - **Dark mode** -- Automatic system detection with manual toggle

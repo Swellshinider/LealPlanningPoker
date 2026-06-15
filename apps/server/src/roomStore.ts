@@ -47,6 +47,8 @@ export interface RoomStoreOptions {
   idFactory?: () => string;
   roomIdFactory?: () => string;
   roomTtlMs?: number;
+  offlineCleanupMs?: number;
+  onRoomClosed?: (roomId: string) => void;
 }
 
 interface RoomParticipantRecord {
@@ -135,11 +137,17 @@ export interface SnapshotInput {
 export class RoomStore {
   readonly roomTtlMs: number;
 
+  readonly offlineCleanupMs: number;
+
   private readonly now: () => Date;
 
   private readonly idFactory: () => string;
 
   private readonly roomIdFactory: () => string;
+
+  private readonly onRoomClosed?: (roomId: string) => void;
+
+  private readonly offlineTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   private readonly rooms = new Map<string, RoomRecord>();
 
@@ -148,6 +156,8 @@ export class RoomStore {
     this.idFactory = options.idFactory ?? (() => randomUUID());
     this.roomIdFactory = options.roomIdFactory ?? options.idFactory ?? createRoomCode;
     this.roomTtlMs = options.roomTtlMs ?? 1000 * 60 * 60 * 4;
+    this.offlineCleanupMs = options.offlineCleanupMs ?? 1000 * 60 * 30;
+    this.onRoomClosed = options.onRoomClosed;
   }
 
   createRoom(input: CreateRoomInput): CreateRoomResult {
@@ -222,6 +232,8 @@ export class RoomStore {
 
     room.updatedAt = now;
 
+    this.cancelOfflineCleanup(room.roomId);
+
     return {
       roomId: room.roomId,
       participantToken: participant.token,
@@ -237,6 +249,8 @@ export class RoomStore {
     participant.connected = true;
     participant.updatedAt = now;
     room.updatedAt = now;
+
+    this.cancelOfflineCleanup(room.roomId);
 
     return this.buildSnapshot(room, participant.id);
   }
@@ -269,6 +283,8 @@ export class RoomStore {
     participant.connected = false;
     participant.updatedAt = now;
     room.updatedAt = now;
+
+    this.scheduleOfflineCleanup(room);
 
     return this.buildSnapshot(room, participant.id);
   }
@@ -398,12 +414,57 @@ export class RoomStore {
     for (const [roomId, room] of this.rooms) {
       const ageMs = now.getTime() - new Date(room.updatedAt).getTime();
       if (ageMs > this.roomTtlMs) {
+        this.cancelOfflineCleanup(roomId);
         this.rooms.delete(roomId);
         expired.push(roomId);
       }
     }
 
     return expired;
+  }
+
+  close(): void {
+    for (const timer of this.offlineTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.offlineTimers.clear();
+  }
+
+  private scheduleOfflineCleanup(room: RoomRecord): void {
+    if (this.offlineCleanupMs <= 0) {
+      return;
+    }
+
+    const allOffline = this.getParticipants(room).every((participant) => !participant.connected);
+    const existing = this.offlineTimers.get(room.roomId);
+
+    if (allOffline && !existing) {
+      const timer = setTimeout(() => this.handleOfflineExpiration(room.roomId), this.offlineCleanupMs);
+      if (typeof timer.unref === "function") {
+        timer.unref();
+      }
+      this.offlineTimers.set(room.roomId, timer);
+    } else if (!allOffline && existing) {
+      clearTimeout(existing);
+      this.offlineTimers.delete(room.roomId);
+    }
+  }
+
+  private cancelOfflineCleanup(roomId: string): void {
+    const existing = this.offlineTimers.get(roomId);
+    if (existing) {
+      clearTimeout(existing);
+      this.offlineTimers.delete(roomId);
+    }
+  }
+
+  private handleOfflineExpiration(roomId: string): void {
+    this.offlineTimers.delete(roomId);
+    if (!this.rooms.has(roomId)) {
+      return;
+    }
+    this.rooms.delete(roomId);
+    this.onRoomClosed?.(roomId);
   }
 
   getSnapshot(input: SnapshotInput): RoomSnapshot {

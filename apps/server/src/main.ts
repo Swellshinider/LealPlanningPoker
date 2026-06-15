@@ -40,7 +40,14 @@ function shouldAllowDevelopmentSocketOrigins(): boolean {
 export async function createServerRuntime(options: ServerRuntimeOptions = {}): Promise<ServerRuntime> {
   const staticRoot =
     options.staticRoot ?? resolve(fileURLToPath(new URL("../../web/dist", import.meta.url)));
-  const store = options.store ?? new RoomStore();
+  let broadcastOfflineClosed: (roomId: string) => void = () => {
+    /* wired after socket handlers are registered */
+  };
+  const store =
+    options.store ??
+    new RoomStore({
+      onRoomClosed: (roomId) => broadcastOfflineClosed(roomId)
+    });
   const app = buildHttpApp({
     logger: options.logger,
     staticRoot
@@ -67,6 +74,12 @@ export async function createServerRuntime(options: ServerRuntimeOptions = {}): P
       realtimeHub.notifyRoomClosed(roomId, error);
     }
   });
+  broadcastOfflineClosed = (roomId) => {
+    socketHandlers.notifyRoomClosed(roomId, {
+      code: "ROOM_NOT_FOUND",
+      message: `Room ${roomId} closed after all participants left.`
+    });
+  };
   realtimeHub.setOnRoomChanged((roomId) => {
     socketHandlers.notifyRoomChanged(roomId);
   });
@@ -96,6 +109,7 @@ export async function createServerRuntime(options: ServerRuntimeOptions = {}): P
     store,
     close: async () => {
       clearInterval(expiryInterval);
+      store.close();
       io.close();
       await app.close();
     }

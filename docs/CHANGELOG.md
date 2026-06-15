@@ -1,0 +1,34 @@
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- Rooms now auto-delete 30 minutes after all participants go offline, freeing
+  memory and notifying any lingering clients. The delay is configurable via
+  `RoomStoreOptions.offlineCleanupMs` and can be disabled by setting it to `0`.
+- Export voting history to CSV directly from the archive panel. The file uses a
+  long format (one row per participant per finalized round) and includes a
+  UTF-8 BOM so spreadsheet apps decode special vote labels (`☕`, `?`) correctly.
+
+### Changed
+
+- Renamed the "Reset" action to "Clear votes" and moved it to the left side of
+  the host action row so it is visually separated from the centered Reveal and
+  Finalize buttons. The toast confirmation now reads "Votes cleared."
+- Updated the README host-controls bullet to mention clearing votes instead of
+  resetting rounds.
+
+### Fixed
+
+- Dev-mode clients no longer hit "Unable to connect. Your network or corporate
+  proxy may be blocking room traffic." when the Vite dev server (5173) tried to
+  reach the API directly on port 3000. The Vite dev server now proxies `/api`
+  and `/socket.io` to the backend, and `getApiBaseUrl()` keeps requests
+  same-origin in dev. `buildCompatUrl()` resolves relative paths against the
+  current origin so the compat fallback still works.

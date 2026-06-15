@@ -160,4 +160,23 @@ describe("RoomBoard", () => {
     expect(markup.indexOf("LEAL")).toBeLessThan(markup.indexOf('aria-label="Round result"'));
     expect(markup.indexOf('aria-label="Round result"')).toBeLessThan(markup.indexOf("Planning Poker"));
   });
+
+  it("renders Clear votes before Reveal in the split action row", () => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        RoomBoard,
+        createProps({
+          isHost: true,
+          canReveal: true,
+          canReset: true,
+          canFinalize: true
+        })
+      )
+    );
+
+    expect(markup).toContain("Clear votes");
+    expect(markup).toContain("Reveal votes");
+    expect(markup.indexOf("Clear votes")).toBeLessThan(markup.indexOf("Reveal votes"));
+    expect(markup).toContain("action-row--table-split");
+  });
 });

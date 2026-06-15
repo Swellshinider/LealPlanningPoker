@@ -353,35 +353,41 @@ export function RoomBoard({
             </div>
           ) : null}
 
-          <div className="action-row action-row--table">
-            <button
-              className="button button--primary"
-              disabled={busy || !viewModel.canReveal}
-              type="button"
-              onClick={onReveal}
-            >
-              Reveal votes
-            </button>
-            <button
-              className="button button--quiet"
-              disabled={busy || !viewModel.canReset}
-              type="button"
-              onClick={onReset}
-            >
-              Reset
-            </button>
-            <button
-              className="button button--secondary"
-              disabled={busy || !viewModel.canFinalize}
-              type="button"
-              onClick={onFinalize}
-            >
-              Finalize
-            </button>
+          <div className="action-row action-row--table action-row--table-split">
+            <div className="action-row__cell action-row__cell--left">
+              <button
+                className="button button--quiet"
+                disabled={busy || !viewModel.canReset}
+                type="button"
+                onClick={onReset}
+                aria-label="Clear votes"
+              >
+                Clear votes
+              </button>
+            </div>
+            <div className="action-row__cell action-row__cell--center">
+              <button
+                className="button button--primary"
+                disabled={busy || !viewModel.canReveal}
+                type="button"
+                onClick={onReveal}
+              >
+                Reveal votes
+              </button>
+              <button
+                className="button button--secondary"
+                disabled={busy || !viewModel.canFinalize}
+                type="button"
+                onClick={onFinalize}
+              >
+                Finalize
+              </button>
+            </div>
+            <div className="action-row__cell action-row__cell--right" aria-hidden="true" />
           </div>
         </section>
 
-        <HistoryPanel history={history} />
+        <HistoryPanel history={history} roomId={viewModel.roomId} />
       </main>
 
       <footer className="vote-dock" aria-label="Vote cards">

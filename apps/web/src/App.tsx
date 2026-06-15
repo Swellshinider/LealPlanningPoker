@@ -522,7 +522,7 @@ export function App() {
       const response = await resetVotes(snapshot.roomId, hostToken);
       handleSnapshotResponse(response.snapshot);
       setSelectedVote(null);
-      showNotice("success", "Round reset.");
+      showNotice("success", "Votes cleared.");
     } catch (error) {
       const roomError = asRoomRequestError(error);
       showNotice("error", roomError.message);
