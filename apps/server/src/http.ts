@@ -19,23 +19,31 @@ export function buildHttpApp(options: HttpAppOptions = {}) {
   }));
 
   const indexPath = options.staticRoot ? join(options.staticRoot, "index.html") : undefined;
-  if (options.staticRoot && indexPath && existsSync(indexPath)) {
+  const hasStaticIndex = Boolean(options.staticRoot && indexPath && existsSync(indexPath));
+  if (hasStaticIndex && options.staticRoot) {
     app.register(fastifyStatic, {
       root: options.staticRoot,
       index: false
     });
-
-    app.setNotFoundHandler(async (request, reply) => {
-      if (request.method !== "GET") {
-        return reply.code(404).send({
-          ok: false,
-          error: "Not found"
-        });
-      }
-
-      return reply.type("text/html").sendFile("index.html");
-    });
   }
+
+  app.setNotFoundHandler(async (request, reply) => {
+    if (request.url.startsWith("/api/")) {
+      return reply.code(404).send({
+        ok: false,
+        error: "Not found"
+      });
+    }
+
+    if (!hasStaticIndex || request.method !== "GET") {
+      return reply.code(404).send({
+        ok: false,
+        error: "Not found"
+      });
+    }
+
+    return reply.type("text/html").sendFile("index.html");
+  });
 
   return app;
 }

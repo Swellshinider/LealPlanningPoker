@@ -2,12 +2,20 @@ import { startTransition, useEffect, useRef, useState } from "react";
 import type { RoomSnapshot, VoteCard as VoteValue } from "@lealplanningpoker/shared";
 import { buildRoomViewModel } from "./lib/roomView";
 import {
-  createRoomSocket,
-  ensureSocketConnected,
-  emitWithAck,
+  createRoom,
+  finalizeStory,
   getConnectionErrorMessage,
-  type RoomSocketError
-} from "./lib/socket";
+  joinRoom,
+  renameParticipant,
+  resetVotes,
+  revealVotes,
+  RoomRequestError,
+  saveStory,
+  submitVote,
+  subscribeToRoom,
+  syncRoom,
+  type RoomSubscription
+} from "./lib/roomTransport";
 import { resolveHostTokenAfterJoin, shouldRestoreStoredSessionTokens } from "./lib/session";
 import {
   DARK_THEME_MEDIA_QUERY,
@@ -20,9 +28,7 @@ import {
 } from "./lib/theme";
 import { JoinPanel } from "./components/JoinPanel";
 import { RoomBoard } from "./components/RoomBoard";
-import type { Socket } from "socket.io-client";
 
-type ConnectionState = "connecting" | "connected" | "reconnecting" | "disconnected";
 type NoticeTone = "info" | "success" | "error";
 
 interface Notice {
@@ -114,17 +120,17 @@ function extractRoomParticipant(snapshot: RoomSnapshot) {
   return snapshot.participants.find((participant) => participant.id === snapshot.viewer.participantId) ?? null;
 }
 
-function asRoomSocketError(error: unknown): RoomSocketError {
-  if (error instanceof Error && "code" in error) {
-    return error as RoomSocketError;
+function asRoomRequestError(error: unknown): RoomRequestError {
+  if (error instanceof RoomRequestError) {
+    return error;
   }
 
-  const message = error instanceof Error ? error.message : "Unexpected room error.";
-  return Object.assign(new Error(message), { code: "UNKNOWN_ERROR" }) as RoomSocketError;
+  const message = error instanceof Error ? error.message : getConnectionErrorMessage();
+  return new RoomRequestError("UNKNOWN_ERROR", message);
 }
 
 export function App() {
-  const socketRef = useRef<Socket | null>(null);
+  const subscriptionRef = useRef<RoomSubscription | null>(null);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousSnapshotRef = useRef<RoomSnapshot | null>(null);
   const displayNameRef = useRef("");
@@ -144,7 +150,6 @@ export function App() {
     hostToken: ""
   });
 
-  const [connectionState, setConnectionState] = useState<ConnectionState>("connecting");
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
   const [displayName, setDisplayName] = useState(() => readStorage("displayName") || "");
   const [roomCode, setRoomCode] = useState(() => initialRoomQuery || storedRoomCode || "");
@@ -202,66 +207,81 @@ export function App() {
     };
   }, [themePreference]);
 
-  useEffect(() => () => clearNoticeTimer(), []);
+  useEffect(() => () => {
+    clearNoticeTimer();
+    subscriptionRef.current?.close();
+  }, []);
 
   useEffect(() => {
-    const socket = createRoomSocket();
-    socketRef.current = socket;
+    if (!shouldRestoreStoredSession || !roomCode || !participantToken) {
+      return;
+    }
 
-    const handleSnapshot = (nextSnapshot: RoomSnapshot) => {
-      startTransition(() => {
-        handleSnapshotResponse(nextSnapshot, activeSessionRef.current.participantToken);
-      });
-      clearNotice();
-      setConnectionState("connected");
-    };
+    let cancelled = false;
 
-    const handleClosed = (payload: { roomId: string; error: { code: string; message: string } }) => {
-      showNotice("error", payload.error.message);
-      setSnapshot(null);
-      setRoomCode("");
-      setParticipantToken("");
-      setHostToken("");
-      setSelectedVote(null);
-    };
+    const restore = async () => {
+      setBusy(true);
+      try {
+        const response = await syncRoom(roomCode, participantToken);
+        if (cancelled) {
+          return;
+        }
 
-    const handleRoomError = (payload: { code: string; message: string }) => {
-      showNotice("error", payload.message);
-    };
+        handleSnapshotResponse(response.snapshot, participantToken);
+        startRoomSubscription(roomCode, participantToken);
+        showNotice("info", "Session restored.");
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
 
-    const handleConnect = () => {
-      setConnectionState("connected");
-      const session = activeSessionRef.current;
-      if (session.roomCode && session.participantToken) {
-        void syncStoredSession(socket, session.roomCode, session.participantToken);
+        const roomError = asRoomRequestError(error);
+        showNotice("error", roomError.message);
+      } finally {
+        if (!cancelled) {
+          setBusy(false);
+        }
       }
     };
 
-    const handleDisconnect = () => {
-      setConnectionState("reconnecting");
-    };
-
-    socket.on("room:snapshot", handleSnapshot);
-    socket.on("room:closed", handleClosed);
-    socket.on("room:error", handleRoomError);
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("connect_error", () => {
-      setConnectionState("disconnected");
-      showNotice("error", getConnectionErrorMessage());
-    });
-
-    socket.connect();
+    void restore();
 
     return () => {
-      socket.off("room:snapshot", handleSnapshot);
-      socket.off("room:closed", handleClosed);
-      socket.off("room:error", handleRoomError);
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
-      socket.disconnect();
+      cancelled = true;
     };
-  }, []);
+  }, [participantToken, roomCode, shouldRestoreStoredSession]);
+
+  function startRoomSubscription(nextRoomId: string, nextParticipantToken: string) {
+    subscriptionRef.current?.close();
+    subscriptionRef.current = subscribeToRoom({
+      onClosed: (payload) => {
+        showNotice("error", payload.error.message);
+        subscriptionRef.current?.close();
+        subscriptionRef.current = null;
+        previousSnapshotRef.current = null;
+        setSnapshot(null);
+        setRoomCode("");
+        setParticipantToken("");
+        setHostToken("");
+        setSelectedVote(null);
+      },
+      onError: (error) => {
+        showNotice("error", error.message);
+      },
+      onModeChange: (mode) => {
+        if (mode === "polling") {
+          showNotice("info", "Live updates are using compatibility polling.");
+        }
+      },
+      onSnapshot: (nextSnapshot) => {
+        startTransition(() => {
+          handleSnapshotResponse(nextSnapshot, nextParticipantToken);
+        });
+      },
+      participantToken: nextParticipantToken,
+      roomId: nextRoomId
+    });
+  }
 
   function clearNotice() {
     clearNoticeTimer();
@@ -291,21 +311,6 @@ export function App() {
     writeStoredTheme(nextTheme);
   }
 
-  async function syncStoredSession(socket: Socket, room: string, token: string) {
-    try {
-      await ensureSocketConnected(socket);
-      const response = await emitWithAck<{ snapshot: RoomSnapshot }>(socket, "room:sync", {
-        roomId: room,
-        participantToken: token
-      });
-      handleSnapshotResponse(response.snapshot, token);
-      showNotice("info", "Session restored.");
-    } catch (error) {
-      const roomError = asRoomSocketError(error);
-      showNotice("error", roomError.message);
-    }
-  }
-
   function handleSnapshotResponse(nextSnapshot: RoomSnapshot, nextParticipantToken = activeSessionRef.current.participantToken) {
     const previous = previousSnapshotRef.current;
     previousSnapshotRef.current = nextSnapshot;
@@ -326,21 +331,10 @@ export function App() {
     setHostToken(resolveHostTokenAfterJoin(nextSnapshot.viewer.isHost, nextParticipantToken));
   }
 
-  async function createRoom() {
-    const socket = socketRef.current;
-    if (!socket) {
-      return;
-    }
-
+  async function createPlanningRoom() {
     setBusy(true);
     try {
-      await ensureSocketConnected(socket);
-      const response = await emitWithAck<{
-        roomId: string;
-        participantToken: string;
-        hostToken: string;
-        snapshot: RoomSnapshot;
-      }>(socket, "room:create", {
+      const response = await createRoom({
         hostName: displayName || "Anonymous"
       });
 
@@ -348,30 +342,24 @@ export function App() {
       setHostToken(response.hostToken);
       handleSnapshotResponse(response.snapshot, response.participantToken);
       setDisplayName(extractRoomParticipant(response.snapshot)?.name ?? displayName);
+      startRoomSubscription(response.roomId, response.participantToken);
       showNotice("success", "Room created.");
     } catch (error) {
-      const roomError = asRoomSocketError(error);
+      const roomError = asRoomRequestError(error);
       showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
   }
 
-  async function joinRoom() {
-    const socket = socketRef.current;
-    if (!socket || !roomCode.trim()) {
+  async function joinPlanningRoom() {
+    if (!roomCode.trim()) {
       return;
     }
 
     setBusy(true);
     try {
-      await ensureSocketConnected(socket);
-      const response = await emitWithAck<{
-        roomId: string;
-        participantToken: string;
-        snapshot: RoomSnapshot;
-      }>(socket, "room:join", {
-        roomId: roomCode.trim().toUpperCase(),
+      const response = await joinRoom(roomCode.trim().toUpperCase(), {
         displayName: displayName || "Anonymous",
         participantToken: participantToken || undefined
       });
@@ -380,9 +368,10 @@ export function App() {
       setHostToken(resolveHostTokenAfterJoin(response.snapshot.viewer.isHost, response.participantToken));
       handleSnapshotResponse(response.snapshot, response.participantToken);
       setDisplayName(extractRoomParticipant(response.snapshot)?.name ?? displayName);
+      startRoomSubscription(response.roomId, response.participantToken);
       showNotice("success", "Joined room.");
     } catch (error) {
-      const roomError = asRoomSocketError(error);
+      const roomError = asRoomRequestError(error);
       showNotice("error", roomError.message);
     } finally {
       setBusy(false);
@@ -394,17 +383,9 @@ export function App() {
       return;
     }
 
-    const socket = socketRef.current;
-    if (!socket) {
-      return;
-    }
-
     setBusy(true);
     try {
-      await ensureSocketConnected(socket);
-      const response = await emitWithAck<{ snapshot: RoomSnapshot }>(socket, "participant:rename", {
-        roomId: snapshot.roomId,
-        participantToken,
+      const response = await renameParticipant(snapshot.roomId, participantToken, {
         displayName: displayName || "Anonymous"
       });
 
@@ -412,49 +393,36 @@ export function App() {
       setDisplayName(extractRoomParticipant(response.snapshot)?.name ?? displayName);
       showNotice("success", "Name saved.");
     } catch (error) {
-      const roomError = asRoomSocketError(error);
+      const roomError = asRoomRequestError(error);
       showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
   }
 
-  async function saveStory() {
+  async function persistStory() {
     if (!snapshot || !hostToken) {
-      return;
-    }
-
-    const socket = socketRef.current;
-    if (!socket) {
       return;
     }
 
     setBusy(true);
     try {
-      await ensureSocketConnected(socket);
-      const response = await emitWithAck<{ snapshot: RoomSnapshot }>(socket, "host:story:set", {
-        roomId: snapshot.roomId,
-        hostToken,
+      const response = await saveStory(snapshot.roomId, hostToken, {
         story: storyDraft
       });
 
       handleSnapshotResponse(response.snapshot);
       showNotice("success", "Story saved.");
     } catch (error) {
-      const roomError = asRoomSocketError(error);
+      const roomError = asRoomRequestError(error);
       showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
   }
 
-  async function submitVote(vote: VoteValue) {
+  async function castVote(vote: VoteValue) {
     if (!snapshot || !participantToken) {
-      return;
-    }
-
-    const socket = socketRef.current;
-    if (!socket) {
       return;
     }
 
@@ -462,102 +430,69 @@ export function App() {
     setSelectedVote(vote);
     setBusy(true);
     try {
-      await ensureSocketConnected(socket);
-      const response = await emitWithAck<{ snapshot: RoomSnapshot }>(socket, "vote:submit", {
-        roomId: snapshot.roomId,
-        participantToken,
+      const response = await submitVote(snapshot.roomId, participantToken, {
         vote
       });
 
       handleSnapshotResponse(response.snapshot);
     } catch (error) {
       setSelectedVote(previousVote);
-      const roomError = asRoomSocketError(error);
+      const roomError = asRoomRequestError(error);
       showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
   }
 
-  async function revealVotes() {
+  async function revealRoomVotes() {
     if (!snapshot || !hostToken) {
-      return;
-    }
-
-    const socket = socketRef.current;
-    if (!socket) {
       return;
     }
 
     setBusy(true);
     try {
-      await ensureSocketConnected(socket);
-      const response = await emitWithAck<{ snapshot: RoomSnapshot }>(socket, "host:reveal", {
-        roomId: snapshot.roomId,
-        hostToken
-      });
-
+      const response = await revealVotes(snapshot.roomId, hostToken);
       handleSnapshotResponse(response.snapshot);
       showNotice("success", "Votes revealed.");
     } catch (error) {
-      const roomError = asRoomSocketError(error);
+      const roomError = asRoomRequestError(error);
       showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
   }
 
-  async function resetVotes() {
+  async function resetRoomVotes() {
     if (!snapshot || !hostToken) {
-      return;
-    }
-
-    const socket = socketRef.current;
-    if (!socket) {
       return;
     }
 
     setBusy(true);
     try {
-      await ensureSocketConnected(socket);
-      const response = await emitWithAck<{ snapshot: RoomSnapshot }>(socket, "host:reset", {
-        roomId: snapshot.roomId,
-        hostToken
-      });
-
+      const response = await resetVotes(snapshot.roomId, hostToken);
       handleSnapshotResponse(response.snapshot);
       setSelectedVote(null);
       showNotice("success", "Round reset.");
     } catch (error) {
-      const roomError = asRoomSocketError(error);
+      const roomError = asRoomRequestError(error);
       showNotice("error", roomError.message);
     } finally {
       setBusy(false);
     }
   }
 
-  async function finalizeStory() {
+  async function finalizeCurrentStory() {
     if (!snapshot || !hostToken) {
-      return;
-    }
-
-    const socket = socketRef.current;
-    if (!socket) {
       return;
     }
 
     setBusy(true);
     try {
-      await ensureSocketConnected(socket);
-      const response = await emitWithAck<{ snapshot: RoomSnapshot }>(socket, "host:finalize", {
-        roomId: snapshot.roomId,
-        hostToken
-      });
-
+      const response = await finalizeStory(snapshot.roomId, hostToken);
       handleSnapshotResponse(response.snapshot);
       showNotice("success", "Story finalized.");
     } catch (error) {
-      const roomError = asRoomSocketError(error);
+      const roomError = asRoomRequestError(error);
       showNotice("error", roomError.message);
     } finally {
       setBusy(false);
@@ -579,7 +514,8 @@ export function App() {
   }
 
   function startNewRoom() {
-    const socket = socketRef.current;
+    subscriptionRef.current?.close();
+    subscriptionRef.current = null;
     activeSessionRef.current = {
       roomCode: "",
       participantToken: "",
@@ -597,12 +533,6 @@ export function App() {
     writeStorage("participantToken", "");
     writeStorage("hostToken", "");
     clearRoomQuery();
-
-    if (socket) {
-      setConnectionState("connecting");
-      socket.disconnect();
-      socket.connect();
-    }
   }
 
   const bannerText = notice ? notice.text : null;
@@ -616,9 +546,9 @@ export function App() {
           displayName={displayName}
           roomCode={roomCode}
           theme={theme}
-          onCreateRoom={() => void createRoom()}
+          onCreateRoom={() => void createPlanningRoom()}
           onDisplayNameChange={setDisplayName}
-          onJoinRoom={() => void joinRoom()}
+          onJoinRoom={() => void joinPlanningRoom()}
           onRoomCodeChange={setRoomCode}
           onToggleTheme={toggleTheme}
         />
@@ -639,15 +569,15 @@ export function App() {
         viewModel={viewModel}
         onCopyLink={() => void copyRoomLink()}
         onDisplayNameChange={setDisplayName}
-        onFinalize={() => void finalizeStory()}
+        onFinalize={() => void finalizeCurrentStory()}
         onNewRoom={startNewRoom}
         onRename={() => void renameSelf()}
-        onReset={() => void resetVotes()}
-        onReveal={() => void revealVotes()}
-        onSaveStory={() => void saveStory()}
+        onReset={() => void resetRoomVotes()}
+        onReveal={() => void revealRoomVotes()}
+        onSaveStory={() => void persistStory()}
         onStoryChange={setStoryDraft}
         onToggleTheme={toggleTheme}
-        onVote={(vote) => void submitVote(vote)}
+        onVote={(vote) => void castVote(vote)}
       />
       {bannerText ? <div className={`floating-banner floating-banner--${bannerTone}`}>{bannerText}</div> : null}
     </main>

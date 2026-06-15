@@ -4,6 +4,8 @@ import { Server, type ServerOptions } from "socket.io";
 import { RoomStore } from "./roomStore";
 import { buildHttpApp } from "./http";
 import { registerSocketHandlers } from "./socketHandlers";
+import { RoomRealtimeHub } from "./roomRealtimeHub";
+import { registerRoomHttpRoutes } from "./roomHttp";
 
 export interface ServerRuntimeOptions {
   logger?: boolean;
@@ -54,8 +56,26 @@ export async function createServerRuntime(options: ServerRuntimeOptions = {}): P
   }
 
   const io = new Server(app.server, socketOptions);
-
-  const socketHandlers = registerSocketHandlers(io, store);
+  const realtimeHub = new RoomRealtimeHub({
+    store
+  });
+  const socketHandlers = registerSocketHandlers(io, store, {
+    onRoomChanged: (roomId) => {
+      realtimeHub.publishRoom(roomId);
+    },
+    onRoomClosed: (roomId, error) => {
+      realtimeHub.notifyRoomClosed(roomId, error);
+    }
+  });
+  realtimeHub.setOnRoomChanged((roomId) => {
+    socketHandlers.notifyRoomChanged(roomId);
+  });
+  registerRoomHttpRoutes({
+    app,
+    store,
+    hub: realtimeHub,
+    sockets: socketHandlers
+  });
   const expiryInterval = setInterval(() => {
     const expiredRoomIds = store.expireRooms();
     for (const roomId of expiredRoomIds) {

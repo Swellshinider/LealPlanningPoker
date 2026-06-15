@@ -69,10 +69,16 @@ class SocketHandlerError extends Error {
 }
 
 export interface SocketHandlerController {
+  notifyRoomChanged: (roomId: string) => void;
   notifyRoomClosed: (roomId: string, error: SocketErrorPayload) => void;
 }
 
-export function registerSocketHandlers(io: Server, store: RoomStore): SocketHandlerController {
+export interface SocketHandlerOptions {
+  onRoomChanged?: (roomId: string) => void;
+  onRoomClosed?: (roomId: string, error: SocketErrorPayload) => void;
+}
+
+export function registerSocketHandlers(io: Server, store: RoomStore, options: SocketHandlerOptions = {}): SocketHandlerController {
   const sessionBySocketId = new Map<string, SocketSession>();
   const socketsByRoomId = new Map<string, Set<string>>();
   const socketsByToken = new Map<string, Set<string>>();
@@ -89,6 +95,7 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
         const result = store.createRoom({ hostName: requireStringField(payload, "hostName") });
         switchSession(socket, result.roomId, result.participantToken);
         broadcastRoom(result.roomId, socket.id);
+        options.onRoomChanged?.(result.roomId);
         return {
           roomId: result.roomId,
           participantToken: result.participantToken,
@@ -111,6 +118,7 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
         });
         switchSession(socket, result.roomId, result.participantToken);
         broadcastRoom(result.roomId, socket.id);
+        options.onRoomChanged?.(result.roomId);
         return {
           roomId: result.roomId,
           participantToken: result.participantToken,
@@ -126,6 +134,7 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
         const snapshot = store.syncRoom({ roomId, participantToken });
         switchSession(socket, roomId, participantToken);
         broadcastRoom(roomId, socket.id);
+        options.onRoomChanged?.(roomId);
         return { snapshot };
       });
     });
@@ -139,6 +148,7 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
           const displayName = requireStringField(payload, "displayName");
           const snapshot = store.renameParticipant({ roomId, participantToken, displayName });
           broadcastRoom(roomId, socket.id);
+          options.onRoomChanged?.(roomId);
           return { snapshot };
         });
       }
@@ -151,6 +161,7 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
         const vote = requireStringField(payload, "vote") as VoteCard;
         const snapshot = store.submitVote({ roomId, participantToken, vote });
         broadcastRoom(roomId, socket.id);
+        options.onRoomChanged?.(roomId);
         return { snapshot };
       });
     });
@@ -164,6 +175,7 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
           const story = requireStringField(payload, "story");
           const snapshot = store.setStory({ roomId, hostToken, story });
           broadcastRoom(roomId, socket.id);
+          options.onRoomChanged?.(roomId);
           return { snapshot };
         });
       }
@@ -177,6 +189,7 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
           const hostToken = requireStringField(payload, "hostToken");
           const snapshot = store.revealVotes({ roomId, hostToken });
           broadcastRoom(roomId, socket.id);
+          options.onRoomChanged?.(roomId);
           return { snapshot };
         });
       }
@@ -188,6 +201,7 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
         const hostToken = requireStringField(payload, "hostToken");
         const snapshot = store.resetVotes({ roomId, hostToken });
         broadcastRoom(roomId, socket.id);
+        options.onRoomChanged?.(roomId);
         return { snapshot };
       });
     });
@@ -198,6 +212,7 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
         const hostToken = requireStringField(payload, "hostToken");
         const snapshot = store.finalizeStory({ roomId, hostToken });
         broadcastRoom(roomId, socket.id);
+        options.onRoomChanged?.(roomId);
         return { snapshot };
       });
     });
@@ -266,6 +281,7 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
         participantToken: session.participantToken
       });
       broadcastRoom(session.roomId, socket.id);
+      options.onRoomChanged?.(session.roomId);
     } catch (error) {
       if (!isRoomNotFound(error)) {
         socket.emit("room:error", toSocketError(error));
@@ -347,6 +363,9 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
   }
 
   return {
+    notifyRoomChanged(roomId) {
+      broadcastRoom(roomId);
+    },
     notifyRoomClosed(roomId, error) {
       const socketIds = socketsByRoomId.get(roomId);
       if (!socketIds) {
@@ -364,6 +383,8 @@ export function registerSocketHandlers(io: Server, store: RoomStore): SocketHand
         detachSocket(targetSocket, sessionBySocketId.get(targetSocket.id), false);
         eventTimestampsBySocketId.delete(targetSocket.id);
       }
+
+      options.onRoomClosed?.(roomId, error);
     }
   };
 }
