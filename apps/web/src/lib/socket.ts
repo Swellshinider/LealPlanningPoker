@@ -40,7 +40,8 @@ export function createRoomSocket(): Socket {
   return io(devSocketServerUrl, {
     autoConnect: false,
     path: "/socket.io",
-    transports: ["websocket", "polling"]
+    transports: ["polling", "websocket"],
+    tryAllTransports: true
   });
 }
 
