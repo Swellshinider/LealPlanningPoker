@@ -110,6 +110,61 @@ describe("registerRoomHttpRoutes", () => {
     await app.close();
   });
 
+  it("accepts host reveal actions without a JSON request body", async () => {
+    const { app, sockets } = createApp();
+
+    const createResponse = await app.inject({
+      method: "POST",
+      payload: {
+        hostName: "Mina"
+      },
+      url: "/api/rooms"
+    });
+    const createdRoom = createResponse.json();
+
+    await app.inject({
+      method: "POST",
+      payload: {
+        story: "Improve onboarding"
+      },
+      headers: {
+        "x-host-token": createdRoom.hostToken
+      },
+      url: `/api/rooms/${createdRoom.roomId}/story`
+    });
+
+    await app.inject({
+      method: "POST",
+      payload: {
+        vote: "3"
+      },
+      headers: {
+        "x-participant-token": createdRoom.participantToken
+      },
+      url: `/api/rooms/${createdRoom.roomId}/votes`
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      headers: {
+        "x-host-token": createdRoom.hostToken
+      },
+      url: `/api/rooms/${createdRoom.roomId}/reveal`
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      ok: true,
+      snapshot: {
+        phase: "revealed",
+        roomId: createdRoom.roomId
+      }
+    });
+    expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
+
+    await app.close();
+  });
+
   it("marks API payload errors as 400 responses", async () => {
     const { app } = createApp();
 

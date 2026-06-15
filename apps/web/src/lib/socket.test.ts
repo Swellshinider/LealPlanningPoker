@@ -1,10 +1,41 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createRoom,
+  finalizeStory,
   getConnectionErrorMessage,
+  resetVotes,
+  revealVotes,
   subscribeToRoom,
   syncRoom
 } from "./roomTransport";
+
+function jsonResponse(payload: object) {
+  return new Response(JSON.stringify(payload), {
+    headers: {
+      "content-type": "application/json"
+    },
+    status: 200
+  });
+}
+
+function snapshotEnvelope() {
+  return {
+    ok: true,
+    snapshot: {
+      roomId: "ROOM-0001",
+      hostName: "Mina",
+      story: "",
+      phase: "lobby" as const,
+      participants: [],
+      history: [],
+      updatedAt: "2026-06-15T12:00:00.000Z",
+      viewer: {
+        participantId: "P_1",
+        isHost: true
+      }
+    }
+  };
+}
 
 describe("roomTransport", () => {
   beforeEach(() => {
@@ -160,6 +191,49 @@ describe("roomTransport", () => {
           "x-participant-token": "TOKEN_1"
         },
         method: "GET"
+      })
+    );
+  });
+
+  it("sends bodyless host actions without a JSON content type", async () => {
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse(snapshotEnvelope())));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await revealVotes("ROOM-0001", "HOST_TOKEN");
+    await resetVotes("ROOM-0001", "HOST_TOKEN");
+    await finalizeStory("ROOM-0001", "HOST_TOKEN");
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "/api/rooms/ROOM-0001/reveal",
+      expect.objectContaining({
+        body: undefined,
+        headers: {
+          "x-host-token": "HOST_TOKEN"
+        },
+        method: "POST"
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/api/rooms/ROOM-0001/reset",
+      expect.objectContaining({
+        body: undefined,
+        headers: {
+          "x-host-token": "HOST_TOKEN"
+        },
+        method: "POST"
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      "/api/rooms/ROOM-0001/finalize",
+      expect.objectContaining({
+        body: undefined,
+        headers: {
+          "x-host-token": "HOST_TOKEN"
+        },
+        method: "POST"
       })
     );
   });
