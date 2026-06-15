@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RoomStore, RoomStoreError } from "./roomStore";
 
 function createStore() {
@@ -486,5 +486,142 @@ describe("RoomStore", () => {
     expect(snapshot.history).toHaveLength(100);
     expect(snapshot.history[0]?.story).toBe("Story 5");
     expect(snapshot.history.at(-1)?.story).toBe("Story 104");
+  });
+});
+
+describe("RoomStore offline cleanup", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function createOfflineStore(options: { offlineCleanupMs?: number; closed?: string[] } = {}) {
+    const ids = [
+      "ROOM01",
+      "HOST_PARTICIPANT",
+      "HOST_TOKEN",
+      "ANA_PARTICIPANT",
+      "ANA_TOKEN",
+      "BOB_PARTICIPANT",
+      "BOB_TOKEN"
+    ];
+    const closed = options.closed ?? [];
+    vi.useFakeTimers({ now: new Date("2026-06-11T12:00:00.000Z") });
+    const store = new RoomStore({
+      idFactory: () => {
+        const id = ids.shift();
+        if (!id) {
+          throw new Error("No more ids");
+        }
+        return id;
+      },
+      now: () => new Date("2026-06-11T12:00:00.000Z"),
+      offlineCleanupMs: options.offlineCleanupMs ?? 1000,
+      onRoomClosed: (roomId) => {
+        closed.push(roomId);
+      }
+    });
+    return { store, closed };
+  }
+
+  it("removes a room after the offline cleanup window when everyone disconnects", () => {
+    const { store, closed } = createOfflineStore();
+    const created = store.createRoom({ hostName: "Mina" });
+
+    store.leaveRoom({
+      roomId: created.roomId,
+      participantToken: created.hostToken
+    });
+
+    vi.advanceTimersByTime(999);
+    expect(
+      store.getSnapshot({
+        roomId: created.roomId,
+        participantToken: created.hostToken
+      }).roomId
+    ).toBe(created.roomId);
+    expect(closed).toEqual([]);
+
+    vi.advanceTimersByTime(2);
+    expect(closed).toEqual([created.roomId]);
+    expect(() =>
+      store.getSnapshot({
+        roomId: created.roomId,
+        participantToken: created.hostToken
+      })
+    ).toThrow();
+  });
+
+  it("cancels the offline timer when a participant rejoins", () => {
+    const { store, closed } = createOfflineStore();
+    const created = store.createRoom({ hostName: "Mina" });
+
+    store.leaveRoom({
+      roomId: created.roomId,
+      participantToken: created.hostToken
+    });
+
+    vi.advanceTimersByTime(500);
+
+    store.syncRoom({
+      roomId: created.roomId,
+      participantToken: created.hostToken
+    });
+
+    vi.advanceTimersByTime(10_000);
+
+    expect(closed).toEqual([]);
+    expect(() =>
+      store.getSnapshot({
+        roomId: created.roomId,
+        participantToken: created.hostToken
+      })
+    ).not.toThrow();
+  });
+
+  it("does not arm the timer when other participants are still connected", () => {
+    const { store, closed } = createOfflineStore();
+    const created = store.createRoom({ hostName: "Mina" });
+    const joined = store.joinRoom({
+      roomId: created.roomId,
+      displayName: "Ana"
+    });
+
+    store.leaveRoom({
+      roomId: created.roomId,
+      participantToken: created.hostToken
+    });
+
+    vi.advanceTimersByTime(5_000);
+
+    expect(closed).toEqual([]);
+    expect(
+      store.getSnapshot({
+        roomId: created.roomId,
+        participantToken: joined.participantToken
+      }).participants
+    ).toHaveLength(2);
+
+    store.leaveRoom({
+      roomId: created.roomId,
+      participantToken: joined.participantToken
+    });
+
+    vi.advanceTimersByTime(5_000);
+
+    expect(closed).toEqual([created.roomId]);
+  });
+
+  it("skips offline cleanup when offlineCleanupMs is zero", () => {
+    const { store, closed } = createOfflineStore({ offlineCleanupMs: 0 });
+    const created = store.createRoom({ hostName: "Mina" });
+
+    store.leaveRoom({
+      roomId: created.roomId,
+      participantToken: created.hostToken
+    });
+
+    vi.advanceTimersByTime(10 * 60 * 1000);
+
+    expect(closed).toEqual([]);
   });
 });

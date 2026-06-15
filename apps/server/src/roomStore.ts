@@ -20,6 +20,7 @@ export class RoomStoreError extends Error {
     | "ROUND_LOCKED"
     | "INVALID_VOTE"
     | "INVALID_STORY"
+    | "INVALID_DISPLAY_NAME"
     | "ROOM_FULL";
 
   constructor(
@@ -31,6 +32,7 @@ export class RoomStoreError extends Error {
       | "ROUND_LOCKED"
       | "INVALID_VOTE"
       | "INVALID_STORY"
+      | "INVALID_DISPLAY_NAME"
       | "ROOM_FULL",
     message: string
   ) {
@@ -45,6 +47,8 @@ export interface RoomStoreOptions {
   idFactory?: () => string;
   roomIdFactory?: () => string;
   roomTtlMs?: number;
+  offlineCleanupMs?: number;
+  onRoomClosed?: (roomId: string) => void;
 }
 
 interface RoomParticipantRecord {
@@ -117,7 +121,7 @@ export interface StoryInput {
 export interface VoteInput {
   roomId: string;
   participantToken: string;
-  vote: VoteCard;
+  vote: VoteCard | null;
 }
 
 export interface HostActionInput {
@@ -133,11 +137,17 @@ export interface SnapshotInput {
 export class RoomStore {
   readonly roomTtlMs: number;
 
+  readonly offlineCleanupMs: number;
+
   private readonly now: () => Date;
 
   private readonly idFactory: () => string;
 
   private readonly roomIdFactory: () => string;
+
+  private readonly onRoomClosed?: (roomId: string) => void;
+
+  private readonly offlineTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   private readonly rooms = new Map<string, RoomRecord>();
 
@@ -146,6 +156,8 @@ export class RoomStore {
     this.idFactory = options.idFactory ?? (() => randomUUID());
     this.roomIdFactory = options.roomIdFactory ?? options.idFactory ?? createRoomCode;
     this.roomTtlMs = options.roomTtlMs ?? 1000 * 60 * 60 * 4;
+    this.offlineCleanupMs = options.offlineCleanupMs ?? 1000 * 60 * 30;
+    this.onRoomClosed = options.onRoomClosed;
   }
 
   createRoom(input: CreateRoomInput): CreateRoomResult {
@@ -154,6 +166,10 @@ export class RoomStore {
     const hostParticipantId = this.nextId();
     const hostToken = this.nextId();
     const hostName = normalizeDisplayName(input.hostName);
+
+    if (!hostName) {
+      throw new RoomStoreError("INVALID_DISPLAY_NAME", "Display name is required.");
+    }
 
     const hostParticipant: RoomParticipantRecord = {
       id: hostParticipantId,
@@ -194,6 +210,10 @@ export class RoomStore {
     const now = this.nowIso();
     const normalizedName = normalizeDisplayName(input.displayName);
 
+    if (!normalizedName) {
+      throw new RoomStoreError("INVALID_DISPLAY_NAME", "Display name is required.");
+    }
+
     const existingParticipantId = input.participantToken
       ? room.participantTokens.get(input.participantToken)
       : undefined;
@@ -212,6 +232,8 @@ export class RoomStore {
 
     room.updatedAt = now;
 
+    this.cancelOfflineCleanup(room.roomId);
+
     return {
       roomId: room.roomId,
       participantToken: participant.token,
@@ -228,6 +250,8 @@ export class RoomStore {
     participant.updatedAt = now;
     room.updatedAt = now;
 
+    this.cancelOfflineCleanup(room.roomId);
+
     return this.buildSnapshot(room, participant.id);
   }
 
@@ -236,6 +260,10 @@ export class RoomStore {
     const participant = this.getParticipantByTokenOrThrow(room, input.participantToken);
     const now = this.nowIso();
     const name = normalizeDisplayName(input.displayName);
+
+    if (!name) {
+      throw new RoomStoreError("INVALID_DISPLAY_NAME", "Display name is required.");
+    }
 
     participant.name = name;
     participant.updatedAt = now;
@@ -255,6 +283,8 @@ export class RoomStore {
     participant.connected = false;
     participant.updatedAt = now;
     room.updatedAt = now;
+
+    this.scheduleOfflineCleanup(room);
 
     return this.buildSnapshot(room, participant.id);
   }
@@ -289,6 +319,14 @@ export class RoomStore {
 
     if (room.phase !== "voting") {
       throw new RoomStoreError("VOTES_LOCKED", "Votes can only change while the room is voting.");
+    }
+
+    if (input.vote === null) {
+      const now = this.nowIso();
+      participant.vote = null;
+      participant.updatedAt = now;
+      room.updatedAt = now;
+      return this.buildSnapshot(room, participant.id);
     }
 
     const vote = normalizeVoteCard(input.vote);
@@ -376,12 +414,57 @@ export class RoomStore {
     for (const [roomId, room] of this.rooms) {
       const ageMs = now.getTime() - new Date(room.updatedAt).getTime();
       if (ageMs > this.roomTtlMs) {
+        this.cancelOfflineCleanup(roomId);
         this.rooms.delete(roomId);
         expired.push(roomId);
       }
     }
 
     return expired;
+  }
+
+  close(): void {
+    for (const timer of this.offlineTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.offlineTimers.clear();
+  }
+
+  private scheduleOfflineCleanup(room: RoomRecord): void {
+    if (this.offlineCleanupMs <= 0) {
+      return;
+    }
+
+    const allOffline = this.getParticipants(room).every((participant) => !participant.connected);
+    const existing = this.offlineTimers.get(room.roomId);
+
+    if (allOffline && !existing) {
+      const timer = setTimeout(() => this.handleOfflineExpiration(room.roomId), this.offlineCleanupMs);
+      if (typeof timer.unref === "function") {
+        timer.unref();
+      }
+      this.offlineTimers.set(room.roomId, timer);
+    } else if (!allOffline && existing) {
+      clearTimeout(existing);
+      this.offlineTimers.delete(room.roomId);
+    }
+  }
+
+  private cancelOfflineCleanup(roomId: string): void {
+    const existing = this.offlineTimers.get(roomId);
+    if (existing) {
+      clearTimeout(existing);
+      this.offlineTimers.delete(roomId);
+    }
+  }
+
+  private handleOfflineExpiration(roomId: string): void {
+    this.offlineTimers.delete(roomId);
+    if (!this.rooms.has(roomId)) {
+      return;
+    }
+    this.rooms.delete(roomId);
+    this.onRoomClosed?.(roomId);
   }
 
   getSnapshot(input: SnapshotInput): RoomSnapshot {
