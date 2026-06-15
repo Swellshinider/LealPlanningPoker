@@ -2,6 +2,10 @@ import { FIBONACCI_DECK, isBuiltInVoteCard, type VoteCard } from "./deck.js";
 
 export type RoomPhase = "lobby" | "voting" | "revealed" | "finalized";
 
+export const THROWABLE_REACTION_EMOJIS = ["👏", "🔥", "💯", "🍅", "👎", "💀"] as const;
+
+export type ThrowableReactionEmoji = (typeof THROWABLE_REACTION_EMOJIS)[number];
+
 export interface VoteSummaryEntry {
   card: VoteCard;
   count: number;
@@ -37,6 +41,15 @@ export interface RoomHistoryEntry {
   }>;
 }
 
+export interface RoomActiveReactionSnapshot {
+  id: string;
+  emoji: ThrowableReactionEmoji;
+  throwerParticipantId: string;
+  targetParticipantId: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
 export interface RoomSnapshot {
   roomId: string;
   hostName: string;
@@ -44,6 +57,7 @@ export interface RoomSnapshot {
   phase: RoomPhase;
   participants: RoomParticipantSnapshot[];
   history: RoomHistoryEntry[];
+  activeReactions: RoomActiveReactionSnapshot[];
   updatedAt: string;
   viewer: {
     participantId: string;
@@ -133,6 +147,10 @@ export function shouldRevealVoteForViewer(options: {
   isSelf: boolean;
 }): boolean {
   return options.isSelf || options.phase === "revealed" || options.phase === "finalized";
+}
+
+export function isThrowableReactionEmoji(value: string): value is ThrowableReactionEmoji {
+  return THROWABLE_REACTION_EMOJIS.includes(value as ThrowableReactionEmoji);
 }
 
 function compareNumericVoteStrings(left: string, right: string): number {

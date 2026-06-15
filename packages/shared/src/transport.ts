@@ -1,5 +1,5 @@
 import type { VoteCard } from "./deck.js";
-import type { RoomSnapshot } from "./room.js";
+import type { RoomSnapshot, ThrowableReactionEmoji } from "./room.js";
 
 export interface RoomErrorPayload {
   code: string;
@@ -36,6 +36,11 @@ export interface VoteRequest {
 
 export interface StoryRequest {
   story: string;
+}
+
+export interface ThrowReactionRequest {
+  targetParticipantId: string;
+  emoji: ThrowableReactionEmoji;
 }
 
 export interface RoomClosedEvent {

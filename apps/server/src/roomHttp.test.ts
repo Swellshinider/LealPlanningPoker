@@ -214,4 +214,132 @@ describe("registerRoomHttpRoutes", () => {
 
     await app.close();
   });
+
+  it("accepts reaction throws through both POST and compatibility GET routes", async () => {
+    const { app, sockets } = createApp();
+
+    const createResponse = await app.inject({
+      method: "POST",
+      payload: {
+        hostName: "Mina"
+      },
+      url: "/api/rooms"
+    });
+    const createdRoom = createResponse.json();
+
+    const joinResponse = await app.inject({
+      method: "POST",
+      payload: {
+        displayName: "Ana"
+      },
+      url: `/api/rooms/${createdRoom.roomId}/join`
+    });
+    const joined = joinResponse.json();
+
+    const postResponse = await app.inject({
+      method: "POST",
+      headers: {
+        "x-participant-token": createdRoom.participantToken
+      },
+      payload: {
+        emoji: "🔥",
+        targetParticipantId: joined.snapshot.viewer.participantId
+      },
+      url: `/api/rooms/${createdRoom.roomId}/reactions/throw`
+    });
+
+    expect(postResponse.statusCode).toBe(200);
+    expect(postResponse.json()).toMatchObject({
+      ok: true,
+      snapshot: {
+        activeReactions: [
+          {
+            emoji: "🔥",
+            targetParticipantId: joined.snapshot.viewer.participantId
+          }
+        ]
+      }
+    });
+
+    const compatResponse = await app.inject({
+      method: "GET",
+      headers: {
+        "x-participant-token": joined.participantToken
+      },
+      url: `/api/compat/rooms/${createdRoom.roomId}/reactions/throw?targetParticipantId=${createdRoom.snapshot.viewer.participantId}&emoji=%F0%9F%92%80&_ts=123`
+    });
+
+    expect(compatResponse.statusCode).toBe(200);
+    expect(compatResponse.json()).toMatchObject({
+      ok: true,
+      snapshot: {
+        activeReactions: expect.arrayContaining([
+          expect.objectContaining({
+            emoji: "💀",
+            throwerParticipantId: joined.snapshot.viewer.participantId,
+            targetParticipantId: createdRoom.snapshot.viewer.participantId
+          })
+        ])
+      }
+    });
+    expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
+
+    await app.close();
+  });
+
+  it("returns the room error envelope for invalid reaction throws", async () => {
+    const { app } = createApp();
+
+    const createResponse = await app.inject({
+      method: "POST",
+      payload: {
+        hostName: "Mina"
+      },
+      url: "/api/rooms"
+    });
+    const createdRoom = createResponse.json();
+
+    const response = await app.inject({
+      method: "POST",
+      headers: {
+        "x-participant-token": createdRoom.participantToken
+      },
+      payload: {
+        emoji: "👏",
+        targetParticipantId: createdRoom.snapshot.viewer.participantId
+      },
+      url: `/api/rooms/${createdRoom.roomId}/reactions/throw`
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      ok: false,
+      error: {
+        code: "INVALID_REACTION",
+        message: "Pick another player."
+      }
+    });
+
+    const badPayload = await app.inject({
+      method: "POST",
+      headers: {
+        "x-participant-token": createdRoom.participantToken
+      },
+      payload: {
+        targetParticipantId: createdRoom.snapshot.viewer.participantId
+      },
+      url: `/api/rooms/${createdRoom.roomId}/reactions/throw`
+    });
+
+    expect(badPayload.statusCode).toBe(400);
+    expect(badPayload.json()).toEqual({
+      ok: false,
+      error: {
+        code: "INVALID_PAYLOAD",
+        message: "Invalid emoji."
+      }
+    });
+
+    await app.close();
+  });
 });

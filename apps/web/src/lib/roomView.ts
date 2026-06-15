@@ -1,4 +1,5 @@
 import type {
+  RoomActiveReactionSnapshot,
   RoomParticipantSnapshot,
   RoomSnapshot,
   VoteResultStats,
@@ -14,6 +15,7 @@ export interface RoomParticipantView {
   id: string;
   name: string;
   isHost: boolean;
+  isSelf: boolean;
   connected: boolean;
   hasVoted: boolean;
   vote: RoomParticipantSnapshot["vote"];
@@ -35,6 +37,7 @@ export interface RoomViewModel {
   canSetStory: boolean;
   isFinalized: boolean;
   participants: RoomParticipantView[];
+  activeReactions: RoomActiveReactionSnapshot[];
   resultStats: VoteResultStats | null;
   voteSummary: VoteSummaryEntry[];
 }
@@ -67,6 +70,7 @@ export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
     canSetStory,
     isFinalized,
     participants,
+    activeReactions: snapshot.activeReactions,
     resultStats: shouldShowResults ? calculateVoteResultStats(resultVotes) : null,
     voteSummary: shouldShowResults ? summarizeVotes(resultVotes) : []
   };
@@ -88,6 +92,7 @@ function toParticipantView(
     id: participant.id,
     name: participant.name,
     isHost: participant.isHost,
+    isSelf: participant.id === snapshot.viewer.participantId,
     connected: participant.connected,
     hasVoted: participant.hasVoted,
     vote: participant.vote,

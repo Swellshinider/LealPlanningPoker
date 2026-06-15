@@ -8,6 +8,7 @@ import type {
   RoomEventEnvelope,
   RoomSnapshot,
   StoryRequest,
+  ThrowReactionRequest,
   VoteRequest
 } from "@lealplanningpoker/shared";
 
@@ -104,6 +105,27 @@ export async function submitVote(roomId: string, participantToken: string, paylo
     body: payload,
     compatQuery: {
       vote: payload.vote ?? undefined
+    },
+    headers: {
+      "x-participant-token": participantToken
+    }
+  });
+}
+
+export async function throwReaction(
+  roomId: string,
+  participantToken: string,
+  payload: ThrowReactionRequest
+): Promise<{
+  snapshot: RoomSnapshot;
+}> {
+  return requestWithCompat({
+    path: `/api/rooms/${encodeURIComponent(roomId)}/reactions/throw`,
+    compatPath: `/api/compat/rooms/${encodeURIComponent(roomId)}/reactions/throw`,
+    body: payload,
+    compatQuery: {
+      targetParticipantId: payload.targetParticipantId,
+      emoji: payload.emoji
     },
     headers: {
       "x-participant-token": participantToken

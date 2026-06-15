@@ -7,6 +7,16 @@ const votingSnapshot: RoomSnapshot = {
   hostName: "Mina",
   story: "Improve onboarding",
   phase: "voting",
+  activeReactions: [
+    {
+      id: "REACTION_1",
+      emoji: "👏",
+      throwerParticipantId: "HOST_PARTICIPANT",
+      targetParticipantId: "ANA_PARTICIPANT",
+      createdAt: "2026-06-11T12:00:00.000Z",
+      expiresAt: "2026-06-11T12:00:04.000Z"
+    }
+  ],
   updatedAt: "2026-06-11T12:00:00.000Z",
   viewer: {
     participantId: "ANA_PARTICIPANT",
@@ -58,6 +68,7 @@ describe("buildRoomViewModel", () => {
     expect(model.canReset).toBe(false);
     expect(model.canSetStory).toBe(false);
     expect(model.resultStats).toBeNull();
+    expect(model.activeReactions).toBe(votingSnapshot.activeReactions);
     expect(model.participants[0].visibleVote).toBeNull();
     expect(model.participants[1].visibleVote).toBe("3");
     expect(model.participants[0].tableVote).toBeNull();
@@ -83,6 +94,7 @@ describe("buildRoomViewModel", () => {
       numericVoteCount: 2,
       unknownVoteCount: 0
     });
+    expect(model.activeReactions).toBe(votingSnapshot.activeReactions);
     expect(model.participants.every((participant) => participant.visibleVote !== null)).toBe(true);
     expect(model.participants.map((participant) => participant.tableVote)).toEqual(["8", "3"]);
   });

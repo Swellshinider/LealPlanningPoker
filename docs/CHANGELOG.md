@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Export voting history to CSV directly from the archive panel. The file uses a
   long format (one row per participant per finalized round) and includes a
   UTF-8 BOM so spreadsheet apps decode special vote labels (`☕`, `?`) correctly.
+- Players can throw one of six live emoji reactions at another connected
+  participant. The emoji arcs from the thrower to the target, lingers briefly
+  above the target's head, and disappears after a few seconds without being
+  saved to room history.
 
 ### Changed
 

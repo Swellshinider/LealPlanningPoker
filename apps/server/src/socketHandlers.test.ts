@@ -170,4 +170,98 @@ describe("registerSocketHandlers", () => {
       }
     });
   });
+
+  it("acknowledges successful reaction throws with the updated snapshot", () => {
+    const socket = createFakeSocket();
+    const { io, connect } = createFakeIo(socket);
+    const store = createStore();
+    registerSocketHandlers(io as never, store);
+    connect();
+
+    const createAck = vi.fn();
+    socket.handlers.get("room:create")?.({ hostName: "Mina" }, createAck);
+    const created = createAck.mock.calls[0]?.[0];
+
+    const joinAck = vi.fn();
+    socket.handlers.get("room:join")?.(
+      {
+        roomId: created.roomId,
+        displayName: "Ana"
+      },
+      joinAck
+    );
+    const joined = joinAck.mock.calls[0]?.[0];
+
+    const throwAck = vi.fn();
+    socket.handlers.get("reaction:throw")?.(
+      {
+        roomId: created.roomId,
+        participantToken: created.participantToken,
+        emoji: "💯",
+        targetParticipantId: joined.snapshot.viewer.participantId
+      },
+      throwAck
+    );
+
+    expect(throwAck).toHaveBeenCalledWith({
+      ok: true,
+      snapshot: expect.objectContaining({
+        activeReactions: [
+          expect.objectContaining({
+            emoji: "💯",
+            targetParticipantId: joined.snapshot.viewer.participantId
+          })
+        ]
+      })
+    });
+  });
+
+  it("returns payload and domain errors for invalid reaction throws", () => {
+    const socket = createFakeSocket();
+    const { io, connect } = createFakeIo(socket);
+    const store = createStore();
+    registerSocketHandlers(io as never, store);
+    connect();
+
+    const createAck = vi.fn();
+    socket.handlers.get("room:create")?.({ hostName: "Mina" }, createAck);
+    const created = createAck.mock.calls[0]?.[0];
+
+    const malformedAck = vi.fn();
+    socket.handlers.get("reaction:throw")?.(
+      {
+        roomId: created.roomId,
+        participantToken: created.participantToken,
+        targetParticipantId: created.snapshot.viewer.participantId
+      },
+      malformedAck
+    );
+
+    expect(malformedAck).toHaveBeenCalledWith({
+      ok: false,
+      error: {
+        code: "INVALID_PAYLOAD",
+        message: "Invalid emoji."
+      }
+    });
+
+    const domainAck = vi.fn();
+    socket.handlers.get("reaction:throw")?.(
+      {
+        roomId: created.roomId,
+        participantToken: created.participantToken,
+        emoji: "👏",
+        targetParticipantId: created.snapshot.viewer.participantId
+      },
+      domainAck
+    );
+
+    expect(domainAck).toHaveBeenCalledWith({
+      ok: false,
+      error: {
+        code: "INVALID_REACTION",
+        message: "Pick another player."
+      }
+    });
+  });
 });

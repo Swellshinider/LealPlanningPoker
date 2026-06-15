@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  THROWABLE_REACTION_EMOJIS,
   calculateVoteResultStats,
+  isThrowableReactionEmoji,
   normalizeDisplayName,
   shouldRevealVoteForViewer,
   summarizeVotes
@@ -85,5 +87,20 @@ describe("shouldRevealVoteForViewer", () => {
     expect(shouldRevealVoteForViewer({ phase: "voting", isSelf: false })).toBe(false);
     expect(shouldRevealVoteForViewer({ phase: "revealed", isSelf: false })).toBe(true);
     expect(shouldRevealVoteForViewer({ phase: "finalized", isSelf: false })).toBe(true);
+  });
+});
+
+describe("throwable reactions", () => {
+  it("exports the fixed emoji set in order", () => {
+    expect(THROWABLE_REACTION_EMOJIS).toEqual(["👏", "🔥", "💯", "🍅", "👎", "💀"]);
+  });
+
+  it("recognizes supported reaction emojis", () => {
+    for (const emoji of THROWABLE_REACTION_EMOJIS) {
+      expect(isThrowableReactionEmoji(emoji)).toBe(true);
+    }
+
+    expect(isThrowableReactionEmoji("🙂")).toBe(false);
+    expect(isThrowableReactionEmoji("")).toBe(false);
   });
 });
