@@ -23,6 +23,8 @@ import { QrCodeModal } from "./QrCodeModal";
 import { ThemeToggleButton } from "./ThemeToggleButton";
 import { VoteCard } from "./VoteCard";
 
+const REACTION_POPOVER_CLOSE_DELAY_MS = 140;
+
 export interface RoomBoardProps {
   viewModel: RoomViewModel;
   history: RoomHistoryEntry[];
@@ -205,6 +207,8 @@ function PlayerSeat({
               hidden={!isReactionPopoverOpen}
               role="menu"
               aria-label={`Reaction choices for ${participant.name}`}
+              onMouseEnter={onOpenReactionPopover}
+              onMouseLeave={onCloseReactionPopover}
             >
               {THROWABLE_REACTION_EMOJIS.map((emoji) => (
                 <button
@@ -277,6 +281,7 @@ export function RoomBoard({
   const [activeReactionTargetId, setActiveReactionTargetId] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const reactionCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const headElementsRef = useRef(new Map<string, HTMLElement>());
   const seatElementsRef = useRef(new Map<string, HTMLElement>());
   const normalizedCustomVote = useMemo(() => normalizeVoteCard(customVoteDraft), [customVoteDraft]);
@@ -304,6 +309,13 @@ export function RoomBoard({
     };
   }, [visibleReactions.length, viewModel.activeReactions]);
 
+  useEffect(
+    () => () => {
+      clearReactionCloseTimer();
+    },
+    []
+  );
+
   useEffect(() => {
     if (!activeReactionTargetId) {
       return;
@@ -313,7 +325,7 @@ export function RoomBoard({
       (participant) => participant.id === activeReactionTargetId
     );
     if (!targetStillVisible) {
-      setActiveReactionTargetId(null);
+      dismissReactionPopover();
     }
   }, [activeReactionTargetId, reactionTargets]);
 
@@ -325,12 +337,12 @@ export function RoomBoard({
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Element) || !target.closest("[data-reaction-region='true']")) {
-        setActiveReactionTargetId(null);
+        dismissReactionPopover();
       }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setActiveReactionTargetId(null);
+        dismissReactionPopover();
       }
     };
 
@@ -349,6 +361,33 @@ export function RoomBoard({
     }
 
     onVote(customVote);
+  }
+
+  function clearReactionCloseTimer() {
+    if (reactionCloseTimerRef.current) {
+      clearTimeout(reactionCloseTimerRef.current);
+      reactionCloseTimerRef.current = null;
+    }
+  }
+
+  function openReactionPopoverFor(targetParticipantId: string) {
+    clearReactionCloseTimer();
+    setActiveReactionTargetId(targetParticipantId);
+  }
+
+  function scheduleReactionPopoverClose(targetParticipantId: string) {
+    clearReactionCloseTimer();
+    reactionCloseTimerRef.current = setTimeout(() => {
+      reactionCloseTimerRef.current = null;
+      setActiveReactionTargetId((current) =>
+        current === targetParticipantId ? null : current
+      );
+    }, REACTION_POPOVER_CLOSE_DELAY_MS);
+  }
+
+  function dismissReactionPopover() {
+    clearReactionCloseTimer();
+    setActiveReactionTargetId(null);
   }
 
   function registerSeatElement(participantId: string, element: HTMLElement | null) {
@@ -548,13 +587,14 @@ export function RoomBoard({
                     registerHeadElement={registerHeadElement}
                     registerSeatElement={registerSeatElement}
                     variant="ring"
-                    onCloseReactionPopover={() => setActiveReactionTargetId(null)}
-                    onOpenReactionPopover={() => setActiveReactionTargetId(participant.id)}
+                    onCloseReactionPopover={() => scheduleReactionPopoverClose(participant.id)}
+                    onOpenReactionPopover={() => openReactionPopoverFor(participant.id)}
                     onThrowReaction={(emoji) => {
-                      setActiveReactionTargetId(null);
+                      dismissReactionPopover();
                       onThrowReaction(participant.id, emoji);
                     }}
                     onToggleReactionPopover={() => {
+                      clearReactionCloseTimer();
                       setActiveReactionTargetId((current) =>
                         current === participant.id ? null : participant.id
                       );
@@ -581,13 +621,14 @@ export function RoomBoard({
                       registerHeadElement={registerHeadElement}
                       registerSeatElement={registerSeatElement}
                       variant="bench"
-                      onCloseReactionPopover={() => setActiveReactionTargetId(null)}
-                      onOpenReactionPopover={() => setActiveReactionTargetId(participant.id)}
+                      onCloseReactionPopover={() => scheduleReactionPopoverClose(participant.id)}
+                      onOpenReactionPopover={() => openReactionPopoverFor(participant.id)}
                       onThrowReaction={(emoji) => {
-                        setActiveReactionTargetId(null);
+                        dismissReactionPopover();
                         onThrowReaction(participant.id, emoji);
                       }}
                       onToggleReactionPopover={() => {
+                        clearReactionCloseTimer();
                         setActiveReactionTargetId((current) =>
                           current === participant.id ? null : participant.id
                         );
