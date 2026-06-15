@@ -26,18 +26,22 @@ export class RoomSocketError extends Error {
   }
 }
 
-function getDevSocketServerUrl(): string | undefined {
-  if (!import.meta.env.DEV || typeof window === "undefined") {
+function getSocketServerUrl(): string | undefined {
+  if (typeof window === "undefined") {
     return undefined;
   }
 
-  return `${window.location.protocol}//${window.location.hostname}:3000`;
+  if (import.meta.env.DEV) {
+    return `${window.location.protocol}//${window.location.hostname}:3000`;
+  }
+
+  return window.location.origin;
 }
 
 export function createRoomSocket(): Socket {
-  const devSocketServerUrl = getDevSocketServerUrl();
+  const socketServerUrl = getSocketServerUrl();
 
-  return io(devSocketServerUrl, {
+  return io(socketServerUrl, {
     autoConnect: false,
     path: "/socket.io",
     transports: ["polling", "websocket"],
