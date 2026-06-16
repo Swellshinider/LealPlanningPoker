@@ -4,7 +4,7 @@ Thanks for your interest in contributing! This document covers setup, convention
 
 ## Quick start
 
-**Prerequisites:** [Node.js](https://nodejs.org/) >= 22, [pnpm](https://pnpm.io/) >= 11
+**Prerequisites:** [Node.js](https://nodejs.org/) >= 22, [pnpm](https://pnpm.io/) >= 10
 
 ```bash
 git clone https://github.com/Swellshinider/LealPlanningPoker.git

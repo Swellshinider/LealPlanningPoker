@@ -35,7 +35,7 @@ Self-hosted planning poker for agile teams. Create a room, share the link, vote,
 
 ## Quick start
 
-**Prerequisites:** [Node.js](https://nodejs.org/) >= 22, [pnpm](https://pnpm.io/) >= 11
+**Prerequisites:** [Node.js](https://nodejs.org/) >= 22, [pnpm](https://pnpm.io/) >= 10
 
 ```bash
 git clone https://github.com/Swellshinider/LealPlanningPoker.git
