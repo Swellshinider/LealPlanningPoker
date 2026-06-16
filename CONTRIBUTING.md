@@ -17,7 +17,7 @@ Open <http://localhost:5173> in your browser. The dev server proxies API request
 
 ## Common scripts
 
-| Script              | Description                       |
+| Command or file     | Description                       |
 | ------------------- | --------------------------------- |
 | `pnpm dev`          | Start dev servers (web + backend) |
 | `pnpm build`        | Production build                  |
@@ -27,12 +27,12 @@ Open <http://localhost:5173> in your browser. The dev server proxies API request
 | `pnpm lint:fix`     | Auto-fix lint issues              |
 | `pnpm format`       | Format the repo with Prettier     |
 | `pnpm format:check` | Verify formatting without writing |
-| `pnpm changeset`    | Add a changeset (see below)       |
+| `docs/CHANGELOG.md` | Record user-facing release notes  |
 
 ## Branch model
 
 - **`main`** is the active development branch. Pull requests target `main`.
-- **`release/**`** branches are cut from `main`when it's time to ship a version. Each release branch corresponds to one published version (e.g.`release/release-1-0-0`). Pushing to a `release/\*\*` branch triggers the release workflow.
+- **`release/**`** branches are cut from `main`when it's time to ship a version. Each release branch corresponds to one published version (for example,`release/release-1-0-0`). Pushing to a `release/\*\*` branch triggers the release workflow.
 - Use descriptive feature/fix branch names:
   - `feature/<short-description>`
   - `fix/<short-description>`
@@ -53,37 +53,35 @@ pnpm build
 
 CI runs the same gates on every PR. A failing gate blocks merge.
 
-## Changesets
+## Changelog
 
-This repo uses [Changesets](https://github.com/changesets/changesets) to manage releases and the changelog.
+For any user-facing change, update [`docs/CHANGELOG.md`](docs/CHANGELOG.md) in the
+same pull request. Follow the existing Keep a Changelog structure:
 
-For any user-facing change (bug fix, feature, breaking change):
-
-```bash
-pnpm changeset
-```
-
-Answer the prompts:
-
-1. Select the affected package(s). For app-level changes that aren't published, select `lealplanningpoker` (the root) or skip if it doesn't affect a release.
-2. Choose bump type: `patch` (bug fix), `minor` (new feature, backwards-compatible), `major` (breaking change).
-3. Write a short summary -- this becomes the changelog entry.
-
-Commit the generated `.changeset/*.md` file alongside your code changes.
+- Add unreleased work under `## [Unreleased]` while the change is still on `main`.
+- Move those notes into the versioned `## [X.Y.Z] - YYYY-MM-DD` section when you
+  cut a release.
+- Keep entries focused on externally visible behavior: features, fixes,
+  workflow changes, or breaking changes.
 
 ### Cutting a release (maintainers)
 
-1. Wait for changesets to accumulate on `main`.
-2. Run `pnpm version-packages` locally to bump versions and refresh `docs/CHANGELOG.md`. Review the diff.
-3. Manually sync any non-published packages (root, `apps/server`, `apps/web`) to match the target version if needed.
-4. Commit the version bump as `chore(release): vX.Y.Z`.
-5. Create a release branch off that commit:
+1. Update the `version` field in the root `package.json` and in each workspace
+   package that ships with the release (`apps/server`, `apps/web`,
+   `packages/shared`).
+2. Move the release notes from `## [Unreleased]` into a dated
+   `## [X.Y.Z] - YYYY-MM-DD` section in `docs/CHANGELOG.md`. Review the diff.
+3. Commit the version and changelog update as `chore(release): vX.Y.Z`.
+4. Create a release branch off that commit:
    ```bash
    git checkout -b release/release-X-Y-Z
    git push origin release/release-X-Y-Z
    ```
-6. Pushing the `release/**` branch triggers `.github/workflows/release.yml`, which reads `version` from `package.json`, extracts the matching section from `docs/CHANGELOG.md`, and creates the `vX.Y.Z` GitHub Release and git tag.
-7. Merge the release branch back to `main` (or cherry-pick the version commit) so `main` stays in sync.
+5. Pushing the `release/**` branch triggers `.github/workflows/release.yml`,
+   which reads `version` from `package.json`, extracts the matching section from
+   `docs/CHANGELOG.md`, and creates the `vX.Y.Z` GitHub Release and git tag.
+6. Merge the release branch back to `main` (or cherry-pick the version commit)
+   so `main` stays in sync.
 
 ## Commit messages
 

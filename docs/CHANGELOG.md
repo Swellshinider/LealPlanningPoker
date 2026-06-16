@@ -24,7 +24,9 @@ _Initial public release._
 - Added GitHub Actions pipelines: `ci.yml` (lint -> typecheck -> build -> test
   with per-stage gating so a failed stage skips downstream jobs), `codeql.yml`
   for security scanning, and `release.yml` for tag-driven releases.
-- Added Changesets for release and changelog management.
+- Added a docs-first release workflow with `docs/CHANGELOG.md` as the
+  authoritative source for release notes consumed by the GitHub release
+  workflow.
 - Rooms now auto-delete 30 minutes after all participants go offline, freeing
   memory and notifying any lingering clients. The delay is configurable via
   `RoomStoreOptions.offlineCleanupMs` and can be disabled by setting it to `0`.

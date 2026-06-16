@@ -78,10 +78,11 @@ pnpm test         # Run the test suite once
 pnpm typecheck    # Type-check all workspaces
 pnpm lint         # Lint with ESLint
 pnpm format       # Format with Prettier
-pnpm changeset    # Add a changeset (see CONTRIBUTING.md)
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contributor workflow.
+For user-facing changes, update [docs/CHANGELOG.md](docs/CHANGELOG.md) in the
+same pull request.
 
 ## Production
 
