@@ -28,8 +28,6 @@ describe("shouldRestoreStoredSessionTokens", () => {
 
   it("does not restore a stored token on the help page", () => {
     expect(shouldRestoreStoredSessionTokens("/help", "", "ROOM01", "TOKEN01")).toBe(false);
-    expect(shouldRestoreStoredSessionTokens("/help", "ROOM01", "ROOM01", "TOKEN01")).toBe(
-      false,
-    );
+    expect(shouldRestoreStoredSessionTokens("/help", "ROOM01", "ROOM01", "TOKEN01")).toBe(false);
   });
 });
