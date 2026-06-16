@@ -4,7 +4,7 @@
 [![CodeQL](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)]()
-[![Node](https://img.shields.io/badge/Node-%3E%3D20-green.svg)]()
+[![Node](https://img.shields.io/badge/Node-%3E%3D22-green.svg)]()
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 Self-hosted planning poker for agile teams. Create a room, share the link, vote, reveal together, and archive the result -- no accounts required.
@@ -35,7 +35,7 @@ Self-hosted planning poker for agile teams. Create a room, share the link, vote,
 
 ## Quick start
 
-**Prerequisites:** [Node.js](https://nodejs.org/) >= 20, [pnpm](https://pnpm.io/) >= 9
+**Prerequisites:** [Node.js](https://nodejs.org/) >= 22, [pnpm](https://pnpm.io/) >= 11
 
 ```bash
 git clone https://github.com/Swellshinider/LealPlanningPoker.git
