@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Preparing for v1.0.0 release.
+- Releases are now published by pushing version tags in the `vX.Y.Z` format.
+  The release workflow validates the tag against `package.json`, reads release
+  notes from `docs/CHANGELOG.md`, and no longer depends on `release/**`
+  branches.
 
 ## [Unreleased] - 2026-06-15
 

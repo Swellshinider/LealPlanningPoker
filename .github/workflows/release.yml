@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    branches:
-      - "release/**"
+    tags:
+      - "v*.*.*"
 
 permissions:
   contents: write
@@ -40,6 +40,11 @@ jobs:
         run: |
           version=$(jq -r '.version' package.json)
           tag="v${version}"
+          pushed_tag="${GITHUB_REF_NAME}"
+          if [ "$pushed_tag" != "$tag" ]; then
+            echo "::error::Pushed tag ${pushed_tag} does not match package.json version tag ${tag}"
+            exit 1
+          fi
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
           echo "Resolved version ${version} -> tag ${tag}"

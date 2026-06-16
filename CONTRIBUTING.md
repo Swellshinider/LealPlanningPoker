@@ -32,7 +32,8 @@ Open <http://localhost:5173> in your browser. The dev server proxies API request
 ## Branch model
 
 - **`main`** is the active development branch. Pull requests target `main`.
-- **`release/**`** branches are cut from `main`when it's time to ship a version. Each release branch corresponds to one published version (for example,`release/release-1-0-0`). Pushing to a `release/\*\*` branch triggers the release workflow.
+- **`vX.Y.Z`** tags are pushed when it's time to ship a version. Pushing a
+  version tag triggers the release workflow.
 - Use descriptive feature/fix branch names:
   - `feature/<short-description>`
   - `fix/<short-description>`
@@ -72,16 +73,17 @@ same pull request. Follow the existing Keep a Changelog structure:
 2. Move the release notes from `## [Unreleased]` into a dated
    `## [X.Y.Z] - YYYY-MM-DD` section in `docs/CHANGELOG.md`. Review the diff.
 3. Commit the version and changelog update as `chore(release): vX.Y.Z`.
-4. Create a release branch off that commit:
+4. Create and push the matching version tag from that commit:
    ```bash
-   git checkout -b release/release-X-Y-Z
-   git push origin release/release-X-Y-Z
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
    ```
-5. Pushing the `release/**` branch triggers `.github/workflows/release.yml`,
-   which reads `version` from `package.json`, extracts the matching section from
-   `docs/CHANGELOG.md`, and creates the `vX.Y.Z` GitHub Release and git tag.
-6. Merge the release branch back to `main` (or cherry-pick the version commit)
-   so `main` stays in sync.
+5. Pushing the `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which
+   verifies that the pushed tag matches the root `package.json` version,
+   extracts the matching section from `docs/CHANGELOG.md`, and creates or
+   updates the `vX.Y.Z` GitHub Release.
+6. Push the release commit to `main` if it is not already there so the version
+   bump and changelog stay in sync with the default branch.
 
 ## Commit messages
 
