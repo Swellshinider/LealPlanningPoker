@@ -1,0 +1,28 @@
+# Auto-detect text files and normalize line endings to LF on checkout
+* text=auto eol=lf
+
+# Windows-specific scripts keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.gz binary
+
+# Generated files should never be diffed
+pnpm-lock.yaml linguist-generated=true -diff
+**/dist/** linguist-generated=true -diff
+**/coverage/** linguist-generated=true -diff
+**/*.tsbuildinfo linguist-generated=true -diff
