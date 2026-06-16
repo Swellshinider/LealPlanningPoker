@@ -11,7 +11,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@fastify/static": "^7.0.4",
+    "@fastify/static": "^9.1.3",
     "@lealplanningpoker/shared": "workspace:*",
     "fastify": "^4.28.1",
     "socket.io": "^4.7.5"
