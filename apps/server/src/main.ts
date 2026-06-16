@@ -28,7 +28,7 @@ const DEVELOPMENT_SOCKET_ORIGINS = [
   /^http:\/\/\[::1\](?::\d+)?$/,
   /^http:\/\/10\.\d+\.\d+\.\d+(?::\d+)?$/,
   /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(?::\d+)?$/,
-  /^http:\/\/192\.168\.\d+\.\d+(?::\d+)?$/
+  /^http:\/\/192\.168\.\d+\.\d+(?::\d+)?$/,
 ];
 
 function shouldAllowDevelopmentSocketOrigins(): boolean {
@@ -37,7 +37,9 @@ function shouldAllowDevelopmentSocketOrigins(): boolean {
   return process.env.NODE_ENV === "development" || runtimeArgs.includes("--conditions=development");
 }
 
-export async function createServerRuntime(options: ServerRuntimeOptions = {}): Promise<ServerRuntime> {
+export async function createServerRuntime(
+  options: ServerRuntimeOptions = {},
+): Promise<ServerRuntime> {
   const staticRoot =
     options.staticRoot ?? resolve(fileURLToPath(new URL("../../web/dist", import.meta.url)));
   let broadcastOfflineClosed: (roomId: string) => void = () => {
@@ -46,25 +48,25 @@ export async function createServerRuntime(options: ServerRuntimeOptions = {}): P
   const store =
     options.store ??
     new RoomStore({
-      onRoomClosed: (roomId) => broadcastOfflineClosed(roomId)
+      onRoomClosed: (roomId) => broadcastOfflineClosed(roomId),
     });
   const app = buildHttpApp({
     logger: options.logger,
-    staticRoot
+    staticRoot,
   });
   const socketOptions: Partial<ServerOptions> = {
-    path: "/socket.io"
+    path: "/socket.io",
   };
 
   if (shouldAllowDevelopmentSocketOrigins()) {
     socketOptions.cors = {
-      origin: DEVELOPMENT_SOCKET_ORIGINS
+      origin: DEVELOPMENT_SOCKET_ORIGINS,
     };
   }
 
   const io = new Server(app.server, socketOptions);
   const realtimeHub = new RoomRealtimeHub({
-    store
+    store,
   });
   const socketHandlers = registerSocketHandlers(io, store, {
     onRoomChanged: (roomId) => {
@@ -72,12 +74,12 @@ export async function createServerRuntime(options: ServerRuntimeOptions = {}): P
     },
     onRoomClosed: (roomId, error) => {
       realtimeHub.notifyRoomClosed(roomId, error);
-    }
+    },
   });
   broadcastOfflineClosed = (roomId) => {
     socketHandlers.notifyRoomClosed(roomId, {
       code: "ROOM_NOT_FOUND",
-      message: `Room ${roomId} closed after all participants left.`
+      message: `Room ${roomId} closed after all participants left.`,
     });
   };
   realtimeHub.setOnRoomChanged((roomId) => {
@@ -87,17 +89,20 @@ export async function createServerRuntime(options: ServerRuntimeOptions = {}): P
     app,
     store,
     hub: realtimeHub,
-    sockets: socketHandlers
+    sockets: socketHandlers,
   });
-  const expiryInterval = setInterval(() => {
-    const expiredRoomIds = store.expireRooms();
-    for (const roomId of expiredRoomIds) {
-      socketHandlers.notifyRoomClosed(roomId, {
-        code: "ROOM_NOT_FOUND",
-        message: `Room ${roomId} expired.`
-      });
-    }
-  }, Math.min(store.roomTtlMs, 60_000));
+  const expiryInterval = setInterval(
+    () => {
+      const expiredRoomIds = store.expireRooms();
+      for (const roomId of expiredRoomIds) {
+        socketHandlers.notifyRoomClosed(roomId, {
+          code: "ROOM_NOT_FOUND",
+          message: `Room ${roomId} expired.`,
+        });
+      }
+    },
+    Math.min(store.roomTtlMs, 60_000),
+  );
 
   if (typeof expiryInterval.unref === "function") {
     expiryInterval.unref();
@@ -112,7 +117,7 @@ export async function createServerRuntime(options: ServerRuntimeOptions = {}): P
       store.close();
       io.close();
       await app.close();
-    }
+    },
   };
 }
 
@@ -123,7 +128,7 @@ export async function startServer(options: ServerRuntimeOptions = {}): Promise<S
 
   await runtime.app.listen({
     port,
-    host
+    host,
   });
 
   if (options.logger ?? true) {

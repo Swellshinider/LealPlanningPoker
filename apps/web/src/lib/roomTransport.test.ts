@@ -20,21 +20,21 @@ describe("throwReaction", () => {
         JSON.stringify({
           ok: true,
           snapshot: {
-            roomId: "ROOM01"
-          }
+            roomId: "ROOM01",
+          },
         }),
         {
           headers: {
-            "content-type": "application/json"
+            "content-type": "application/json",
           },
-          status: 200
-        }
-      )
+          status: 200,
+        },
+      ),
     );
 
     await throwReaction("ROOM01", "PARTICIPANT_TOKEN", {
       emoji: "🔥",
-      targetParticipantId: "TARGET_1"
+      targetParticipantId: "TARGET_1",
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -43,14 +43,14 @@ describe("throwReaction", () => {
       expect.objectContaining({
         body: JSON.stringify({
           emoji: "🔥",
-          targetParticipantId: "TARGET_1"
+          targetParticipantId: "TARGET_1",
         }),
         headers: expect.objectContaining({
           "content-type": "application/json",
-          "x-participant-token": "PARTICIPANT_TOKEN"
+          "x-participant-token": "PARTICIPANT_TOKEN",
         }),
-        method: "POST"
-      })
+        method: "POST",
+      }),
     );
   });
 
@@ -59,44 +59,44 @@ describe("throwReaction", () => {
       .mockResolvedValueOnce(
         new Response("<!doctype html>", {
           headers: {
-            "content-type": "text/html"
+            "content-type": "text/html",
           },
-          status: 200
-        })
+          status: 200,
+        }),
       )
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
             ok: true,
             snapshot: {
-              roomId: "ROOM01"
-            }
+              roomId: "ROOM01",
+            },
           }),
           {
             headers: {
-              "content-type": "application/json"
+              "content-type": "application/json",
             },
-            status: 200
-          }
-        )
+            status: 200,
+          },
+        ),
       );
 
     await throwReaction("ROOM01", "PARTICIPANT_TOKEN", {
       emoji: "💯",
-      targetParticipantId: "TARGET_2"
+      targetParticipantId: "TARGET_2",
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1]?.[0]).toBe(
-      "http://localhost/api/compat/rooms/ROOM01/reactions/throw?_ts=1717171717000&targetParticipantId=TARGET_2&emoji=%F0%9F%92%AF"
+      "http://localhost/api/compat/rooms/ROOM01/reactions/throw?_ts=1717171717000&targetParticipantId=TARGET_2&emoji=%F0%9F%92%AF",
     );
     expect(fetchMock.mock.calls[1]?.[1]).toEqual(
       expect.objectContaining({
         headers: {
-          "x-participant-token": "PARTICIPANT_TOKEN"
+          "x-participant-token": "PARTICIPANT_TOKEN",
         },
-        method: "GET"
-      })
+        method: "GET",
+      }),
     );
   });
 });

@@ -1,11 +1,12 @@
 {
   "name": "@lealplanningpoker/server",
   "private": true,
+  "version": "1.0.0",
   "type": "module",
   "main": "./dist/main.js",
   "scripts": {
     "dev": "tsx watch --conditions=development src/main.ts",
-    "build": "tsup src/main.ts --format esm --platform node --target node20 --out-dir dist --clean --sourcemap",
+    "build": "tsup src/main.ts --format esm --platform node --target node22 --out-dir dist --clean --sourcemap",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

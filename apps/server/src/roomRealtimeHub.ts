@@ -1,5 +1,9 @@
 import type { FastifyReply } from "fastify";
-import type { RoomClosedEvent, RoomErrorPayload, RoomEventEnvelope } from "@lealplanningpoker/shared";
+import type {
+  RoomClosedEvent,
+  RoomErrorPayload,
+  RoomEventEnvelope,
+} from "@lealplanningpoker/shared";
 import { RoomStore, RoomStoreError } from "./roomStore";
 
 const DISCONNECT_GRACE_MS = 30_000;
@@ -50,13 +54,13 @@ export class RoomRealtimeHub {
     const initialSnapshot = this.store.syncRoom({ roomId, participantToken });
     const revived = this.touchPresence(roomId, participantToken, {
       connected: true,
-      holdOpen: true
+      holdOpen: true,
     });
     const subscriber = this.registerSubscriber(reply, roomId, participantToken);
 
     this.sendEvent(subscriber.reply, {
       type: "snapshot",
-      snapshot: initialSnapshot
+      snapshot: initialSnapshot,
     });
 
     if (revived) {
@@ -66,14 +70,16 @@ export class RoomRealtimeHub {
   }
 
   refreshPresence(roomId: string, participantToken: string): void {
-    const current = this.presenceByParticipantKey.get(this.toParticipantKey(roomId, participantToken));
+    const current = this.presenceByParticipantKey.get(
+      this.toParticipantKey(roomId, participantToken),
+    );
     if (!current?.connected) {
       this.store.syncRoom({ roomId, participantToken });
     }
 
     const revived = this.touchPresence(roomId, participantToken, {
       connected: true,
-      holdOpen: false
+      holdOpen: false,
     });
 
     if (revived) {
@@ -102,11 +108,11 @@ export class RoomRealtimeHub {
       try {
         const snapshot = this.store.getSnapshot({
           roomId,
-          participantToken: subscriber.participantToken
+          participantToken: subscriber.participantToken,
         });
         this.sendEvent(subscriber.reply, {
           type: "snapshot",
-          snapshot
+          snapshot,
         });
       } catch (error) {
         if (isRoomNotFound(error)) {
@@ -116,7 +122,7 @@ export class RoomRealtimeHub {
 
         this.sendEvent(subscriber.reply, {
           type: "error",
-          error: toRoomError(error)
+          error: toRoomError(error),
         });
       }
     }
@@ -137,7 +143,7 @@ export class RoomRealtimeHub {
 
       this.sendEvent(subscriber.reply, {
         type: "closed",
-        ...payload
+        ...payload,
       });
       this.unregisterSubscriber(subscriberId);
     }
@@ -167,7 +173,11 @@ export class RoomRealtimeHub {
     this.presenceByParticipantKey.clear();
   }
 
-  private registerSubscriber(reply: FastifyReply, roomId: string, participantToken: string): RoomSubscriber {
+  private registerSubscriber(
+    reply: FastifyReply,
+    roomId: string,
+    participantToken: string,
+  ): RoomSubscriber {
     const subscriberId = `sse-${(this.nextSubscriberId += 1).toString().padStart(6, "0")}`;
     const keepaliveTimer = setInterval(() => {
       this.writeChunk(reply, ": keepalive\n\n");
@@ -189,7 +199,7 @@ export class RoomRealtimeHub {
       roomId,
       participantToken,
       reply,
-      keepaliveTimer
+      keepaliveTimer,
     };
 
     this.subscriberById.set(subscriberId, subscriber);
@@ -222,7 +232,7 @@ export class RoomRealtimeHub {
     this.touchPresence(subscriber.roomId, subscriber.participantToken, {
       connected: true,
       holdOpen: false,
-      releaseStream: true
+      releaseStream: true,
     });
 
     if (!subscriber.reply.raw.writableEnded) {
@@ -237,13 +247,13 @@ export class RoomRealtimeHub {
       connected: boolean;
       holdOpen: boolean;
       releaseStream?: boolean;
-    }
+    },
   ): boolean {
     const key = this.toParticipantKey(roomId, participantToken);
     const current = this.presenceByParticipantKey.get(key) ?? {
       activeStreamCount: 0,
       connected: false,
-      disconnectTimer: null
+      disconnectTimer: null,
     };
     const wasConnected = current.connected;
 
@@ -287,7 +297,7 @@ export class RoomRealtimeHub {
     try {
       this.store.leaveRoom({
         roomId,
-        participantToken
+        participantToken,
       });
       this.publishRoom(roomId);
       this.onRoomChanged?.(roomId);
@@ -325,12 +335,12 @@ function toRoomError(error: unknown): RoomErrorPayload {
   if (error instanceof RoomStoreError) {
     return {
       code: error.code,
-      message: error.message
+      message: error.message,
     };
   }
 
   return {
     code: "UNKNOWN_ERROR",
-    message: "Unexpected server error."
+    message: "Unexpected server error.",
   };
 }

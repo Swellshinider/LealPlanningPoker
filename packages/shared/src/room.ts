@@ -71,7 +71,7 @@ export function normalizeDisplayName(value: string): string {
 }
 
 export function summarizeVotes(
-  votes: readonly (VoteCard | null | undefined)[]
+  votes: readonly (VoteCard | null | undefined)[],
 ): VoteSummaryEntry[] {
   const counts = new Map<VoteCard, number>();
 
@@ -97,7 +97,7 @@ export function summarizeVotes(
 }
 
 export function calculateVoteResultStats(
-  votes: readonly (VoteCard | null | undefined)[]
+  votes: readonly (VoteCard | null | undefined)[],
 ): VoteResultStats {
   const numericVotes: number[] = [];
   const numericCounts = new Map<string, number>();
@@ -138,14 +138,11 @@ export function calculateVoteResultStats(
     average,
     confidence,
     numericVoteCount: numericVotes.length,
-    unknownVoteCount
+    unknownVoteCount,
   };
 }
 
-export function shouldRevealVoteForViewer(options: {
-  phase: RoomPhase;
-  isSelf: boolean;
-}): boolean {
+export function shouldRevealVoteForViewer(options: { phase: RoomPhase; isSelf: boolean }): boolean {
   return options.isSelf || options.phase === "revealed" || options.phase === "finalized";
 }
 

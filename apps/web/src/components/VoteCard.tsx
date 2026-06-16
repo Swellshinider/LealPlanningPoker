@@ -14,17 +14,13 @@ export function VoteCard({
   selected = false,
   disabled = false,
   revealed = false,
-  onSelect
+  onSelect,
 }: VoteCardProps) {
   const label = formatVoteLabel(value);
 
   return (
     <button
-      className={[
-        "vote-card",
-        selected ? "is-selected" : "",
-        revealed ? "is-revealed" : ""
-      ]
+      className={["vote-card", selected ? "is-selected" : "", revealed ? "is-revealed" : ""]
         .filter(Boolean)
         .join(" ")}
       disabled={disabled}

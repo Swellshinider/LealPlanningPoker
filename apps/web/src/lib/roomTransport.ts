@@ -4,12 +4,11 @@ import type {
   RenameParticipantRequest,
   RoomActionEnvelope,
   RoomClosedEvent,
-  RoomErrorPayload,
   RoomEventEnvelope,
   RoomSnapshot,
   StoryRequest,
   ThrowReactionRequest,
-  VoteRequest
+  VoteRequest,
 } from "@lealplanningpoker/shared";
 
 export class RoomRequestError extends Error {
@@ -50,12 +49,15 @@ export async function createRoom(payload: CreateRoomRequest): Promise<{
     compatPath: "/api/compat/rooms/create",
     body: payload,
     compatQuery: {
-      hostName: payload.hostName
-    }
+      hostName: payload.hostName,
+    },
   });
 }
 
-export async function joinRoom(roomId: string, payload: JoinRoomRequest): Promise<{
+export async function joinRoom(
+  roomId: string,
+  payload: JoinRoomRequest,
+): Promise<{
   roomId: string;
   participantToken: string;
   snapshot: RoomSnapshot;
@@ -66,21 +68,31 @@ export async function joinRoom(roomId: string, payload: JoinRoomRequest): Promis
     body: payload,
     compatQuery: {
       displayName: payload.displayName,
-      participantToken: payload.participantToken
-    }
-  });
-}
-
-export async function syncRoom(roomId: string, participantToken: string): Promise<{ snapshot: RoomSnapshot }> {
-  return requestJson<{ snapshot: RoomSnapshot }>(`${getApiBaseUrl()}/api/rooms/${encodeURIComponent(roomId)}/snapshot`, {
-    headers: {
-      "x-participant-token": participantToken
+      participantToken: payload.participantToken,
     },
-    method: "GET"
   });
 }
 
-export async function renameParticipant(roomId: string, participantToken: string, payload: RenameParticipantRequest): Promise<{
+export async function syncRoom(
+  roomId: string,
+  participantToken: string,
+): Promise<{ snapshot: RoomSnapshot }> {
+  return requestJson<{ snapshot: RoomSnapshot }>(
+    `${getApiBaseUrl()}/api/rooms/${encodeURIComponent(roomId)}/snapshot`,
+    {
+      headers: {
+        "x-participant-token": participantToken,
+      },
+      method: "GET",
+    },
+  );
+}
+
+export async function renameParticipant(
+  roomId: string,
+  participantToken: string,
+  payload: RenameParticipantRequest,
+): Promise<{
   snapshot: RoomSnapshot;
 }> {
   return requestWithCompat({
@@ -88,15 +100,19 @@ export async function renameParticipant(roomId: string, participantToken: string
     compatPath: `/api/compat/rooms/${encodeURIComponent(roomId)}/participants/self/rename`,
     body: payload,
     compatQuery: {
-      displayName: payload.displayName
+      displayName: payload.displayName,
     },
     headers: {
-      "x-participant-token": participantToken
-    }
+      "x-participant-token": participantToken,
+    },
   });
 }
 
-export async function submitVote(roomId: string, participantToken: string, payload: VoteRequest): Promise<{
+export async function submitVote(
+  roomId: string,
+  participantToken: string,
+  payload: VoteRequest,
+): Promise<{
   snapshot: RoomSnapshot;
 }> {
   return requestWithCompat({
@@ -104,18 +120,18 @@ export async function submitVote(roomId: string, participantToken: string, paylo
     compatPath: `/api/compat/rooms/${encodeURIComponent(roomId)}/votes`,
     body: payload,
     compatQuery: {
-      vote: payload.vote ?? undefined
+      vote: payload.vote ?? undefined,
     },
     headers: {
-      "x-participant-token": participantToken
-    }
+      "x-participant-token": participantToken,
+    },
   });
 }
 
 export async function throwReaction(
   roomId: string,
   participantToken: string,
-  payload: ThrowReactionRequest
+  payload: ThrowReactionRequest,
 ): Promise<{
   snapshot: RoomSnapshot;
 }> {
@@ -125,15 +141,19 @@ export async function throwReaction(
     body: payload,
     compatQuery: {
       targetParticipantId: payload.targetParticipantId,
-      emoji: payload.emoji
+      emoji: payload.emoji,
     },
     headers: {
-      "x-participant-token": participantToken
-    }
+      "x-participant-token": participantToken,
+    },
   });
 }
 
-export async function saveStory(roomId: string, hostToken: string, payload: StoryRequest): Promise<{
+export async function saveStory(
+  roomId: string,
+  hostToken: string,
+  payload: StoryRequest,
+): Promise<{
   snapshot: RoomSnapshot;
 }> {
   return requestWithCompat({
@@ -141,41 +161,50 @@ export async function saveStory(roomId: string, hostToken: string, payload: Stor
     compatPath: `/api/compat/rooms/${encodeURIComponent(roomId)}/story`,
     body: payload,
     compatQuery: {
-      story: payload.story
+      story: payload.story,
     },
     headers: {
-      "x-host-token": hostToken
-    }
+      "x-host-token": hostToken,
+    },
   });
 }
 
-export async function revealVotes(roomId: string, hostToken: string): Promise<{ snapshot: RoomSnapshot }> {
+export async function revealVotes(
+  roomId: string,
+  hostToken: string,
+): Promise<{ snapshot: RoomSnapshot }> {
   return requestWithCompat({
     path: `/api/rooms/${encodeURIComponent(roomId)}/reveal`,
     compatPath: `/api/compat/rooms/${encodeURIComponent(roomId)}/reveal`,
     headers: {
-      "x-host-token": hostToken
-    }
+      "x-host-token": hostToken,
+    },
   });
 }
 
-export async function resetVotes(roomId: string, hostToken: string): Promise<{ snapshot: RoomSnapshot }> {
+export async function resetVotes(
+  roomId: string,
+  hostToken: string,
+): Promise<{ snapshot: RoomSnapshot }> {
   return requestWithCompat({
     path: `/api/rooms/${encodeURIComponent(roomId)}/reset`,
     compatPath: `/api/compat/rooms/${encodeURIComponent(roomId)}/reset`,
     headers: {
-      "x-host-token": hostToken
-    }
+      "x-host-token": hostToken,
+    },
   });
 }
 
-export async function finalizeStory(roomId: string, hostToken: string): Promise<{ snapshot: RoomSnapshot }> {
+export async function finalizeStory(
+  roomId: string,
+  hostToken: string,
+): Promise<{ snapshot: RoomSnapshot }> {
   return requestWithCompat({
     path: `/api/rooms/${encodeURIComponent(roomId)}/finalize`,
     compatPath: `/api/compat/rooms/${encodeURIComponent(roomId)}/finalize`,
     headers: {
-      "x-host-token": hostToken
-    }
+      "x-host-token": hostToken,
+    },
   });
 }
 
@@ -244,7 +273,7 @@ export function subscribeToRoom(options: RoomSubscriptionOptions): RoomSubscript
           stop();
           options.onClosed({
             roomId: event.roomId,
-            error: event.error
+            error: event.error,
           });
           return;
         }
@@ -253,7 +282,7 @@ export function subscribeToRoom(options: RoomSubscriptionOptions): RoomSubscript
       },
       participantToken: options.participantToken,
       roomId: options.roomId,
-      signal: streamAbortController.signal
+      signal: streamAbortController.signal,
     }).catch((error: unknown) => {
       if (closed || isAbortError(error)) {
         return;
@@ -266,7 +295,7 @@ export function subscribeToRoom(options: RoomSubscriptionOptions): RoomSubscript
   startStream();
 
   return {
-    close: stop
+    close: stop,
   };
 }
 
@@ -288,9 +317,9 @@ async function requestWithCompat<T extends object>(options: CompatRequestOptions
       body: hasBody ? JSON.stringify(options.body) : undefined,
       headers: {
         ...(hasBody ? { "content-type": "application/json" } : {}),
-        ...options.headers
+        ...options.headers,
       },
-      method: "POST"
+      method: "POST",
     });
   } catch (error) {
     if (!(error instanceof CompatFallbackError)) {
@@ -301,7 +330,7 @@ async function requestWithCompat<T extends object>(options: CompatRequestOptions
   try {
     return await requestJson<T>(buildCompatUrl(options.compatPath, options.compatQuery), {
       headers: options.headers,
-      method: "GET"
+      method: "GET",
     });
   } catch (error) {
     throw asRoomRequestError(error);
@@ -315,7 +344,7 @@ async function requestJson<T extends object>(url: string, init: RequestInit): Pr
     response = await fetch(url, {
       cache: "no-store",
       credentials: "same-origin",
-      ...init
+      ...init,
     });
   } catch {
     throw new CompatFallbackError(getConnectionErrorMessage());
@@ -345,16 +374,19 @@ async function streamRoomEvents(options: {
   signal: AbortSignal;
   onEvent: (event: RoomEventEnvelope) => void;
 }): Promise<void> {
-  const response = await fetch(`${getApiBaseUrl()}/api/rooms/${encodeURIComponent(options.roomId)}/events`, {
-    cache: "no-store",
-    credentials: "same-origin",
-    headers: {
-      Accept: "text/event-stream",
-      "x-participant-token": options.participantToken
+  const response = await fetch(
+    `${getApiBaseUrl()}/api/rooms/${encodeURIComponent(options.roomId)}/events`,
+    {
+      cache: "no-store",
+      credentials: "same-origin",
+      headers: {
+        Accept: "text/event-stream",
+        "x-participant-token": options.participantToken,
+      },
+      method: "GET",
+      signal: options.signal,
     },
-    method: "GET",
-    signal: options.signal
-  });
+  );
 
   const contentType = response.headers.get("content-type") ?? "";
   if (!response.ok || !response.body || !contentType.includes("text/event-stream")) {

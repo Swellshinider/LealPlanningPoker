@@ -27,7 +27,7 @@ export interface ReactionPhaseState {
 
 export function deriveReactionPhase(
   reaction: Pick<RoomActiveReactionSnapshot, "createdAt" | "expiresAt">,
-  nowMs = Date.now()
+  nowMs = Date.now(),
 ): ReactionPhaseState {
   const createdAtMs = Date.parse(reaction.createdAt);
   const expiresAtMs = Date.parse(reaction.expiresAt);
@@ -45,7 +45,7 @@ export function deriveReactionPhase(
     return {
       phase: "impact",
       progress: (elapsedMs - FLIGHT_MS) / (IMPACT_END_MS - FLIGHT_MS),
-      elapsedMs
+      elapsedMs,
     };
   }
 
@@ -53,20 +53,20 @@ export function deriveReactionPhase(
     return {
       phase: "linger",
       progress: (elapsedMs - IMPACT_END_MS) / (LINGER_END_MS - IMPACT_END_MS),
-      elapsedMs
+      elapsedMs,
     };
   }
 
   return {
     phase: "fade",
     progress: (elapsedMs - LINGER_END_MS) / (FADE_END_MS - LINGER_END_MS),
-    elapsedMs
+    elapsedMs,
   };
 }
 
 export function filterExpiredReactions<T extends Pick<RoomActiveReactionSnapshot, "expiresAt">>(
   reactions: readonly T[],
-  nowMs = Date.now()
+  nowMs = Date.now(),
 ): T[] {
   return reactions.filter((reaction) => Date.parse(reaction.expiresAt) > nowMs);
 }
@@ -85,30 +85,44 @@ export function getReactionPanelGeometry(input: {
   const distance = Math.hypot(end.x - start.x, end.y - start.y);
   const control = {
     x: Math.round(start.x + (end.x - start.x) * 0.52),
-    y: Math.round(((start.y + end.y) / 2) - clamp((distance * 0.15) + 6, 56, 132))
+    y: Math.round((start.y + end.y) / 2 - clamp(distance * 0.15 + 6, 56, 132)),
   };
 
   return { start, end, control };
 }
 
-export function getQuadraticPoint(progress: number, geometry: {
-  start: Point;
-  control: Point;
-  end: Point;
-}): Point {
+export function getQuadraticPoint(
+  progress: number,
+  geometry: {
+    start: Point;
+    control: Point;
+    end: Point;
+  },
+): Point {
   const t = clamp(progress, 0, 1);
   const inverse = 1 - t;
 
   return {
-    x: (inverse * inverse * geometry.start.x) + (2 * inverse * t * geometry.control.x) + (t * t * geometry.end.x),
-    y: (inverse * inverse * geometry.start.y) + (2 * inverse * t * geometry.control.y) + (t * t * geometry.end.y)
+    x:
+      inverse * inverse * geometry.start.x +
+      2 * inverse * t * geometry.control.x +
+      t * t * geometry.end.x,
+    y:
+      inverse * inverse * geometry.start.y +
+      2 * inverse * t * geometry.control.y +
+      t * t * geometry.end.y,
   };
 }
 
-function toPanelPoint(rect: RectLike, panelRect: RectLike, anchorX: number, anchorY: number): Point {
+function toPanelPoint(
+  rect: RectLike,
+  panelRect: RectLike,
+  anchorX: number,
+  anchorY: number,
+): Point {
   return {
-    x: Math.round((rect.left - panelRect.left) + rect.width * anchorX),
-    y: Math.round((rect.top - panelRect.top) + rect.height * anchorY)
+    x: Math.round(rect.left - panelRect.left + rect.width * anchorX),
+    y: Math.round(rect.top - panelRect.top + rect.height * anchorY),
   };
 }
 

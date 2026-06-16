@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const roomBoardSource = readFileSync(
   new URL("../components/RoomBoard.tsx", import.meta.url),
-  "utf8"
+  "utf8",
 );
 
 describe("reaction popover hover behavior", () => {

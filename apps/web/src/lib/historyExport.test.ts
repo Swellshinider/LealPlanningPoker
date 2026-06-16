@@ -10,9 +10,9 @@ function createEntry(overrides: Partial<RoomHistoryEntry> = {}): RoomHistoryEntr
     voteSummary: [],
     votes: [
       { participantId: "P1", name: "Mina", vote: "5" },
-      { participantId: "P2", name: "Ana", vote: "8" }
+      { participantId: "P2", name: "Ana", vote: "8" },
     ],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -20,7 +20,10 @@ describe("historyToCsv", () => {
   it("emits the header plus one row per participant per round", () => {
     const csv = historyToCsv([createEntry()]);
 
-    const lines = csv.replace(/^\uFEFF/, "").split("\r\n").filter((line) => line.length > 0);
+    const lines = csv
+      .replace(/^\uFEFF/, "")
+      .split("\r\n")
+      .filter((line) => line.length > 0);
     expect(lines[0]).toBe("RoundId,Story,FinalizedAt,ParticipantId,ParticipantName,Vote");
     expect(lines).toHaveLength(3);
     expect(lines[1]).toBe("ROUND01,Improve onboarding,2026-06-11T12:00:00.000Z,P1,Mina,5");
@@ -28,9 +31,7 @@ describe("historyToCsv", () => {
   });
 
   it("escapes a story containing a comma by quoting", () => {
-    const csv = historyToCsv([
-      createEntry({ story: "Sprint 1, retrospective" })
-    ]);
+    const csv = historyToCsv([createEntry({ story: "Sprint 1, retrospective" })]);
 
     const storyCell = csv.split("\r\n")[1]?.split(",")[1];
     expect(storyCell).toBe('"Sprint 1');
@@ -38,17 +39,13 @@ describe("historyToCsv", () => {
   });
 
   it("doubles internal quotes when quoting", () => {
-    const csv = historyToCsv([
-      createEntry({ story: 'The "boss" story' })
-    ]);
+    const csv = historyToCsv([createEntry({ story: 'The "boss" story' })]);
 
     expect(csv).toContain('"The ""boss"" story"');
   });
 
   it("quotes values containing newlines", () => {
-    const csv = historyToCsv([
-      createEntry({ story: "Multi\nline\nstory" })
-    ]);
+    const csv = historyToCsv([createEntry({ story: "Multi\nline\nstory" })]);
 
     expect(csv).toContain('"Multi\nline\nstory"');
   });
@@ -56,8 +53,8 @@ describe("historyToCsv", () => {
   it("emits an empty vote cell when a participant abstained", () => {
     const csv = historyToCsv([
       createEntry({
-        votes: [{ participantId: "P1", name: "Mina", vote: null }]
-      })
+        votes: [{ participantId: "P1", name: "Mina", vote: null }],
+      }),
     ]);
 
     const row = csv.split("\r\n")[1];
@@ -70,9 +67,9 @@ describe("historyToCsv", () => {
       createEntry({
         votes: [
           { participantId: "P1", name: "Mina", vote: "coffee" },
-          { participantId: "P2", name: "Ana", vote: "?" }
-        ]
-      })
+          { participantId: "P2", name: "Ana", vote: "?" },
+        ],
+      }),
     ]);
 
     expect(csv).toContain(",☕\r\n");
@@ -82,7 +79,7 @@ describe("historyToCsv", () => {
   it("emits rounds in chronological order (oldest first)", () => {
     const csv = historyToCsv([
       createEntry({ id: "ROUND01", story: "First" }),
-      createEntry({ id: "ROUND02", story: "Second" })
+      createEntry({ id: "ROUND02", story: "Second" }),
     ]);
 
     expect(csv.indexOf("ROUND01")).toBeLessThan(csv.indexOf("ROUND02"));

@@ -7,7 +7,7 @@ import type {
   RoomErrorPayload,
   StoryRequest,
   ThrowReactionRequest,
-  VoteRequest
+  VoteRequest,
 } from "@lealplanningpoker/shared";
 import { RoomStore, RoomStoreError } from "./roomStore";
 import { RoomRealtimeHub } from "./roomRealtimeHub";
@@ -16,7 +16,10 @@ import type { SocketHandlerController } from "./socketHandlers";
 type RoomActionErrorCode = RoomStoreError["code"] | "INVALID_PAYLOAD" | "RATE_LIMITED";
 
 class RoomActionError extends Error {
-  constructor(readonly code: RoomActionErrorCode, message: string) {
+  constructor(
+    readonly code: RoomActionErrorCode,
+    message: string,
+  ) {
     super(message);
     this.name = "RoomActionError";
   }
@@ -27,7 +30,9 @@ class HttpRoomRateLimiter {
 
   assertWithinRateLimit(key: string): void {
     const now = Date.now();
-    const recent = (this.timestampsByKey.get(key) ?? []).filter((timestamp) => now - timestamp < 10_000);
+    const recent = (this.timestampsByKey.get(key) ?? []).filter(
+      (timestamp) => now - timestamp < 10_000,
+    );
     recent.push(now);
     this.timestampsByKey.set(key, recent);
 
@@ -53,11 +58,6 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
     sockets.notifyRoomChanged(roomId);
   };
 
-  const notifyRoomClosed = (roomId: string, error: RoomErrorPayload) => {
-    hub.notifyRoomClosed(roomId, error);
-    sockets.notifyRoomClosed(roomId, error);
-  };
-
   app.get("/api/rooms/:roomId/events", async (request, reply) => {
     try {
       const roomId = requirePathString(request, "roomId");
@@ -77,7 +77,7 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       hub.refreshPresence(roomId, participantToken);
       const snapshot = store.getSnapshot({
         roomId,
-        participantToken
+        participantToken,
       });
       return { snapshot };
     });
@@ -88,12 +88,12 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       rateLimiter.assertWithinRateLimit(`ip:${request.ip}:create`);
       const body = requireRecordBody<CreateRoomRequest>(request);
       const result = store.createRoom({
-        hostName: requireBodyString(body, "hostName")
+        hostName: requireBodyString(body, "hostName"),
       });
       hub.refreshPresence(result.roomId, result.participantToken);
       notifyRoomChanged(result.roomId);
       return result;
-    })
+    }),
   );
 
   app.post("/api/rooms/:roomId/join", async (request, reply) =>
@@ -101,16 +101,18 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       const roomId = requirePathString(request, "roomId");
       const body = requireRecordBody<JoinRoomRequest>(request);
       const knownParticipantToken = requireOptionalBodyString(body, "participantToken");
-      rateLimiter.assertWithinRateLimit(knownParticipantToken ? `participant:${knownParticipantToken}` : `ip:${request.ip}:join`);
+      rateLimiter.assertWithinRateLimit(
+        knownParticipantToken ? `participant:${knownParticipantToken}` : `ip:${request.ip}:join`,
+      );
       const result = store.joinRoom({
         roomId,
         displayName: requireBodyString(body, "displayName"),
-        participantToken: knownParticipantToken
+        participantToken: knownParticipantToken,
       });
       hub.refreshPresence(result.roomId, result.participantToken);
       notifyRoomChanged(result.roomId);
       return result;
-    })
+    }),
   );
 
   app.post("/api/rooms/:roomId/participants/self/rename", async (request, reply) =>
@@ -123,11 +125,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       const snapshot = store.renameParticipant({
         roomId,
         participantToken,
-        displayName: requireBodyString(body, "displayName")
+        displayName: requireBodyString(body, "displayName"),
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.post("/api/rooms/:roomId/votes", async (request, reply) =>
@@ -140,11 +142,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       const snapshot = store.submitVote({
         roomId,
         participantToken,
-        vote: requireNullableBodyString(body, "vote")
+        vote: requireNullableBodyString(body, "vote"),
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.post("/api/rooms/:roomId/reactions/throw", async (request, reply) =>
@@ -158,11 +160,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
         roomId,
         participantToken,
         emoji: requireBodyString(body, "emoji") as ThrowReactionRequest["emoji"],
-        targetParticipantId: requireBodyString(body, "targetParticipantId")
+        targetParticipantId: requireBodyString(body, "targetParticipantId"),
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.post("/api/rooms/:roomId/story", async (request, reply) =>
@@ -175,11 +177,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       const snapshot = store.setStory({
         roomId,
         hostToken,
-        story: requireBodyString(body, "story")
+        story: requireBodyString(body, "story"),
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.post("/api/rooms/:roomId/reveal", async (request, reply) =>
@@ -190,11 +192,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       hub.refreshPresence(roomId, hostToken);
       const snapshot = store.revealVotes({
         roomId,
-        hostToken
+        hostToken,
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.post("/api/rooms/:roomId/reset", async (request, reply) =>
@@ -205,11 +207,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       hub.refreshPresence(roomId, hostToken);
       const snapshot = store.resetVotes({
         roomId,
-        hostToken
+        hostToken,
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.post("/api/rooms/:roomId/finalize", async (request, reply) =>
@@ -220,11 +222,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       hub.refreshPresence(roomId, hostToken);
       const snapshot = store.finalizeStory({
         roomId,
-        hostToken
+        hostToken,
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.get("/api/compat/rooms/create", async (request, reply) =>
@@ -236,7 +238,7 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       hub.refreshPresence(result.roomId, result.participantToken);
       notifyRoomChanged(result.roomId);
       return result;
-    })
+    }),
   );
 
   app.get("/api/compat/rooms/:roomId/join", async (request, reply) =>
@@ -244,16 +246,18 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       const roomId = requirePathString(request, "roomId");
       const participantToken = requireOptionalQueryString(request, "participantToken");
       requireCacheBuster(request);
-      rateLimiter.assertWithinRateLimit(participantToken ? `participant:${participantToken}` : `ip:${request.ip}:join`);
+      rateLimiter.assertWithinRateLimit(
+        participantToken ? `participant:${participantToken}` : `ip:${request.ip}:join`,
+      );
       const result = store.joinRoom({
         roomId,
         displayName: requireQueryString(request, "displayName"),
-        participantToken
+        participantToken,
       });
       hub.refreshPresence(result.roomId, result.participantToken);
       notifyRoomChanged(result.roomId);
       return result;
-    })
+    }),
   );
 
   app.get("/api/compat/rooms/:roomId/participants/self/rename", async (request, reply) =>
@@ -266,11 +270,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       const snapshot = store.renameParticipant({
         roomId,
         participantToken,
-        displayName: requireQueryString(request, "displayName")
+        displayName: requireQueryString(request, "displayName"),
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.get("/api/compat/rooms/:roomId/votes", async (request, reply) =>
@@ -283,11 +287,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       const snapshot = store.submitVote({
         roomId,
         participantToken,
-        vote: requireOptionalQueryString(request, "vote") ?? null
+        vote: requireOptionalQueryString(request, "vote") ?? null,
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.get("/api/compat/rooms/:roomId/reactions/throw", async (request, reply) =>
@@ -301,11 +305,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
         roomId,
         participantToken,
         emoji: requireQueryString(request, "emoji") as ThrowReactionRequest["emoji"],
-        targetParticipantId: requireQueryString(request, "targetParticipantId")
+        targetParticipantId: requireQueryString(request, "targetParticipantId"),
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.get("/api/compat/rooms/:roomId/story", async (request, reply) =>
@@ -318,11 +322,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       const snapshot = store.setStory({
         roomId,
         hostToken,
-        story: requireQueryString(request, "story")
+        story: requireQueryString(request, "story"),
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.get("/api/compat/rooms/:roomId/reveal", async (request, reply) =>
@@ -334,11 +338,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       hub.refreshPresence(roomId, hostToken);
       const snapshot = store.revealVotes({
         roomId,
-        hostToken
+        hostToken,
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.get("/api/compat/rooms/:roomId/reset", async (request, reply) =>
@@ -350,11 +354,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       hub.refreshPresence(roomId, hostToken);
       const snapshot = store.resetVotes({
         roomId,
-        hostToken
+        hostToken,
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.get("/api/compat/rooms/:roomId/finalize", async (request, reply) =>
@@ -366,11 +370,11 @@ export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): 
       hub.refreshPresence(roomId, hostToken);
       const snapshot = store.finalizeStory({
         roomId,
-        hostToken
+        hostToken,
       });
       notifyRoomChanged(roomId);
       return { snapshot };
-    })
+    }),
   );
 
   app.setErrorHandler((error, _request, reply) => {
@@ -493,7 +497,7 @@ function respond<T extends object>(reply: FastifyReply, action: () => T): Fastif
   try {
     return reply.code(200).send({
       ok: true,
-      ...action()
+      ...action(),
     } satisfies RoomActionEnvelope<T>);
   } catch (error) {
     return sendFailure(reply, error);
@@ -504,7 +508,7 @@ function sendFailure(reply: FastifyReply, error: unknown): FastifyReply {
   const payload = toRoomError(error);
   return reply.code(statusForErrorCode(payload.code)).send({
     ok: false,
-    error: payload
+    error: payload,
   } satisfies RoomActionEnvelope<object>);
 }
 
@@ -512,13 +516,13 @@ function toRoomError(error: unknown): RoomErrorPayload {
   if (error instanceof RoomStoreError || error instanceof RoomActionError) {
     return {
       code: error.code,
-      message: error.message
+      message: error.message,
     };
   }
 
   return {
     code: "UNKNOWN_ERROR",
-    message: "Unexpected server error."
+    message: "Unexpected server error.",
   };
 }
 

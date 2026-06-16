@@ -9,7 +9,7 @@ function createStore() {
     "ANA_PARTICIPANT",
     "ANA_TOKEN",
     "BOB_PARTICIPANT",
-    "BOB_TOKEN"
+    "BOB_TOKEN",
   ];
   const now = new Date("2026-06-11T12:00:00.000Z");
   let extraId = 0;
@@ -17,7 +17,7 @@ function createStore() {
     idFactory: () => {
       return ids.shift() ?? `EXTRA_${(extraId += 1).toString().padStart(3, "0")}`;
     },
-    now: () => new Date(now)
+    now: () => new Date(now),
   });
 }
 
@@ -48,7 +48,7 @@ describe("RoomStore", () => {
     expect(result.snapshot.hostName).toBe("Mina");
     expect(result.snapshot.viewer).toEqual({
       participantId: "HOST_PARTICIPANT",
-      isHost: true
+      isHost: true,
     });
     expect(result.snapshot.participants).toEqual([
       {
@@ -59,14 +59,14 @@ describe("RoomStore", () => {
         vote: null,
         hasVoted: false,
         joinedAt: "2026-06-11T12:00:00.000Z",
-        updatedAt: "2026-06-11T12:00:00.000Z"
-      }
+        updatedAt: "2026-06-11T12:00:00.000Z",
+      },
     ]);
   });
 
   it("creates compact room codes by default", () => {
     const defaultStore = new RoomStore({
-      now: () => new Date("2026-06-11T12:00:00.000Z")
+      now: () => new Date("2026-06-11T12:00:00.000Z"),
     });
 
     const result = defaultStore.createRoom({ hostName: "Mina" });
@@ -85,7 +85,7 @@ describe("RoomStore", () => {
         }
         return id;
       },
-      now: () => new Date("2026-06-11T12:00:00.000Z")
+      now: () => new Date("2026-06-11T12:00:00.000Z"),
     });
 
     const result = injectedStore.createRoom({ hostName: "Mina" });
@@ -99,7 +99,7 @@ describe("RoomStore", () => {
     const joined = store.joinRoom({
       roomId: created.roomId,
       displayName: "Ana",
-      participantToken: undefined
+      participantToken: undefined,
     });
 
     expect(joined.participantToken).toBe("ANA_TOKEN");
@@ -108,33 +108,36 @@ describe("RoomStore", () => {
     const renamed = store.renameParticipant({
       roomId: created.roomId,
       participantToken: joined.participantToken,
-      displayName: "Ana Lu"
+      displayName: "Ana Lu",
     });
 
     expect(
-      renamed.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.name
+      renamed.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.name,
     ).toBe("Ana Lu");
 
     const disconnected = store.leaveRoom({
       roomId: created.roomId,
-      participantToken: joined.participantToken
+      participantToken: joined.participantToken,
     });
 
     expect(
-      disconnected.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.connected
+      disconnected.participants.find((participant) => participant.id === "ANA_PARTICIPANT")
+        ?.connected,
     ).toBe(false);
 
     const rejoined = store.joinRoom({
       roomId: created.roomId,
       displayName: "Ana Later",
-      participantToken: joined.participantToken
+      participantToken: joined.participantToken,
     });
 
     expect(
-      rejoined.snapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.connected
+      rejoined.snapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")
+        ?.connected,
     ).toBe(true);
     expect(
-      rejoined.snapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.name
+      rejoined.snapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")
+        ?.name,
     ).toBe("Ana Later");
   });
 
@@ -142,56 +145,75 @@ describe("RoomStore", () => {
     const created = store.createRoom({ hostName: "Mina" });
     const joined = store.joinRoom({
       roomId: created.roomId,
-      displayName: "Ana"
+      displayName: "Ana",
     });
 
     store.setStory({
       roomId: created.roomId,
       hostToken: created.hostToken,
-      story: "Improve onboarding"
+      story: "Improve onboarding",
     });
 
     store.submitVote({
       roomId: created.roomId,
       participantToken: created.hostToken,
-      vote: "8"
+      vote: "8",
     });
     store.submitVote({
       roomId: created.roomId,
       participantToken: joined.participantToken,
-      vote: "3"
+      vote: "3",
     });
 
     const hostSnapshot = store.getSnapshot({
       roomId: created.roomId,
-      participantToken: created.hostToken
+      participantToken: created.hostToken,
     });
     const participantSnapshot = store.getSnapshot({
       roomId: created.roomId,
-      participantToken: joined.participantToken
+      participantToken: joined.participantToken,
     });
 
     expect(hostSnapshot.phase).toBe("voting");
-    expect(hostSnapshot.participants.find((participant) => participant.id === "HOST_PARTICIPANT")?.vote).toBe("8");
-    expect(hostSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.vote).toBeNull();
-    expect(hostSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.hasVoted).toBe(true);
+    expect(
+      hostSnapshot.participants.find((participant) => participant.id === "HOST_PARTICIPANT")?.vote,
+    ).toBe("8");
+    expect(
+      hostSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.vote,
+    ).toBeNull();
+    expect(
+      hostSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")
+        ?.hasVoted,
+    ).toBe(true);
 
-    expect(participantSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.vote).toBe("3");
-    expect(participantSnapshot.participants.find((participant) => participant.id === "HOST_PARTICIPANT")?.vote).toBe(null);
+    expect(
+      participantSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")
+        ?.vote,
+    ).toBe("3");
+    expect(
+      participantSnapshot.participants.find((participant) => participant.id === "HOST_PARTICIPANT")
+        ?.vote,
+    ).toBe(null);
 
     store.revealVotes({
       roomId: created.roomId,
-      hostToken: created.hostToken
+      hostToken: created.hostToken,
     });
 
     const revealedSnapshot = store.getSnapshot({
       roomId: created.roomId,
-      participantToken: joined.participantToken
+      participantToken: joined.participantToken,
     });
 
     expect(revealedSnapshot.phase).toBe("revealed");
-    expect(revealedSnapshot.participants.find((participant) => participant.id === "HOST_PARTICIPANT")?.vote).toBe("8");
-    expect(revealedSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.vote).toBe("3");
+    expect(
+      revealedSnapshot.participants.find((participant) => participant.id === "HOST_PARTICIPANT")
+        ?.vote,
+    ).toBe("8");
+    expect(
+      revealedSnapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")
+        ?.vote,
+    ).toBe("3");
   });
 
   it("accepts custom whole-number votes and normalizes whitespace", () => {
@@ -200,16 +222,18 @@ describe("RoomStore", () => {
     store.setStory({
       roomId: created.roomId,
       hostToken: created.hostToken,
-      story: "Improve onboarding"
+      story: "Improve onboarding",
     });
 
     const snapshot = store.submitVote({
       roomId: created.roomId,
       participantToken: created.hostToken,
-      vote: " 34 "
+      vote: " 34 ",
     });
 
-    expect(snapshot.participants.find((participant) => participant.id === "HOST_PARTICIPANT")?.vote).toBe("34");
+    expect(
+      snapshot.participants.find((participant) => participant.id === "HOST_PARTICIPANT")?.vote,
+    ).toBe("34");
   });
 
   it("rejects invalid custom votes", () => {
@@ -218,20 +242,22 @@ describe("RoomStore", () => {
     store.setStory({
       roomId: created.roomId,
       hostToken: created.hostToken,
-      story: "Improve onboarding"
+      story: "Improve onboarding",
     });
 
     try {
       store.submitVote({
         roomId: created.roomId,
         participantToken: created.hostToken,
-        vote: "1.5"
+        vote: "1.5",
       });
       throw new Error("Expected the store to throw");
     } catch (error) {
       expect(error).toBeInstanceOf(RoomStoreError);
       expect((error as RoomStoreError).code).toBe("INVALID_VOTE");
-      expect((error as RoomStoreError).message).toBe("Use a deck card or a whole-number custom vote.");
+      expect((error as RoomStoreError).message).toBe(
+        "Use a deck card or a whole-number custom vote.",
+      );
     }
 
     expectRoomError(
@@ -239,9 +265,9 @@ describe("RoomStore", () => {
         store.submitVote({
           roomId: created.roomId,
           participantToken: created.hostToken,
-          vote: "small"
+          vote: "small",
         }),
-      "INVALID_VOTE"
+      "INVALID_VOTE",
     );
 
     expectRoomError(
@@ -249,9 +275,9 @@ describe("RoomStore", () => {
         store.submitVote({
           roomId: created.roomId,
           participantToken: created.hostToken,
-          vote: "10000"
+          vote: "10000",
         }),
-      "INVALID_VOTE"
+      "INVALID_VOTE",
     );
   });
 
@@ -259,26 +285,26 @@ describe("RoomStore", () => {
     const created = store.createRoom({ hostName: "Mina" });
     const joined = store.joinRoom({
       roomId: created.roomId,
-      displayName: "Ana"
+      displayName: "Ana",
     });
 
     expectRoomError(
       () =>
         store.revealVotes({
           roomId: created.roomId,
-          hostToken: joined.participantToken
+          hostToken: joined.participantToken,
         }),
-      "NOT_HOST"
+      "NOT_HOST",
     );
 
     store.setStory({
       roomId: created.roomId,
       hostToken: created.hostToken,
-      story: "Improve onboarding"
+      story: "Improve onboarding",
     });
     store.revealVotes({
       roomId: created.roomId,
-      hostToken: created.hostToken
+      hostToken: created.hostToken,
     });
 
     expectRoomError(
@@ -286,9 +312,9 @@ describe("RoomStore", () => {
         store.submitVote({
           roomId: created.roomId,
           participantToken: joined.participantToken,
-          vote: "5"
+          vote: "5",
         }),
-      "VOTES_LOCKED"
+      "VOTES_LOCKED",
     );
   });
 
@@ -296,32 +322,32 @@ describe("RoomStore", () => {
     const created = store.createRoom({ hostName: "Mina" });
     const joined = store.joinRoom({
       roomId: created.roomId,
-      displayName: "Ana"
+      displayName: "Ana",
     });
 
     store.setStory({
       roomId: created.roomId,
       hostToken: created.hostToken,
-      story: "Improve onboarding"
+      story: "Improve onboarding",
     });
     store.submitVote({
       roomId: created.roomId,
       participantToken: created.hostToken,
-      vote: "5"
+      vote: "5",
     });
     store.submitVote({
       roomId: created.roomId,
       participantToken: joined.participantToken,
-      vote: "8"
+      vote: "8",
     });
     store.revealVotes({
       roomId: created.roomId,
-      hostToken: created.hostToken
+      hostToken: created.hostToken,
     });
 
     const finalized = store.finalizeStory({
       roomId: created.roomId,
-      hostToken: created.hostToken
+      hostToken: created.hostToken,
     });
 
     expect(finalized.phase).toBe("finalized");
@@ -330,13 +356,13 @@ describe("RoomStore", () => {
       story: "Improve onboarding",
       voteSummary: [
         { card: "5", count: 1 },
-        { card: "8", count: 1 }
-      ]
+        { card: "8", count: 1 },
+      ],
     });
 
     const reset = store.resetVotes({
       roomId: created.roomId,
-      hostToken: created.hostToken
+      hostToken: created.hostToken,
     });
 
     expect(reset.phase).toBe("voting");
@@ -348,46 +374,48 @@ describe("RoomStore", () => {
     const created = store.createRoom({ hostName: "Mina" });
     const joined = store.joinRoom({
       roomId: created.roomId,
-      displayName: "Ana"
+      displayName: "Ana",
     });
 
     store.setStory({
       roomId: created.roomId,
       hostToken: created.hostToken,
-      story: "Improve onboarding"
+      story: "Improve onboarding",
     });
     store.submitVote({
       roomId: created.roomId,
       participantToken: created.hostToken,
-      vote: "13"
+      vote: "13",
     });
     store.submitVote({
       roomId: created.roomId,
       participantToken: joined.participantToken,
-      vote: "10"
+      vote: "10",
     });
     store.revealVotes({
       roomId: created.roomId,
-      hostToken: created.hostToken
+      hostToken: created.hostToken,
     });
 
     const finalized = store.finalizeStory({
       roomId: created.roomId,
-      hostToken: created.hostToken
+      hostToken: created.hostToken,
     });
 
     expect(finalized.history[0].voteSummary).toEqual([
       { card: "13", count: 1 },
-      { card: "10", count: 1 }
+      { card: "10", count: 1 },
     ]);
-    expect(finalized.history[0].votes.find((vote) => vote.participantId === "ANA_PARTICIPANT")?.vote).toBe("10");
+    expect(
+      finalized.history[0].votes.find((vote) => vote.participantId === "ANA_PARTICIPANT")?.vote,
+    ).toBe("10");
   });
 
   it("expires stale rooms", () => {
     const expiringStore = new RoomStore({
       idFactory: () => "ROOM01",
       now: () => new Date("2026-06-11T12:00:00.000Z"),
-      roomTtlMs: 1_000
+      roomTtlMs: 1_000,
     });
 
     const created = expiringStore.createRoom({ hostName: "Mina" });
@@ -397,14 +425,17 @@ describe("RoomStore", () => {
       () =>
         expiringStore.getSnapshot({
           roomId: created.roomId,
-          participantToken: created.hostToken
+          participantToken: created.hostToken,
         }),
-      "ROOM_NOT_FOUND"
+      "ROOM_NOT_FOUND",
     );
   });
 
   it("rejects joins after the room reaches the participant limit", () => {
-    const ids = Array.from({ length: 120 }, (_, index) => `ID_${index.toString().padStart(3, "0")}`);
+    const ids = Array.from(
+      { length: 120 },
+      (_, index) => `ID_${index.toString().padStart(3, "0")}`,
+    );
     const limitedStore = new RoomStore({
       roomIdFactory: () => "ABCD-2345",
       idFactory: () => {
@@ -414,7 +445,7 @@ describe("RoomStore", () => {
         }
         return id;
       },
-      now: () => new Date("2026-06-11T12:00:00.000Z")
+      now: () => new Date("2026-06-11T12:00:00.000Z"),
     });
 
     const created = limitedStore.createRoom({ hostName: "Mina" });
@@ -422,7 +453,7 @@ describe("RoomStore", () => {
     for (let index = 0; index < 49; index += 1) {
       limitedStore.joinRoom({
         roomId: created.roomId,
-        displayName: `Participant ${index}`
+        displayName: `Participant ${index}`,
       });
     }
 
@@ -430,14 +461,17 @@ describe("RoomStore", () => {
       () =>
         limitedStore.joinRoom({
           roomId: created.roomId,
-          displayName: "Overflow"
+          displayName: "Overflow",
         }),
-      "ROOM_FULL"
+      "ROOM_FULL",
     );
   });
 
   it("keeps only the latest finalized history entries", () => {
-    const ids = Array.from({ length: 400 }, (_, index) => `ITEM_${index.toString().padStart(3, "0")}`);
+    const ids = Array.from(
+      { length: 400 },
+      (_, index) => `ITEM_${index.toString().padStart(3, "0")}`,
+    );
     let currentTime = new Date("2026-06-11T12:00:00.000Z");
     const historyStore = new RoomStore({
       roomIdFactory: () => "ABCD-2345",
@@ -448,7 +482,7 @@ describe("RoomStore", () => {
         }
         return id;
       },
-      now: () => new Date(currentTime)
+      now: () => new Date(currentTime),
     });
 
     const created = historyStore.createRoom({ hostName: "Mina" });
@@ -458,26 +492,26 @@ describe("RoomStore", () => {
       historyStore.setStory({
         roomId: created.roomId,
         hostToken: created.hostToken,
-        story: `Story ${index}`
+        story: `Story ${index}`,
       });
       historyStore.submitVote({
         roomId: created.roomId,
         participantToken: created.hostToken,
-        vote: "5"
+        vote: "5",
       });
       historyStore.revealVotes({
         roomId: created.roomId,
-        hostToken: created.hostToken
+        hostToken: created.hostToken,
       });
       historyStore.finalizeStory({
         roomId: created.roomId,
-        hostToken: created.hostToken
+        hostToken: created.hostToken,
       });
     }
 
     const snapshot = historyStore.getSnapshot({
       roomId: created.roomId,
-      participantToken: created.hostToken
+      participantToken: created.hostToken,
     });
 
     expect(snapshot.history).toHaveLength(100);
@@ -492,49 +526,49 @@ describe("RoomStore", () => {
     const timedStore = new RoomStore({
       idFactory: () => `ID_${(nextId += 1).toString().padStart(3, "0")}`,
       now: () => new Date(now),
-      roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`
+      roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`,
     });
 
     const created = timedStore.createRoom({ hostName: "Mina" });
     const joined = timedStore.joinRoom({
       roomId: created.roomId,
-      displayName: "Ana"
+      displayName: "Ana",
     });
 
     const lobbySnapshot = timedStore.throwReaction({
       roomId: created.roomId,
       participantToken: created.participantToken,
       emoji: "👏",
-      targetParticipantId: "ID_003"
+      targetParticipantId: "ID_003",
     });
     expect(lobbySnapshot.activeReactions).toHaveLength(1);
 
     timedStore.setStory({
       roomId: created.roomId,
       hostToken: created.hostToken,
-      story: "Improve onboarding"
+      story: "Improve onboarding",
     });
     const votingSnapshot = timedStore.throwReaction({
       roomId: created.roomId,
       participantToken: joined.participantToken,
       emoji: "🔥",
-      targetParticipantId: "ID_001"
+      targetParticipantId: "ID_001",
     });
     expect(votingSnapshot.activeReactions).toHaveLength(2);
 
     timedStore.revealVotes({
       roomId: created.roomId,
-      hostToken: created.hostToken
+      hostToken: created.hostToken,
     });
     timedStore.finalizeStory({
       roomId: created.roomId,
-      hostToken: created.hostToken
+      hostToken: created.hostToken,
     });
     const finalizedSnapshot = timedStore.throwReaction({
       roomId: created.roomId,
       participantToken: created.participantToken,
       emoji: "💯",
-      targetParticipantId: "ID_003"
+      targetParticipantId: "ID_003",
     });
     expect(finalizedSnapshot.activeReactions).toHaveLength(3);
 
@@ -542,8 +576,8 @@ describe("RoomStore", () => {
     expect(
       timedStore.getSnapshot({
         roomId: created.roomId,
-        participantToken: created.participantToken
-      }).activeReactions
+        participantToken: created.participantToken,
+      }).activeReactions,
     ).toEqual([]);
   });
 
@@ -554,20 +588,20 @@ describe("RoomStore", () => {
     const timedStore = new RoomStore({
       idFactory: () => `ID_${(nextId += 1).toString().padStart(3, "0")}`,
       now: () => new Date(now),
-      roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`
+      roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`,
     });
 
     const created = timedStore.createRoom({ hostName: "Mina" });
     const joined = timedStore.joinRoom({
       roomId: created.roomId,
-      displayName: "Ana"
+      displayName: "Ana",
     });
 
     timedStore.throwReaction({
       roomId: created.roomId,
       participantToken: created.participantToken,
       emoji: "👏",
-      targetParticipantId: "ID_003"
+      targetParticipantId: "ID_003",
     });
 
     now.setSeconds(now.getSeconds() + 5);
@@ -576,30 +610,30 @@ describe("RoomStore", () => {
       timedStore.joinRoom({
         roomId: created.roomId,
         displayName: "Ana Again",
-        participantToken: joined.participantToken
-      }).snapshot.activeReactions
+        participantToken: joined.participantToken,
+      }).snapshot.activeReactions,
     ).toEqual([]);
 
     timedStore.throwReaction({
       roomId: created.roomId,
       participantToken: created.participantToken,
       emoji: "🔥",
-      targetParticipantId: "ID_003"
+      targetParticipantId: "ID_003",
     });
 
     now.setSeconds(now.getSeconds() + 5);
     expect(
       timedStore.syncRoom({
         roomId: created.roomId,
-        participantToken: created.participantToken
-      }).activeReactions
+        participantToken: created.participantToken,
+      }).activeReactions,
     ).toEqual([]);
 
     const latest = timedStore.throwReaction({
       roomId: created.roomId,
       participantToken: created.participantToken,
       emoji: "💀",
-      targetParticipantId: "ID_003"
+      targetParticipantId: "ID_003",
     });
 
     expect(latest.activeReactions).toHaveLength(1);
@@ -610,7 +644,7 @@ describe("RoomStore", () => {
     const created = store.createRoom({ hostName: "Mina" });
     const joined = store.joinRoom({
       roomId: created.roomId,
-      displayName: "Ana"
+      displayName: "Ana",
     });
 
     expectRoomError(
@@ -619,14 +653,14 @@ describe("RoomStore", () => {
           roomId: created.roomId,
           participantToken: created.participantToken,
           emoji: "👏",
-          targetParticipantId: "HOST_PARTICIPANT"
+          targetParticipantId: "HOST_PARTICIPANT",
         }),
-      "INVALID_REACTION"
+      "INVALID_REACTION",
     );
 
     store.leaveRoom({
       roomId: created.roomId,
-      participantToken: joined.participantToken
+      participantToken: joined.participantToken,
     });
     expectRoomError(
       () =>
@@ -634,9 +668,9 @@ describe("RoomStore", () => {
           roomId: created.roomId,
           participantToken: created.participantToken,
           emoji: "🔥",
-          targetParticipantId: "ANA_PARTICIPANT"
+          targetParticipantId: "ANA_PARTICIPANT",
         }),
-      "INVALID_REACTION"
+      "INVALID_REACTION",
     );
 
     expectRoomError(
@@ -645,9 +679,9 @@ describe("RoomStore", () => {
           roomId: created.roomId,
           participantToken: created.participantToken,
           emoji: "🙂" as never,
-          targetParticipantId: "ANA_PARTICIPANT"
+          targetParticipantId: "ANA_PARTICIPANT",
         }),
-      "INVALID_REACTION"
+      "INVALID_REACTION",
     );
 
     expectRoomError(
@@ -656,9 +690,9 @@ describe("RoomStore", () => {
           roomId: created.roomId,
           participantToken: created.participantToken,
           emoji: "👏",
-          targetParticipantId: "MISSING_PARTICIPANT"
+          targetParticipantId: "MISSING_PARTICIPANT",
         }),
-      "PARTICIPANT_NOT_FOUND"
+      "PARTICIPANT_NOT_FOUND",
     );
   });
 
@@ -669,18 +703,18 @@ describe("RoomStore", () => {
     const timedStore = new RoomStore({
       idFactory: () => `ID_${(nextId += 1).toString().padStart(3, "0")}`,
       now: () => new Date(now),
-      roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`
+      roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`,
     });
 
     const created = timedStore.createRoom({ hostName: "Mina" });
     timedStore.joinRoom({
       roomId: created.roomId,
-      displayName: "Ana"
+      displayName: "Ana",
     });
 
     let latestSnapshot = timedStore.getSnapshot({
       roomId: created.roomId,
-      participantToken: created.participantToken
+      participantToken: created.participantToken,
     });
 
     for (let index = 0; index < 41; index += 1) {
@@ -688,7 +722,7 @@ describe("RoomStore", () => {
         roomId: created.roomId,
         participantToken: created.participantToken,
         emoji: "🍅",
-        targetParticipantId: "ID_003"
+        targetParticipantId: "ID_003",
       });
       now.setMilliseconds(now.getMilliseconds() + 50);
     }
@@ -711,7 +745,7 @@ describe("RoomStore offline cleanup", () => {
       "ANA_PARTICIPANT",
       "ANA_TOKEN",
       "BOB_PARTICIPANT",
-      "BOB_TOKEN"
+      "BOB_TOKEN",
     ];
     const closed = options.closed ?? [];
     vi.useFakeTimers({ now: new Date("2026-06-11T12:00:00.000Z") });
@@ -727,7 +761,7 @@ describe("RoomStore offline cleanup", () => {
       offlineCleanupMs: options.offlineCleanupMs ?? 1000,
       onRoomClosed: (roomId) => {
         closed.push(roomId);
-      }
+      },
     });
     return { store, closed };
   }
@@ -738,15 +772,15 @@ describe("RoomStore offline cleanup", () => {
 
     store.leaveRoom({
       roomId: created.roomId,
-      participantToken: created.hostToken
+      participantToken: created.hostToken,
     });
 
     vi.advanceTimersByTime(999);
     expect(
       store.getSnapshot({
         roomId: created.roomId,
-        participantToken: created.hostToken
-      }).roomId
+        participantToken: created.hostToken,
+      }).roomId,
     ).toBe(created.roomId);
     expect(closed).toEqual([]);
 
@@ -755,8 +789,8 @@ describe("RoomStore offline cleanup", () => {
     expect(() =>
       store.getSnapshot({
         roomId: created.roomId,
-        participantToken: created.hostToken
-      })
+        participantToken: created.hostToken,
+      }),
     ).toThrow();
   });
 
@@ -766,14 +800,14 @@ describe("RoomStore offline cleanup", () => {
 
     store.leaveRoom({
       roomId: created.roomId,
-      participantToken: created.hostToken
+      participantToken: created.hostToken,
     });
 
     vi.advanceTimersByTime(500);
 
     store.syncRoom({
       roomId: created.roomId,
-      participantToken: created.hostToken
+      participantToken: created.hostToken,
     });
 
     vi.advanceTimersByTime(10_000);
@@ -782,8 +816,8 @@ describe("RoomStore offline cleanup", () => {
     expect(() =>
       store.getSnapshot({
         roomId: created.roomId,
-        participantToken: created.hostToken
-      })
+        participantToken: created.hostToken,
+      }),
     ).not.toThrow();
   });
 
@@ -792,12 +826,12 @@ describe("RoomStore offline cleanup", () => {
     const created = store.createRoom({ hostName: "Mina" });
     const joined = store.joinRoom({
       roomId: created.roomId,
-      displayName: "Ana"
+      displayName: "Ana",
     });
 
     store.leaveRoom({
       roomId: created.roomId,
-      participantToken: created.hostToken
+      participantToken: created.hostToken,
     });
 
     vi.advanceTimersByTime(5_000);
@@ -806,13 +840,13 @@ describe("RoomStore offline cleanup", () => {
     expect(
       store.getSnapshot({
         roomId: created.roomId,
-        participantToken: joined.participantToken
-      }).participants
+        participantToken: joined.participantToken,
+      }).participants,
     ).toHaveLength(2);
 
     store.leaveRoom({
       roomId: created.roomId,
-      participantToken: joined.participantToken
+      participantToken: joined.participantToken,
     });
 
     vi.advanceTimersByTime(5_000);
@@ -826,7 +860,7 @@ describe("RoomStore offline cleanup", () => {
 
     store.leaveRoom({
       roomId: created.roomId,
-      participantToken: created.hostToken
+      participantToken: created.hostToken,
     });
 
     vi.advanceTimersByTime(10 * 60 * 1000);

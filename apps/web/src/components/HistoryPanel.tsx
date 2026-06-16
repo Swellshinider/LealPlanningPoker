@@ -10,7 +10,7 @@ export interface HistoryPanelProps {
 function formatTimestamp(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
-    timeStyle: "short"
+    timeStyle: "short",
   }).format(new Date(value));
 }
 
@@ -21,7 +21,7 @@ export function HistoryPanel({ history, roomId }: HistoryPanelProps) {
     downloadTextFile(
       buildHistoryFilename(roomId, "csv"),
       historyToCsv(history),
-      "text/csv;charset=utf-8"
+      "text/csv;charset=utf-8",
     );
   }
 

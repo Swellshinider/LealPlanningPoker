@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   deriveReactionPhase,
   filterExpiredReactions,
-  getReactionPanelGeometry
+  getReactionPanelGeometry,
 } from "./reactionOverlay";
 
 const baseReaction = {
@@ -11,7 +11,7 @@ const baseReaction = {
   expiresAt: "2026-06-15T12:00:04.000Z",
   id: "REACTION_1",
   targetParticipantId: "TARGET_1",
-  throwerParticipantId: "THROWER_1"
+  throwerParticipantId: "THROWER_1",
 };
 
 describe("deriveReactionPhase", () => {
@@ -19,27 +19,27 @@ describe("deriveReactionPhase", () => {
     expect(deriveReactionPhase(baseReaction, Date.parse("2026-06-15T12:00:00.100Z"))).toEqual({
       elapsedMs: 100,
       phase: "flight",
-      progress: 100 / 650
+      progress: 100 / 650,
     });
     expect(deriveReactionPhase(baseReaction, Date.parse("2026-06-15T12:00:00.800Z"))).toEqual({
       elapsedMs: 800,
       phase: "impact",
-      progress: (800 - 650) / 400
+      progress: (800 - 650) / 400,
     });
     expect(deriveReactionPhase(baseReaction, Date.parse("2026-06-15T12:00:02.000Z"))).toEqual({
       elapsedMs: 2_000,
       phase: "linger",
-      progress: (2_000 - 1_050) / 2_550
+      progress: (2_000 - 1_050) / 2_550,
     });
     expect(deriveReactionPhase(baseReaction, Date.parse("2026-06-15T12:00:03.800Z"))).toEqual({
       elapsedMs: 3_800,
       phase: "fade",
-      progress: 0.5
+      progress: 0.5,
     });
     expect(deriveReactionPhase(baseReaction, Date.parse("2026-06-15T12:00:04.000Z"))).toEqual({
       elapsedMs: 4_000,
       phase: "expired",
-      progress: 1
+      progress: 1,
     });
   });
 });
@@ -47,9 +47,11 @@ describe("deriveReactionPhase", () => {
 describe("filterExpiredReactions", () => {
   it("drops reactions once the expiry instant is reached", () => {
     expect(filterExpiredReactions([baseReaction], Date.parse("2026-06-15T12:00:03.999Z"))).toEqual([
-      baseReaction
+      baseReaction,
     ]);
-    expect(filterExpiredReactions([baseReaction], Date.parse("2026-06-15T12:00:04.000Z"))).toEqual([]);
+    expect(filterExpiredReactions([baseReaction], Date.parse("2026-06-15T12:00:04.000Z"))).toEqual(
+      [],
+    );
   });
 });
 
@@ -61,34 +63,34 @@ describe("getReactionPanelGeometry", () => {
           height: 600,
           left: 100,
           top: 80,
-          width: 900
+          width: 900,
         },
         targetHeadRect: {
           height: 40,
           left: 740,
           top: 170,
-          width: 40
+          width: 40,
         },
         throwerSeatRect: {
           height: 120,
           left: 180,
           top: 360,
-          width: 160
-        }
-      })
+          width: 160,
+        },
+      }),
     ).toEqual({
       control: {
         x: 420,
-        y: 126
+        y: 126,
       },
       end: {
         x: 660,
-        y: 110
+        y: 110,
       },
       start: {
         x: 160,
-        y: 316
-      }
+        y: 316,
+      },
     });
   });
 });

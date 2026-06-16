@@ -3,18 +3,7 @@ import { FIBONACCI_DECK, MAX_CUSTOM_VOTE_DIGITS, normalizeVoteCard } from "./dec
 
 describe("FIBONACCI_DECK", () => {
   it("exports the planning poker deck in the expected order", () => {
-    expect(FIBONACCI_DECK).toEqual([
-      "0",
-      "1",
-      "2",
-      "3",
-      "5",
-      "8",
-      "13",
-      "21",
-      "?",
-      "coffee"
-    ]);
+    expect(FIBONACCI_DECK).toEqual(["0", "1", "2", "3", "5", "8", "13", "21", "?", "coffee"]);
   });
 });
 

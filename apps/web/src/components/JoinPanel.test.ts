@@ -14,7 +14,7 @@ function createProps(overrides: Partial<JoinPanelProps> = {}): JoinPanelProps {
     onCreateRoom: () => undefined,
     onJoinRoom: () => undefined,
     onToggleTheme: () => undefined,
-    ...overrides
+    ...overrides,
   };
 }
 

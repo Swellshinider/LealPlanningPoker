@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - "release/**"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    # Prevent forks from publishing releases
+    if: github.repository == 'Swellshinider/LealPlanningPoker'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Read version from package.json
+        id: version
+        run: |
+          version=$(jq -r '.version' package.json)
+          tag="v${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "Resolved version ${version} -> tag ${tag}"
+
+      - name: Extract release notes from CHANGELOG
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          awk -v v="$version" '
+            /^## \[/ { in_section=($2 == "["v"]") }
+            in_section && /^## \[/ && !printed { printed=1; next }
+            in_section && /^## \[/ { exit }
+            in_section { print }
+          ' docs/CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::No CHANGELOG entry found for version ${version}"
+            exit 1
+          fi
+          echo "----- Release notes for ${version} -----"
+          cat notes.md
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body_path: notes.md
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.tag, '-') }}
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

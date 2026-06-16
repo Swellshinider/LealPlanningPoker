@@ -6,15 +6,15 @@ import {
   resetVotes,
   revealVotes,
   subscribeToRoom,
-  syncRoom
+  syncRoom,
 } from "./roomTransport";
 
 function jsonResponse(payload: object) {
   return new Response(JSON.stringify(payload), {
     headers: {
-      "content-type": "application/json"
+      "content-type": "application/json",
     },
-    status: 200
+    status: 200,
   });
 }
 
@@ -31,9 +31,9 @@ function snapshotEnvelope() {
       updatedAt: "2026-06-15T12:00:00.000Z",
       viewer: {
         participantId: "P_1",
-        isHost: true
-      }
-    }
+        isHost: true,
+      },
+    },
   };
 }
 
@@ -44,8 +44,8 @@ describe("roomTransport", () => {
       location: {
         origin: "https://poker.erleal.com",
         protocol: "https:",
-        hostname: "poker.erleal.com"
-      }
+        hostname: "poker.erleal.com",
+      },
     });
   });
 
@@ -72,30 +72,33 @@ describe("roomTransport", () => {
             updatedAt: "2026-06-15T12:00:00.000Z",
             viewer: {
               participantId: "P_1",
-              isHost: true
-            }
-          }
+              isHost: true,
+            },
+          },
         }),
         {
           headers: {
-            "content-type": "application/json"
+            "content-type": "application/json",
           },
-          status: 200
-        }
-      )
+          status: 200,
+        },
+      ),
     );
     vi.stubGlobal("fetch", fetchMock);
 
     await createRoom({
-      hostName: "Mina"
+      hostName: "Mina",
     });
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/rooms", expect.objectContaining({
-      body: JSON.stringify({
-        hostName: "Mina"
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/rooms",
+      expect.objectContaining({
+        body: JSON.stringify({
+          hostName: "Mina",
+        }),
+        method: "POST",
       }),
-      method: "POST"
-    }));
+    );
   });
 
   it("falls back to compat GET when POST returns a proxy block page", async () => {
@@ -104,10 +107,10 @@ describe("roomTransport", () => {
       .mockResolvedValueOnce(
         new Response("<html>blocked</html>", {
           headers: {
-            "content-type": "text/html"
+            "content-type": "text/html",
           },
-          status: 403
-        })
+          status: 403,
+        }),
       )
       .mockResolvedValueOnce(
         new Response(
@@ -126,30 +129,30 @@ describe("roomTransport", () => {
               updatedAt: "2026-06-15T12:00:00.000Z",
               viewer: {
                 participantId: "P_1",
-                isHost: true
-              }
-            }
+                isHost: true,
+              },
+            },
           }),
           {
             headers: {
-              "content-type": "application/json"
+              "content-type": "application/json",
             },
-            status: 200
-          }
-        )
+            status: 200,
+          },
+        ),
       );
     vi.stubGlobal("fetch", fetchMock);
 
     await createRoom({
-      hostName: "Mina"
+      hostName: "Mina",
     });
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining("/api/compat/rooms/create?_ts="),
       expect.objectContaining({
-        method: "GET"
-      })
+        method: "GET",
+      }),
     );
   });
 
@@ -168,17 +171,17 @@ describe("roomTransport", () => {
             updatedAt: "2026-06-15T12:00:00.000Z",
             viewer: {
               participantId: "P_1",
-              isHost: true
-            }
-          }
+              isHost: true,
+            },
+          },
         }),
         {
           headers: {
-            "content-type": "application/json"
+            "content-type": "application/json",
           },
-          status: 200
-        }
-      )
+          status: 200,
+        },
+      ),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -188,15 +191,17 @@ describe("roomTransport", () => {
       "/api/rooms/ROOM-0001/snapshot",
       expect.objectContaining({
         headers: {
-          "x-participant-token": "TOKEN_1"
+          "x-participant-token": "TOKEN_1",
         },
-        method: "GET"
-      })
+        method: "GET",
+      }),
     );
   });
 
   it("sends bodyless host actions without a JSON content type", async () => {
-    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse(snapshotEnvelope())));
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(jsonResponse(snapshotEnvelope())));
     vi.stubGlobal("fetch", fetchMock);
 
     await revealVotes("ROOM-0001", "HOST_TOKEN");
@@ -209,10 +214,10 @@ describe("roomTransport", () => {
       expect.objectContaining({
         body: undefined,
         headers: {
-          "x-host-token": "HOST_TOKEN"
+          "x-host-token": "HOST_TOKEN",
         },
-        method: "POST"
-      })
+        method: "POST",
+      }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
@@ -220,10 +225,10 @@ describe("roomTransport", () => {
       expect.objectContaining({
         body: undefined,
         headers: {
-          "x-host-token": "HOST_TOKEN"
+          "x-host-token": "HOST_TOKEN",
         },
-        method: "POST"
-      })
+        method: "POST",
+      }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
@@ -231,10 +236,10 @@ describe("roomTransport", () => {
       expect.objectContaining({
         body: undefined,
         headers: {
-          "x-host-token": "HOST_TOKEN"
+          "x-host-token": "HOST_TOKEN",
         },
-        method: "POST"
-      })
+        method: "POST",
+      }),
     );
   });
 
@@ -244,10 +249,10 @@ describe("roomTransport", () => {
       .mockResolvedValueOnce(
         new Response("blocked", {
           headers: {
-            "content-type": "text/html"
+            "content-type": "text/html",
           },
-          status: 403
-        })
+          status: 403,
+        }),
       )
       .mockResolvedValueOnce(
         new Response(
@@ -263,17 +268,17 @@ describe("roomTransport", () => {
               updatedAt: "2026-06-15T12:00:00.000Z",
               viewer: {
                 participantId: "P_1",
-                isHost: true
-              }
-            }
+                isHost: true,
+              },
+            },
           }),
           {
             headers: {
-              "content-type": "application/json"
+              "content-type": "application/json",
             },
-            status: 200
-          }
-        )
+            status: 200,
+          },
+        ),
       );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -286,7 +291,7 @@ describe("roomTransport", () => {
       onModeChange,
       onSnapshot,
       participantToken: "TOKEN_1",
-      roomId: "ROOM-0001"
+      roomId: "ROOM-0001",
     });
 
     await vi.runAllTimersAsync();
@@ -303,7 +308,7 @@ describe("roomTransport", () => {
 describe("getConnectionErrorMessage", () => {
   it("uses a transport-neutral network message", () => {
     expect(getConnectionErrorMessage()).toBe(
-      "Unable to connect. Your network or corporate proxy may be blocking room traffic."
+      "Unable to connect. Your network or corporate proxy may be blocking room traffic.",
     );
   });
 });

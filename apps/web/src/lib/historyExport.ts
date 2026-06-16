@@ -34,8 +34,8 @@ export function historyToCsv(history: RoomHistoryEntry[]): string {
           escapeCsvField(entry.finalizedAt),
           escapeCsvField(vote.participantId),
           name,
-          voteLabel
-        ].join(",")
+          voteLabel,
+        ].join(","),
       );
     }
   }
