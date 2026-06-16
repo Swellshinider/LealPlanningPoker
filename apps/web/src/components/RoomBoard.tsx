@@ -10,6 +10,7 @@ import {
   type VoteCard as VoteValue,
 } from "@lealplanningpoker/shared";
 import type { RoomParticipantView, RoomViewModel } from "../lib/roomView";
+import { HELP_PATH } from "../lib/publicPages";
 import {
   deriveReactionPhase,
   filterExpiredReactions,
@@ -18,7 +19,9 @@ import {
 } from "../lib/reactionOverlay";
 import type { ThemeMode } from "../lib/theme";
 import { formatVoteLabel } from "../lib/uiText";
+import { AppLogo } from "./AppLogo";
 import { HistoryPanel } from "./HistoryPanel";
+import { PublicFooter } from "./PublicFooter";
 import { QrCodeModal } from "./QrCodeModal";
 import { ThemeToggleButton } from "./ThemeToggleButton";
 import { VoteCard } from "./VoteCard";
@@ -445,7 +448,7 @@ export function RoomBoard({
     <div className="room-workspace">
       <header className="workspace-topbar">
         <div className="brand-lockup">
-          <span className="brand-mark">LP</span>
+          <AppLogo />
           <div>
             <strong>LealPlanningPoker</strong>
             <span>Room {viewModel.roomId}</span>
@@ -460,6 +463,14 @@ export function RoomBoard({
         </div>
 
         <div className="topbar-actions">
+          <a
+            className="button button--quiet button--link"
+            href={HELP_PATH}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Help
+          </a>
           <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
           <button className="button button--quiet" type="button" onClick={onCopyLink}>
             Copy link
@@ -754,6 +765,7 @@ export function RoomBoard({
 
         <HistoryPanel history={history} roomId={viewModel.roomId} />
       </main>
+      <PublicFooter />
 
       <footer className="vote-dock" aria-label="Vote cards">
         <div className="vote-dock__inner">

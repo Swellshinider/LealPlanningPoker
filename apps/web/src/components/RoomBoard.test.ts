@@ -76,8 +76,15 @@ describe("RoomBoard", () => {
   it("renders the theme toggle in the room header", () => {
     const markup = renderToStaticMarkup(createElement(RoomBoard, createProps()));
 
+    expect(markup).toContain('src="/branding/logo-header.png"');
     expect(markup).toContain('aria-label="Switch to dark theme"');
     expect(markup).toContain('class="button button--quiet theme-toggle"');
+    expect(markup).toContain('href="/help"');
+    expect(markup).toContain('target="_blank"');
+    expect(markup).toContain('rel="noreferrer"');
+    expect(markup).toContain(">Help</a>");
+    expect(markup).toContain("2026 LealPlanningPoker contributors");
+    expect(markup).toContain("github.com/Swellshinider/LealPlanningPoker");
   });
 
   it("hides the story panel for non-host viewers", () => {

@@ -14,4 +14,9 @@ describe("reaction styling", () => {
     expect(styles).toContain(':root[data-theme="dark"] .reaction-popover');
     expect(styles).toContain(':root[data-theme="dark"] .reaction-popover__emoji');
   });
+
+  it("keeps public-page footers pinned after the main content track", () => {
+    expect(styles).toContain(".public-page__main {");
+    expect(styles).toContain("grid-template-rows: auto 1fr auto;");
+  });
 });

@@ -1,13 +1,15 @@
+<center>
+
 # LealPlanningPoker
 
 [![CI](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)]()
-[![Node](https://img.shields.io/badge/Node-%3E%3D22-green.svg)]()
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 Self-hosted planning poker for agile teams. Create a room, share the link, vote, reveal together, and archive the result -- no accounts required.
+
+</center>
 
 ## Table of contents
 

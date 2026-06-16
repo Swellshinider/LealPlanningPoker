@@ -31,7 +31,9 @@ import {
   resolveThemeMode,
   type ThemeMode,
 } from "./lib/theme";
+import { getPublicPage } from "./lib/publicPages";
 import { JoinPanel } from "./components/JoinPanel";
+import { HelpPage } from "./components/HelpPage";
 import { RoomBoard } from "./components/RoomBoard";
 
 type NoticeTone = "info" | "success" | "error";
@@ -101,6 +103,14 @@ function readRoomQuery(): string {
   return value.toUpperCase();
 }
 
+function readPathname(): string {
+  if (typeof window === "undefined") {
+    return "/";
+  }
+
+  return window.location.pathname || "/";
+}
+
 function buildRoomLink(roomCode: string): string {
   if (typeof window === "undefined" || !roomCode) {
     return "";
@@ -143,11 +153,14 @@ export function App() {
   const previousSnapshotRef = useRef<RoomSnapshot | null>(null);
   const displayNameRef = useRef("");
   const initialRoomQuery = readRoomQuery();
+  const pathname = readPathname();
+  const publicPage = getPublicPage(pathname);
   const storedRoomCode = readStorage("roomCode");
   const storedParticipantToken = readStorage("participantToken");
   const storedHostToken = readStorage("hostToken");
   const storedTheme = readStoredTheme();
   const shouldRestoreStoredSession = shouldRestoreStoredSessionTokens(
+    pathname,
     initialRoomQuery,
     storedRoomCode,
     storedParticipantToken,
@@ -271,7 +284,7 @@ export function App() {
   }, [participantToken, roomCode, shouldRestoreStoredSession]);
 
   useEffect(() => {
-    if (!initialRoomQuery || shouldRestoreStoredSession) {
+    if (publicPage !== "home" || !initialRoomQuery || shouldRestoreStoredSession) {
       return;
     }
 
@@ -633,18 +646,22 @@ export function App() {
   if (!snapshot || !viewModel) {
     return (
       <main className="app-shell">
-        <JoinPanel
-          busy={busy}
-          displayName={displayName}
-          roomCode={roomCode}
-          theme={theme}
-          autoFocusName={Boolean(roomCode) && !displayName.trim()}
-          onCreateRoom={() => void createPlanningRoom()}
-          onDisplayNameChange={setDisplayName}
-          onJoinRoom={() => void joinPlanningRoom()}
-          onRoomCodeChange={setRoomCode}
-          onToggleTheme={toggleTheme}
-        />
+        {publicPage === "help" ? (
+          <HelpPage theme={theme} onToggleTheme={toggleTheme} />
+        ) : (
+          <JoinPanel
+            busy={busy}
+            displayName={displayName}
+            roomCode={roomCode}
+            theme={theme}
+            autoFocusName={Boolean(roomCode) && !displayName.trim()}
+            onCreateRoom={() => void createPlanningRoom()}
+            onDisplayNameChange={setDisplayName}
+            onJoinRoom={() => void joinPlanningRoom()}
+            onRoomCodeChange={setRoomCode}
+            onToggleTheme={toggleTheme}
+          />
+        )}
         {bannerText ? (
           <div className={`floating-banner floating-banner--${bannerTone}`}>{bannerText}</div>
         ) : null}
