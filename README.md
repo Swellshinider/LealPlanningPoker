@@ -81,8 +81,6 @@ pnpm format       # Format with Prettier
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contributor workflow.
-For user-facing changes, update [docs/CHANGELOG.md](docs/CHANGELOG.md) in the
-same pull request.
 
 ## Production
 

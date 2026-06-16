@@ -27,7 +27,6 @@ Open <http://localhost:5173> in your browser. The dev server proxies API request
 | `pnpm lint:fix`     | Auto-fix lint issues              |
 | `pnpm format`       | Format the repo with Prettier     |
 | `pnpm format:check` | Verify formatting without writing |
-| `docs/CHANGELOG.md` | Record user-facing release notes  |
 
 ## Branch model
 
@@ -54,36 +53,22 @@ pnpm build
 
 CI runs the same gates on every PR. A failing gate blocks merge.
 
-## Changelog
-
-For any user-facing change, update [`docs/CHANGELOG.md`](docs/CHANGELOG.md) in the
-same pull request. Follow the existing Keep a Changelog structure:
-
-- Add unreleased work under `## [Unreleased]` while the change is still on `main`.
-- Move those notes into the versioned `## [X.Y.Z] - YYYY-MM-DD` section when you
-  cut a release.
-- Keep entries focused on externally visible behavior: features, fixes,
-  workflow changes, or breaking changes.
-
 ### Cutting a release (maintainers)
 
 1. Update the `version` field in the root `package.json` and in each workspace
    package that ships with the release (`apps/server`, `apps/web`,
    `packages/shared`).
-2. Move the release notes from `## [Unreleased]` into a dated
-   `## [X.Y.Z] - YYYY-MM-DD` section in `docs/CHANGELOG.md`. Review the diff.
-3. Commit the version and changelog update as `chore(release): vX.Y.Z`.
-4. Create and push the matching version tag from that commit:
+2. Commit the version update as `chore(release): vX.Y.Z`.
+3. Create and push the matching version tag from that commit:
    ```bash
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
-5. Pushing the `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which
-   verifies that the pushed tag matches the root `package.json` version,
-   extracts the matching section from `docs/CHANGELOG.md`, and creates or
-   updates the `vX.Y.Z` GitHub Release.
-6. Push the release commit to `main` if it is not already there so the version
-   bump and changelog stay in sync with the default branch.
+4. Pushing the `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which
+   verifies that the pushed tag matches the root `package.json` version and
+   creates or updates the `vX.Y.Z` GitHub Release with GitHub-generated notes.
+5. Push the release commit to `main` if it is not already there so the version
+   bump stays in sync with the default branch.
 
 ## Commit messages
 

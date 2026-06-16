@@ -19,7 +19,6 @@
 - [ ] My code follows the project's style guidelines (`pnpm lint`, `pnpm format:check`).
 - [ ] I have run `pnpm typecheck` and it passes.
 - [ ] I have added or updated tests for my changes (`pnpm test`).
-- [ ] I have updated `docs/CHANGELOG.md` for any user-facing change.
 - [ ] I have updated the documentation (README, CONTRIBUTING, etc.) where relevant.
 
 ## Related issues
