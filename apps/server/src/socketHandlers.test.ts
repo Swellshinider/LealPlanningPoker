@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { registerSocketHandlers } from "./socketHandlers";
 import { RoomStore } from "./roomStore";
 
-type Handler = (...args: any[]) => void;
+type Handler = (...args: unknown[]) => void;
 
 interface FakeSocket {
   id: string;
@@ -23,7 +23,7 @@ function createFakeSocket(id = "socket-1"): FakeSocket {
     },
     emit(event, payload) {
       this.emitted.push({ event, payload });
-    }
+    },
   };
 
   return socket;
@@ -40,8 +40,8 @@ function createFakeIo(socket: FakeSocket) {
         }
       },
       sockets: {
-        sockets: new Map([[socket.id, socket]])
-      }
+        sockets: new Map([[socket.id, socket]]),
+      },
     },
     connect() {
       if (!connectionHandler) {
@@ -49,7 +49,7 @@ function createFakeIo(socket: FakeSocket) {
       }
 
       connectionHandler(socket);
-    }
+    },
   };
 }
 
@@ -60,7 +60,7 @@ function createStore() {
   return new RoomStore({
     idFactory: () => `ID_${(nextId += 1).toString().padStart(3, "0")}`,
     roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`,
-    now: () => new Date("2026-06-11T12:00:00.000Z")
+    now: () => new Date("2026-06-11T12:00:00.000Z"),
   });
 }
 
@@ -84,8 +84,8 @@ describe("registerSocketHandlers", () => {
       ok: false,
       error: {
         code: "INVALID_PAYLOAD",
-        message: "Invalid hostName."
-      }
+        message: "Invalid hostName.",
+      },
     });
   });
 
@@ -106,8 +106,8 @@ describe("registerSocketHandlers", () => {
       event: "room:error",
       payload: {
         code: "INVALID_PAYLOAD",
-        message: "Invalid hostName."
-      }
+        message: "Invalid hostName.",
+      },
     });
   });
 
@@ -136,8 +136,8 @@ describe("registerSocketHandlers", () => {
       ok: false,
       error: {
         code: "UNKNOWN_ERROR",
-        message: "Unexpected server error."
-      }
+        message: "Unexpected server error.",
+      },
     });
   });
 
@@ -166,8 +166,8 @@ describe("registerSocketHandlers", () => {
       ok: false,
       error: {
         code: "RATE_LIMITED",
-        message: "Too many requests. Try again shortly."
-      }
+        message: "Too many requests. Try again shortly.",
+      },
     });
   });
 
@@ -186,9 +186,9 @@ describe("registerSocketHandlers", () => {
     socket.handlers.get("room:join")?.(
       {
         roomId: created.roomId,
-        displayName: "Ana"
+        displayName: "Ana",
       },
-      joinAck
+      joinAck,
     );
     const joined = joinAck.mock.calls[0]?.[0];
 
@@ -198,9 +198,9 @@ describe("registerSocketHandlers", () => {
         roomId: created.roomId,
         participantToken: created.participantToken,
         emoji: "💯",
-        targetParticipantId: joined.snapshot.viewer.participantId
+        targetParticipantId: joined.snapshot.viewer.participantId,
       },
-      throwAck
+      throwAck,
     );
 
     expect(throwAck).toHaveBeenCalledWith({
@@ -209,10 +209,10 @@ describe("registerSocketHandlers", () => {
         activeReactions: [
           expect.objectContaining({
             emoji: "💯",
-            targetParticipantId: joined.snapshot.viewer.participantId
-          })
-        ]
-      })
+            targetParticipantId: joined.snapshot.viewer.participantId,
+          }),
+        ],
+      }),
     });
   });
 
@@ -232,17 +232,17 @@ describe("registerSocketHandlers", () => {
       {
         roomId: created.roomId,
         participantToken: created.participantToken,
-        targetParticipantId: created.snapshot.viewer.participantId
+        targetParticipantId: created.snapshot.viewer.participantId,
       },
-      malformedAck
+      malformedAck,
     );
 
     expect(malformedAck).toHaveBeenCalledWith({
       ok: false,
       error: {
         code: "INVALID_PAYLOAD",
-        message: "Invalid emoji."
-      }
+        message: "Invalid emoji.",
+      },
     });
 
     const domainAck = vi.fn();
@@ -251,17 +251,17 @@ describe("registerSocketHandlers", () => {
         roomId: created.roomId,
         participantToken: created.participantToken,
         emoji: "👏",
-        targetParticipantId: created.snapshot.viewer.participantId
+        targetParticipantId: created.snapshot.viewer.participantId,
       },
-      domainAck
+      domainAck,
     );
 
     expect(domainAck).toHaveBeenCalledWith({
       ok: false,
       error: {
         code: "INVALID_REACTION",
-        message: "Pick another player."
-      }
+        message: "Pick another player.",
+      },
     });
   });
 });
