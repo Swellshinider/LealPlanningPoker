@@ -13,16 +13,23 @@ describe("resolveHostTokenAfterJoin", () => {
 
 describe("shouldRestoreStoredSessionTokens", () => {
   it("restores a stored token when the room link does not change rooms", () => {
-    expect(shouldRestoreStoredSessionTokens("", "ROOM01", "TOKEN01")).toBe(true);
-    expect(shouldRestoreStoredSessionTokens("ROOM01", "ROOM01", "TOKEN01")).toBe(true);
+    expect(shouldRestoreStoredSessionTokens("/", "", "ROOM01", "TOKEN01")).toBe(true);
+    expect(shouldRestoreStoredSessionTokens("/", "ROOM01", "ROOM01", "TOKEN01")).toBe(true);
   });
 
   it("does not restore a stored token for a different room", () => {
-    expect(shouldRestoreStoredSessionTokens("ROOM02", "ROOM01", "TOKEN01")).toBe(false);
-    expect(shouldRestoreStoredSessionTokens("ROOM02", "", "TOKEN01")).toBe(false);
+    expect(shouldRestoreStoredSessionTokens("/", "ROOM02", "ROOM01", "TOKEN01")).toBe(false);
+    expect(shouldRestoreStoredSessionTokens("/", "ROOM02", "", "TOKEN01")).toBe(false);
   });
 
   it("does not restore an empty token", () => {
-    expect(shouldRestoreStoredSessionTokens("ROOM01", "ROOM01", "")).toBe(false);
+    expect(shouldRestoreStoredSessionTokens("/", "ROOM01", "ROOM01", "")).toBe(false);
+  });
+
+  it("does not restore a stored token on the help page", () => {
+    expect(shouldRestoreStoredSessionTokens("/help", "", "ROOM01", "TOKEN01")).toBe(false);
+    expect(shouldRestoreStoredSessionTokens("/help", "ROOM01", "ROOM01", "TOKEN01")).toBe(
+      false,
+    );
   });
 });

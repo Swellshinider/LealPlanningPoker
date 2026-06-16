@@ -25,4 +25,15 @@ describe("JoinPanel", () => {
     expect(markup).toContain('aria-label="Switch to light theme"');
     expect(markup).toContain('class="button button--quiet theme-toggle"');
   });
+
+  it("renders public help navigation and footer metadata", () => {
+    const markup = renderToStaticMarkup(createElement(JoinPanel, createProps()));
+
+    expect(markup).toContain('href="/help"');
+    expect(markup).toContain(">Help</a>");
+    expect(markup).toContain("How it works");
+    expect(markup).toContain("Eduardo Leal");
+    expect(markup).toContain("2026 LealPlanningPoker contributors");
+    expect(markup).toContain("github.com/Swellshinider/LealPlanningPoker");
+  });
 });

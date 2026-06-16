@@ -3,11 +3,16 @@ export function resolveHostTokenAfterJoin(isHost: boolean, participantToken: str
 }
 
 export function shouldRestoreStoredSessionTokens(
+  pathname: string,
   roomCodeQuery: string,
   storedRoomCode: string,
   participantToken: string,
 ): boolean {
   if (!participantToken) {
+    return false;
+  }
+
+  if (pathname !== "/") {
     return false;
   }
 

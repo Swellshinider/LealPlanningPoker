@@ -10,6 +10,7 @@ import {
   type VoteCard as VoteValue,
 } from "@lealplanningpoker/shared";
 import type { RoomParticipantView, RoomViewModel } from "../lib/roomView";
+import { HELP_PATH } from "../lib/publicPages";
 import {
   deriveReactionPhase,
   filterExpiredReactions,
@@ -460,6 +461,9 @@ export function RoomBoard({
         </div>
 
         <div className="topbar-actions">
+          <a className="button button--quiet button--link" href={HELP_PATH} target="_blank" rel="noreferrer">
+            Help
+          </a>
           <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
           <button className="button button--quiet" type="button" onClick={onCopyLink}>
             Copy link

@@ -78,6 +78,10 @@ describe("RoomBoard", () => {
 
     expect(markup).toContain('aria-label="Switch to dark theme"');
     expect(markup).toContain('class="button button--quiet theme-toggle"');
+    expect(markup).toContain('href="/help"');
+    expect(markup).toContain('target="_blank"');
+    expect(markup).toContain('rel="noreferrer"');
+    expect(markup).toContain(">Help</a>");
   });
 
   it("hides the story panel for non-host viewers", () => {

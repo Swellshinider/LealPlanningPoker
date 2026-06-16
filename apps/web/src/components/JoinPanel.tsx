@@ -1,4 +1,6 @@
+import { HELP_PATH } from "../lib/publicPages";
 import type { ThemeMode } from "../lib/theme";
+import { PublicFooter } from "./PublicFooter";
 import { ThemeToggleButton } from "./ThemeToggleButton";
 
 export interface JoinPanelProps {
@@ -27,7 +29,7 @@ export function JoinPanel({
   onToggleTheme,
 }: JoinPanelProps) {
   return (
-    <section className="landing-workspace">
+    <section className="landing-workspace public-page">
       <header className="workspace-topbar">
         <div className="brand-lockup">
           <span className="brand-mark">LP</span>
@@ -38,19 +40,39 @@ export function JoinPanel({
         </div>
 
         <div className="topbar-actions">
+          <a className="button button--quiet button--link" href={HELP_PATH}>
+            Help
+          </a>
           <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
         </div>
       </header>
 
-      <div className="landing-grid">
-        <section className="landing-intro">
+      <section className="public-hero">
+        <div className="landing-intro public-hero__copy">
           <p className="section-label">Planning poker</p>
-          <h1>Run estimation sessions from one clean workspace.</h1>
+          <h1>Run focused estimation sessions without adding process overhead.</h1>
           <p>
-            Create a room, share the code, vote privately, reveal together, and archive the result
-            without accounts or setup overhead.
+            Create a room in seconds, invite the team with a code or link, reveal every estimate at
+            once, and keep each finalized round visible while the session stays active.
           </p>
-        </section>
+          <div className="public-highlights">
+            <div className="workspace-panel public-highlight">
+              <strong>No accounts</strong>
+              <span>Open a room and start immediately.</span>
+            </div>
+            <div className="workspace-panel public-highlight">
+              <strong>Private voting</strong>
+              <span>Everyone commits before estimates are revealed.</span>
+            </div>
+            <div className="workspace-panel public-highlight">
+              <strong>Built for teams</strong>
+              <span>Copy links, show QR codes, and archive finished rounds.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="landing-grid">
 
         <section className="workspace-panel join-panel">
           <div className="panel-heading">
@@ -117,6 +139,40 @@ export function JoinPanel({
           </form>
         </section>
       </div>
+
+      <section className="workspace-panel landing-support">
+        <div className="panel-heading">
+          <div>
+            <p className="section-label">How it works</p>
+            <h2>Three quick steps</h2>
+          </div>
+        </div>
+        <div className="support-steps">
+          <article className="support-step">
+            <span className="support-step__index">1</span>
+            <div>
+              <h3>Create a room</h3>
+              <p>Pick your display name and open a fresh session as the host.</p>
+            </div>
+          </article>
+          <article className="support-step">
+            <span className="support-step__index">2</span>
+            <div>
+              <h3>Share and vote</h3>
+              <p>Invite the team with the room code or link, then let everyone vote privately.</p>
+            </div>
+          </article>
+          <article className="support-step">
+            <span className="support-step__index">3</span>
+            <div>
+              <h3>Reveal and finalize</h3>
+              <p>Compare estimates together, finalize the round, and keep the result in the archive.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <PublicFooter />
     </section>
   );
 }

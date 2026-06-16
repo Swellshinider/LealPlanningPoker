@@ -40,9 +40,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   participant. The emoji arcs from the thrower to the target, lingers briefly
   above the target's head, and disappears after a few seconds without being
   saved to room history.
+- Added a dedicated `/help` page with step-by-step usage guidance plus a GitHub
+  issues call-to-action for questions, suggestions, and bug reports.
 
 ### Changed
 
+- Rebuilt the initial public page into a hero-first layout with the existing
+  theme/colors, refreshed create/join sections, a short "How it works" band,
+  and a footer linking author/copyright information to the project repository.
+- Added `Help` navigation to the public header and the in-room header. The
+  in-room link opens the help page in a new tab so active sessions stay on the
+  room board.
 - Renamed the "Reset" action to "Clear votes" and moved it to the left side of
   the host action row so it is visually separated from the centered Reveal and
   Finalize buttons. The toast confirmation now reads "Votes cleared."
