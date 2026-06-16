@@ -18,9 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Repository now ships with ESLint (flat config) + Prettier, `.editorconfig`,
   `.gitattributes`, and a Docker Compose file for one-command local deploys.
 - Added the standard set of open-source community files: `CONTRIBUTING.md`,
-  `CODE_OF_CONDUCT.md`, `SECURITY.md`, issue templates (bug + feature), a pull
-  request template, and a Dependabot config covering npm, GitHub Actions, and
-  Docker.
+  `CODE_OF_CONDUCT.md`, `SECURITY.md`, issue templates (bug + feature), and a
+  pull request template.
 - Added GitHub Actions pipelines: `ci.yml` (lint -> typecheck -> build -> test
   with per-stage gating so a failed stage skips downstream jobs), `codeql.yml`
   for security scanning, and `release.yml` for tag-driven releases.
