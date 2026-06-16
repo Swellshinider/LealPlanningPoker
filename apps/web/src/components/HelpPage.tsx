@@ -1,5 +1,6 @@
 import { HELP_PATH, HOME_PATH, ISSUES_URL } from "../lib/publicPages";
 import type { ThemeMode } from "../lib/theme";
+import { AppLogo } from "./AppLogo";
 import { PublicFooter } from "./PublicFooter";
 import { ThemeToggleButton } from "./ThemeToggleButton";
 
@@ -31,11 +32,13 @@ const HELP_STEPS = [
   },
   {
     title: "Finalize the round",
-    description: "Once the discussion is done, finalize the result and keep it in the session archive.",
+    description:
+      "Once the discussion is done, finalize the result and keep it in the session archive.",
   },
   {
     title: "Start the next round",
-    description: "Set the next story, clear votes, and repeat the process as long as the session lasts.",
+    description:
+      "Set the next story, clear votes, and repeat the process as long as the session lasts.",
   },
 ];
 
@@ -44,7 +47,7 @@ export function HelpPage({ theme, onToggleTheme }: HelpPageProps) {
     <section className="landing-workspace public-page">
       <header className="workspace-topbar">
         <div className="brand-lockup">
-          <span className="brand-mark">LP</span>
+          <AppLogo />
           <div>
             <strong>LealPlanningPoker</strong>
             <span>Step-by-step guide</span>
@@ -66,56 +69,52 @@ export function HelpPage({ theme, onToggleTheme }: HelpPageProps) {
         </div>
       </header>
 
-      <section className="public-hero public-hero--help">
-        <div className="public-hero__copy">
-          <p className="section-label">Help</p>
-          <h1>How to run a planning poker session from start to finish.</h1>
+      <div className="public-page__main">
+        <section className="workspace-panel help-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="section-label">Guide</p>
+              <h2>Step by step</h2>
+            </div>
+          </div>
+
+          <ol className="help-steps">
+            {HELP_STEPS.map((step, index) => (
+              <li key={step.title} className="help-step">
+                <span className="help-step__index">{index + 1}</span>
+                <div className="help-step__copy">
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className="workspace-panel help-cta">
+          <div className="panel-heading">
+            <div>
+              <p className="section-label">Support</p>
+              <h2>Questions, suggestions, or bug reports</h2>
+            </div>
+          </div>
           <p>
-            Follow the same sequence your team uses in the app: open a room, invite people,
-            collect hidden votes, reveal together, and finalize each round.
+            If something is unclear or you want to suggest an improvement, please create an issue in
+            the GitHub repo so the project can track questions, suggestions, and bug reports in one
+            place.
           </p>
-        </div>
-      </section>
-
-      <section className="workspace-panel help-panel">
-        <div className="panel-heading">
-          <div>
-            <p className="section-label">Guide</p>
-            <h2>Step by step</h2>
+          <div className="action-row">
+            <a
+              className="button button--primary button--link"
+              href={ISSUES_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open GitHub issues
+            </a>
           </div>
-        </div>
-
-        <ol className="help-steps">
-          {HELP_STEPS.map((step, index) => (
-            <li key={step.title} className="help-step">
-              <span className="help-step__index">{index + 1}</span>
-              <div className="help-step__copy">
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="workspace-panel help-cta">
-        <div className="panel-heading">
-          <div>
-            <p className="section-label">Support</p>
-            <h2>Questions, suggestions, or bug reports</h2>
-          </div>
-        </div>
-        <p>
-          If something is unclear or you want to suggest an improvement, please create an issue in
-          the GitHub repo so the project can track questions, suggestions, and bug reports in one
-          place.
-        </p>
-        <div className="action-row">
-          <a className="button button--primary button--link" href={ISSUES_URL} target="_blank" rel="noreferrer">
-            Open GitHub issues
-          </a>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <PublicFooter />
     </section>

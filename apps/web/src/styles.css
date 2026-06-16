@@ -115,13 +115,19 @@ textarea:focus-visible {
 }
 
 .public-page {
+  grid-template-rows: auto 1fr auto;
+}
+
+.public-page__main {
+  display: grid;
+  gap: 16px;
   align-content: start;
 }
 
 .room-workspace {
   min-height: 100vh;
   padding: 16px 16px 172px;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto 1fr auto;
 }
 
 .workspace-topbar {
@@ -155,15 +161,16 @@ textarea:focus-visible {
 }
 
 .brand-mark {
-  display: inline-grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 7px;
-  background: var(--text);
-  color: var(--surface);
-  font-size: 0.78rem;
-  font-weight: 800;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+}
+
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .brand-lockup div {
@@ -213,31 +220,10 @@ textarea:focus-visible {
   align-items: stretch;
 }
 
-.landing-intro,
 .join-panel {
   padding: 28px;
 }
 
-.landing-intro {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.98)), var(--surface);
-}
-
-.landing-intro h1 {
-  max-width: 14ch;
-  margin: 8px 0 0;
-  font-size: clamp(1.9rem, 4vw, 3.8rem);
-  font-weight: 760;
-  line-height: 0.98;
-  letter-spacing: 0;
-}
-
-.landing-intro p,
 .room-hero__copy p {
   max-width: 62ch;
   margin: 18px 0 0;
@@ -369,7 +355,6 @@ textarea:focus-visible {
 }
 
 .public-hero,
-.landing-support,
 .help-panel,
 .help-cta,
 .public-footer {
@@ -389,35 +374,11 @@ textarea:focus-visible {
   gap: 12px;
 }
 
-.public-highlights {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.public-highlight,
-.support-step,
-.help-step {
-  padding: 18px;
-  border-color: rgba(23, 105, 224, 0.08);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), var(--surface));
-}
-
-.public-highlight {
-  display: grid;
-  gap: 6px;
-}
-
-.public-highlight strong,
-.support-step h3,
 .help-step h3 {
   font-size: 0.98rem;
   font-weight: 720;
 }
 
-.public-highlight span,
-.support-step p,
 .help-step p,
 .help-cta p,
 .public-footer span {
@@ -425,54 +386,57 @@ textarea:focus-visible {
   line-height: 1.6;
 }
 
-.landing-support,
 .help-panel,
 .help-cta {
   padding: 28px;
 }
 
-.support-steps,
 .help-steps {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   margin: 0;
   padding: 0;
-}
-
-.support-steps {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.help-steps {
   list-style: none;
 }
 
-.support-step,
 .help-step {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 14px;
+  gap: 10px;
+  align-items: start;
+  padding: 14px 16px;
   border: 1px solid var(--line);
   border-radius: calc(var(--radius) + 4px);
+  border-color: rgba(23, 105, 224, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), var(--surface));
 }
 
-.support-step > div,
 .help-step__copy {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
-.support-step__index,
 .help-step__index {
   display: inline-grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
+  margin-top: 1px;
   border-radius: 999px;
   background: var(--text);
   color: var(--surface);
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   font-weight: 780;
+}
+
+.help-step h3,
+.help-step p {
+  margin: 0;
+}
+
+.help-step p {
+  font-size: 0.95rem;
+  line-height: 1.45;
 }
 
 .public-footer {
@@ -504,6 +468,11 @@ textarea:focus-visible {
 
 .public-footer__link:hover {
   text-decoration: underline;
+}
+
+.room-workspace > .public-footer {
+  width: min(100%, 1180px);
+  margin: 0 auto;
 }
 
 .button--secondary {
@@ -1639,18 +1608,8 @@ textarea:focus-visible {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.34);
 }
 
-:root[data-theme="dark"] .brand-mark {
-  background: var(--text);
-  color: #05080b;
-}
-
 :root[data-theme="dark"] .workspace-panel {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.34);
-}
-
-:root[data-theme="dark"] .landing-intro {
-  background:
-    linear-gradient(180deg, rgba(13, 20, 28, 0.72), rgba(9, 13, 18, 0.98)), var(--surface);
 }
 
 :root[data-theme="dark"] .button--link.is-active {
@@ -1797,14 +1756,11 @@ textarea:focus-visible {
     radial-gradient(circle at left bottom, rgba(85, 214, 170, 0.16), transparent 30%);
 }
 
-:root[data-theme="dark"] .public-highlight,
-:root[data-theme="dark"] .support-step,
 :root[data-theme="dark"] .help-step {
   border-color: rgba(52, 67, 82, 0.94);
   background: linear-gradient(180deg, rgba(16, 23, 31, 0.96), rgba(10, 15, 21, 0.98));
 }
 
-:root[data-theme="dark"] .support-step__index,
 :root[data-theme="dark"] .help-step__index {
   background: var(--accent-strong);
   color: #07111b;
@@ -1874,6 +1830,10 @@ textarea:focus-visible {
     gap: 10px;
   }
 
+  .public-page__main {
+    gap: 10px;
+  }
+
   .workspace-topbar,
   .topbar-actions,
   .inline-form {
@@ -1890,7 +1850,6 @@ textarea:focus-visible {
     gap: 10px;
   }
 
-  .landing-intro,
   .join-panel,
   .story-panel,
   .profile-panel,
@@ -1899,25 +1858,15 @@ textarea:focus-visible {
     padding: 16px;
   }
 
-  .landing-intro {
-    min-height: auto;
-  }
-
-  .landing-intro h1,
   .room-hero h1 {
     max-width: none;
     font-size: clamp(2rem, 11vw, 3rem);
   }
 
-  .landing-support,
   .help-panel,
   .help-cta,
   .public-footer {
     padding: 16px;
-  }
-
-  .support-steps {
-    grid-template-columns: 1fr;
   }
 
   .room-hero__room-id {

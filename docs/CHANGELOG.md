@@ -45,6 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Simplified the public landing page so the header now flows directly into the
+  create-room and join-room panels, replaced the `LP` badge across app headers
+  with the provided logo, added repo-owned favicons, and tightened the `/help`
+  step list into a denser, easier-to-scan guide.
+- Removed the `/help` page intro banner, anchored the public footer to the
+  bottom of the landing-page viewport, and added the same footer to the in-room
+  voting page above the vote dock.
 - Rebuilt the initial public page into a hero-first layout with the existing
   theme/colors, refreshed create/join sections, a short "How it works" band,
   and a footer linking author/copyright information to the project repository.

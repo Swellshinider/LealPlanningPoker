@@ -26,12 +26,18 @@ describe("JoinPanel", () => {
     expect(markup).toContain('class="button button--quiet theme-toggle"');
   });
 
-  it("renders public help navigation and footer metadata", () => {
+  it("renders the simplified landing page with shared branding and footer metadata", () => {
     const markup = renderToStaticMarkup(createElement(JoinPanel, createProps()));
 
+    expect(markup).toContain('src="/branding/logo-header.png"');
+    expect(markup).toContain('alt=""');
     expect(markup).toContain('href="/help"');
     expect(markup).toContain(">Help</a>");
-    expect(markup).toContain("How it works");
+    expect(markup).not.toContain("How it works");
+    expect(markup).not.toContain("Three quick steps");
+    expect(markup).not.toContain(
+      "Run focused estimation sessions without adding process overhead.",
+    );
     expect(markup).toContain("Eduardo Leal");
     expect(markup).toContain("2026 LealPlanningPoker contributors");
     expect(markup).toContain("github.com/Swellshinider/LealPlanningPoker");

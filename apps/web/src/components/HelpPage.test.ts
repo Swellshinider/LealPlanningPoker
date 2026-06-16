@@ -13,7 +13,9 @@ describe("HelpPage", () => {
       }),
     );
 
+    expect(markup).toContain('src="/branding/logo-header.png"');
     expect(markup).toContain(">Home</a>");
+    expect(markup).not.toContain("How to run a planning poker session from start to finish.");
     expect(markup).toContain("Create a room");
     expect(markup).toContain("Share the room code or link");
     expect(markup).toContain("Vote privately");
