@@ -5,7 +5,7 @@ import {
   isThrowableReactionEmoji,
   normalizeDisplayName,
   shouldRevealVoteForViewer,
-  summarizeVotes
+  summarizeVotes,
 } from "./room";
 
 describe("normalizeDisplayName", () => {
@@ -22,14 +22,14 @@ describe("summarizeVotes", () => {
       { card: "3", count: 2 },
       { card: "coffee", count: 1 },
       { card: "4", count: 1 },
-      { card: "10", count: 1 }
+      { card: "10", count: 1 },
     ]);
   });
 
   it("sorts large custom numeric strings without losing precision", () => {
     expect(summarizeVotes(["9007199254740993", "9007199254740992"])).toEqual([
       { card: "9007199254740992", count: 1 },
-      { card: "9007199254740993", count: 1 }
+      { card: "9007199254740993", count: 1 },
     ]);
   });
 });
@@ -40,7 +40,7 @@ describe("calculateVoteResultStats", () => {
       average: 6,
       confidence: 33,
       numericVoteCount: 3,
-      unknownVoteCount: 0
+      unknownVoteCount: 0,
     });
   });
 
@@ -49,7 +49,7 @@ describe("calculateVoteResultStats", () => {
       average: 3,
       confidence: 100,
       numericVoteCount: 2,
-      unknownVoteCount: 0
+      unknownVoteCount: 0,
     });
   });
 
@@ -58,7 +58,7 @@ describe("calculateVoteResultStats", () => {
       average: 11 / 3,
       confidence: 50,
       numericVoteCount: 3,
-      unknownVoteCount: 1
+      unknownVoteCount: 1,
     });
   });
 
@@ -67,7 +67,7 @@ describe("calculateVoteResultStats", () => {
       average: null,
       confidence: 0,
       numericVoteCount: 0,
-      unknownVoteCount: 2
+      unknownVoteCount: 2,
     });
   });
 
@@ -76,7 +76,7 @@ describe("calculateVoteResultStats", () => {
       average: null,
       confidence: null,
       numericVoteCount: 0,
-      unknownVoteCount: 0
+      unknownVoteCount: 0,
     });
   });
 });

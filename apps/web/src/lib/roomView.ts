@@ -3,12 +3,12 @@ import type {
   RoomParticipantSnapshot,
   RoomSnapshot,
   VoteResultStats,
-  VoteSummaryEntry
+  VoteSummaryEntry,
 } from "@lealplanningpoker/shared";
 import {
   calculateVoteResultStats,
   shouldRevealVoteForViewer,
-  summarizeVotes
+  summarizeVotes,
 } from "@lealplanningpoker/shared";
 
 export interface RoomParticipantView {
@@ -44,7 +44,7 @@ export interface RoomViewModel {
 
 export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
   const participants = snapshot.participants.map((participant) =>
-    toParticipantView(snapshot, participant)
+    toParticipantView(snapshot, participant),
   );
   const isHost = snapshot.viewer.isHost;
   const isVoting = snapshot.phase === "voting";
@@ -72,21 +72,22 @@ export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
     participants,
     activeReactions: snapshot.activeReactions,
     resultStats: shouldShowResults ? calculateVoteResultStats(resultVotes) : null,
-    voteSummary: shouldShowResults ? summarizeVotes(resultVotes) : []
+    voteSummary: shouldShowResults ? summarizeVotes(resultVotes) : [],
   };
 }
 
 function toParticipantView(
   snapshot: RoomSnapshot,
-  participant: RoomParticipantSnapshot
+  participant: RoomParticipantSnapshot,
 ): RoomParticipantView {
   const visibleVote = shouldRevealVoteForViewer({
     phase: snapshot.phase,
-    isSelf: participant.id === snapshot.viewer.participantId
+    isSelf: participant.id === snapshot.viewer.participantId,
   })
     ? participant.vote
     : null;
-  const tableVote = snapshot.phase === "revealed" || snapshot.phase === "finalized" ? participant.vote : null;
+  const tableVote =
+    snapshot.phase === "revealed" || snapshot.phase === "finalized" ? participant.vote : null;
 
   return {
     id: participant.id,
@@ -99,6 +100,6 @@ function toParticipantView(
     visibleVote,
     tableVote,
     joinedAt: participant.joinedAt,
-    updatedAt: participant.updatedAt
+    updatedAt: participant.updatedAt,
   };
 }

@@ -11,7 +11,7 @@ import {
   normalizeVoteCard,
   normalizeDisplayName,
   shouldRevealVoteForViewer,
-  summarizeVotes
+  summarizeVotes,
 } from "@lealplanningpoker/shared";
 
 export class RoomStoreError extends Error {
@@ -39,7 +39,7 @@ export class RoomStoreError extends Error {
       | "INVALID_STORY"
       | "INVALID_DISPLAY_NAME"
       | "ROOM_FULL",
-    message: string
+    message: string,
   ) {
     super(message);
     this.name = "RoomStoreError";
@@ -194,7 +194,7 @@ export class RoomStore {
       connected: true,
       vote: null,
       joinedAt: now,
-      updatedAt: now
+      updatedAt: now,
     };
 
     const room: RoomRecord = {
@@ -208,7 +208,7 @@ export class RoomStore {
       history: [],
       activeReactions: [],
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     };
 
     this.rooms.set(roomId, room);
@@ -217,7 +217,7 @@ export class RoomStore {
       roomId,
       hostToken,
       participantToken: hostToken,
-      snapshot: this.buildSnapshot(room, hostParticipantId)
+      snapshot: this.buildSnapshot(room, hostParticipantId),
     };
   }
 
@@ -253,7 +253,7 @@ export class RoomStore {
     return {
       roomId: room.roomId,
       participantToken: participant.token,
-      snapshot: this.buildSnapshot(room, participant.id)
+      snapshot: this.buildSnapshot(room, participant.id),
     };
   }
 
@@ -312,12 +312,18 @@ export class RoomStore {
 
     const story = this.normalizeStory(input.story);
     if (room.phase === "revealed") {
-      throw new RoomStoreError("ROUND_LOCKED", "Reset or finalize the current round before changing the story.");
+      throw new RoomStoreError(
+        "ROUND_LOCKED",
+        "Reset or finalize the current round before changing the story.",
+      );
     }
 
     const hasVotes = this.getParticipants(room).some((candidate) => candidate.vote !== null);
     if (room.phase === "voting" && hasVotes) {
-      throw new RoomStoreError("ROUND_LOCKED", "Reset or finalize the current round before changing the story.");
+      throw new RoomStoreError(
+        "ROUND_LOCKED",
+        "Reset or finalize the current round before changing the story.",
+      );
     }
 
     const now = this.nowIso();
@@ -386,8 +392,8 @@ export class RoomStore {
         throwerParticipantId: thrower.id,
         targetParticipantId: target.id,
         createdAt,
-        expiresAt
-      }
+        expiresAt,
+      },
     ].slice(-MAX_ACTIVE_REACTIONS_PER_ROOM);
     room.updatedAt = createdAt;
 
@@ -448,8 +454,8 @@ export class RoomStore {
       votes: participants.map((candidate) => ({
         participantId: candidate.id,
         name: candidate.name,
-        vote: candidate.vote
-      }))
+        vote: candidate.vote,
+      })),
     };
 
     room.history = [...room.history, historyEntry];
@@ -491,7 +497,10 @@ export class RoomStore {
     const existing = this.offlineTimers.get(room.roomId);
 
     if (allOffline && !existing) {
-      const timer = setTimeout(() => this.handleOfflineExpiration(room.roomId), this.offlineCleanupMs);
+      const timer = setTimeout(
+        () => this.handleOfflineExpiration(room.roomId),
+        this.offlineCleanupMs,
+      );
       if (typeof timer.unref === "function") {
         timer.unref();
       }
@@ -528,7 +537,7 @@ export class RoomStore {
   private buildSnapshot(room: RoomRecord, viewerParticipantId: string): RoomSnapshot {
     const viewer = this.getParticipantOrThrow(room, viewerParticipantId);
     const participants = this.getParticipants(room).map((participant) =>
-      this.toSnapshotParticipant(room, participant, viewer)
+      this.toSnapshotParticipant(room, participant, viewer),
     );
 
     return {
@@ -542,19 +551,19 @@ export class RoomStore {
       updatedAt: room.updatedAt,
       viewer: {
         participantId: viewer.id,
-        isHost: viewer.isHost
-      }
+        isHost: viewer.isHost,
+      },
     };
   }
 
   private toSnapshotParticipant(
     room: RoomRecord,
     participant: RoomParticipantRecord,
-    viewer: RoomParticipantRecord
+    viewer: RoomParticipantRecord,
   ): RoomParticipantSnapshot {
     const visible = shouldRevealVoteForViewer({
       phase: room.phase,
-      isSelf: participant.id === viewer.id
+      isSelf: participant.id === viewer.id,
     });
 
     return {
@@ -565,7 +574,7 @@ export class RoomStore {
       vote: visible ? participant.vote : null,
       hasVoted: participant.vote !== null,
       joinedAt: participant.joinedAt,
-      updatedAt: participant.updatedAt
+      updatedAt: participant.updatedAt,
     };
   }
 
@@ -581,14 +590,17 @@ export class RoomStore {
   private pruneExpiredReactions(room: RoomRecord): void {
     const nowMs = this.now().getTime();
     room.activeReactions = room.activeReactions.filter(
-      (reaction) => new Date(reaction.expiresAt).getTime() > nowMs
+      (reaction) => new Date(reaction.expiresAt).getTime() > nowMs,
     );
   }
 
   private getParticipantByTokenOrThrow(room: RoomRecord, token: string): RoomParticipantRecord {
     const participantId = room.participantTokens.get(token);
     if (!participantId) {
-      throw new RoomStoreError("PARTICIPANT_NOT_FOUND", "That participant token is not registered in this room.");
+      throw new RoomStoreError(
+        "PARTICIPANT_NOT_FOUND",
+        "That participant token is not registered in this room.",
+      );
     }
     return this.getParticipantOrThrow(room, participantId);
   }
@@ -596,7 +608,10 @@ export class RoomStore {
   private getParticipantOrThrow(room: RoomRecord, participantId: string): RoomParticipantRecord {
     const participant = room.participants.get(participantId);
     if (!participant) {
-      throw new RoomStoreError("PARTICIPANT_NOT_FOUND", `Participant ${participantId} was not found in room ${room.roomId}.`);
+      throw new RoomStoreError(
+        "PARTICIPANT_NOT_FOUND",
+        `Participant ${participantId} was not found in room ${room.roomId}.`,
+      );
     }
     return participant;
   }
@@ -616,7 +631,7 @@ export class RoomStore {
       connected: true,
       vote: null,
       joinedAt: now,
-      updatedAt: now
+      updatedAt: now,
     };
 
     room.participants.set(participantId, participant);
@@ -686,6 +701,9 @@ export class RoomStore {
 const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 function createRoomCode(): string {
-  const characters = Array.from({ length: 8 }, () => ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)]);
+  const characters = Array.from(
+    { length: 8 },
+    () => ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)],
+  );
   return `${characters.slice(0, 4).join("")}-${characters.slice(4).join("")}`;
 }

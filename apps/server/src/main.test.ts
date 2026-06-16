@@ -20,12 +20,12 @@ describe("createServerRuntime", () => {
     vi.useFakeTimers();
     const store = new ExpiringStore({
       roomTtlMs: 5,
-      now: () => new Date("2026-06-11T12:00:00.000Z")
+      now: () => new Date("2026-06-11T12:00:00.000Z"),
     });
 
     const runtime = await createServerRuntime({
       logger: false,
-      store
+      store,
     });
 
     expect(store.expireCalls).toBe(0);

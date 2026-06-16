@@ -14,13 +14,13 @@ const votingSnapshot: RoomSnapshot = {
       throwerParticipantId: "HOST_PARTICIPANT",
       targetParticipantId: "ANA_PARTICIPANT",
       createdAt: "2026-06-11T12:00:00.000Z",
-      expiresAt: "2026-06-11T12:00:04.000Z"
-    }
+      expiresAt: "2026-06-11T12:00:04.000Z",
+    },
   ],
   updatedAt: "2026-06-11T12:00:00.000Z",
   viewer: {
     participantId: "ANA_PARTICIPANT",
-    isHost: false
+    isHost: false,
   },
   participants: [
     {
@@ -31,7 +31,7 @@ const votingSnapshot: RoomSnapshot = {
       vote: "8",
       hasVoted: true,
       joinedAt: "2026-06-11T12:00:00.000Z",
-      updatedAt: "2026-06-11T12:00:00.000Z"
+      updatedAt: "2026-06-11T12:00:00.000Z",
     },
     {
       id: "ANA_PARTICIPANT",
@@ -41,10 +41,10 @@ const votingSnapshot: RoomSnapshot = {
       vote: "3",
       hasVoted: true,
       joinedAt: "2026-06-11T12:00:00.000Z",
-      updatedAt: "2026-06-11T12:00:00.000Z"
-    }
+      updatedAt: "2026-06-11T12:00:00.000Z",
+    },
   ],
-  history: []
+  history: [],
 };
 
 const revealedSnapshot: RoomSnapshot = {
@@ -52,8 +52,8 @@ const revealedSnapshot: RoomSnapshot = {
   phase: "revealed",
   viewer: {
     participantId: "HOST_PARTICIPANT",
-    isHost: true
-  }
+    isHost: true,
+  },
 };
 
 describe("buildRoomViewModel", () => {
@@ -82,7 +82,7 @@ describe("buildRoomViewModel", () => {
     expect(model.canVote).toBe(false);
     expect(model.voteSummary).toEqual([
       { card: "3", count: 1 },
-      { card: "8", count: 1 }
+      { card: "8", count: 1 },
     ]);
     expect(model.canReveal).toBe(false);
     expect(model.canFinalize).toBe(true);
@@ -92,7 +92,7 @@ describe("buildRoomViewModel", () => {
       average: 5.5,
       confidence: 50,
       numericVoteCount: 2,
-      unknownVoteCount: 0
+      unknownVoteCount: 0,
     });
     expect(model.activeReactions).toBe(votingSnapshot.activeReactions);
     expect(model.participants.every((participant) => participant.visibleVote !== null)).toBe(true);

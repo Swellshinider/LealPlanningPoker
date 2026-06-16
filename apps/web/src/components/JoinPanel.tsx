@@ -24,7 +24,7 @@ export function JoinPanel({
   onRoomCodeChange,
   onCreateRoom,
   onJoinRoom,
-  onToggleTheme
+  onToggleTheme,
 }: JoinPanelProps) {
   return (
     <section className="landing-workspace">
@@ -60,7 +60,12 @@ export function JoinPanel({
             </div>
           </div>
 
-          <form onSubmit={(event) => { event.preventDefault(); if (!busy) onCreateRoom(); }}>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!busy) onCreateRoom();
+            }}
+          >
             <label className="field">
               <span className="field__label">Display name</span>
               <input
@@ -88,7 +93,12 @@ export function JoinPanel({
             </div>
           </div>
 
-          <form onSubmit={(event) => { event.preventDefault(); if (!busy) onJoinRoom(); }}>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!busy) onJoinRoom();
+            }}
+          >
             <label className="field">
               <span className="field__label">Room code</span>
               <input

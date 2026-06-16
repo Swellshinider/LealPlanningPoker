@@ -19,83 +19,79 @@ describe("production server build output", () => {
     }
   });
 
-  it(
-    "starts under plain Node after a successful build",
-    async () => {
-      const buildResult = spawnSync(buildCommand.command, buildCommand.args, {
+  it("starts under plain Node after a successful build", async () => {
+    const buildResult = spawnSync(buildCommand.command, buildCommand.args, {
+      cwd: rootDir,
+      encoding: "utf8",
+      env: process.env,
+    });
+
+    expect(buildResult.error).toBeUndefined();
+    expect(buildResult.status).toBe(0);
+
+    const entryPath = resolve(rootDir, "apps/server/dist/main.js");
+
+    await new Promise<void>((resolvePromise, rejectPromise) => {
+      const child = spawn(process.execPath, [entryPath], {
         cwd: rootDir,
-        encoding: "utf8",
-        env: process.env
+        env: {
+          ...process.env,
+          HOST: "127.0.0.1",
+          PORT: "0",
+        },
+        stdio: ["ignore", "pipe", "pipe"],
       });
+      children.push(child);
 
-      expect(buildResult.error).toBeUndefined();
-      expect(buildResult.status).toBe(0);
+      let settled = false;
+      const stdout: Buffer[] = [];
+      const stderr: Buffer[] = [];
 
-      const entryPath = resolve(rootDir, "apps/server/dist/main.js");
+      const timeout = setTimeout(() => {
+        if (settled) {
+          return;
+        }
 
-      await new Promise<void>((resolvePromise, rejectPromise) => {
-        const child = spawn(process.execPath, [entryPath], {
-          cwd: rootDir,
-          env: {
-            ...process.env,
-            HOST: "127.0.0.1",
-            PORT: "0"
-          },
-          stdio: ["ignore", "pipe", "pipe"]
-        });
-        children.push(child);
+        settled = true;
+        child.kill();
+        rejectPromise(
+          new Error(
+            `Timed out waiting for server startup.\nstdout:\n${Buffer.concat(stdout).toString("utf8")}\nstderr:\n${Buffer.concat(stderr).toString("utf8")}`,
+          ),
+        );
+      }, 10_000);
 
-        let settled = false;
-        const stdout: Buffer[] = [];
-        const stderr: Buffer[] = [];
-
-        const timeout = setTimeout(() => {
-          if (settled) {
-            return;
-          }
-
-          settled = true;
-          child.kill();
-          rejectPromise(
-            new Error(
-              `Timed out waiting for server startup.\nstdout:\n${Buffer.concat(stdout).toString("utf8")}\nstderr:\n${Buffer.concat(stderr).toString("utf8")}`
-            )
-          );
-        }, 10_000);
-
-        child.stdout.on("data", (chunk: Buffer) => {
-          stdout.push(chunk);
-          if (Buffer.concat(stdout).toString("utf8").includes("LealPlanningPoker server listening")) {
-            if (settled) {
-              return;
-            }
-
-            settled = true;
-            clearTimeout(timeout);
-            child.kill();
-            resolvePromise();
-          }
-        });
-
-        child.stderr.on("data", (chunk: Buffer) => {
-          stderr.push(chunk);
-        });
-
-        child.on("exit", (code) => {
+      child.stdout.on("data", (chunk: Buffer) => {
+        stdout.push(chunk);
+        if (Buffer.concat(stdout).toString("utf8").includes("LealPlanningPoker server listening")) {
           if (settled) {
             return;
           }
 
           settled = true;
           clearTimeout(timeout);
-          rejectPromise(
-            new Error(
-              `Server exited before startup with code ${code}.\nstdout:\n${Buffer.concat(stdout).toString("utf8")}\nstderr:\n${Buffer.concat(stderr).toString("utf8")}`
-            )
-          );
-        });
+          child.kill();
+          resolvePromise();
+        }
       });
-    },
-    30_000
-  );
+
+      child.stderr.on("data", (chunk: Buffer) => {
+        stderr.push(chunk);
+      });
+
+      child.on("exit", (code) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        clearTimeout(timeout);
+        rejectPromise(
+          new Error(
+            `Server exited before startup with code ${code}.\nstdout:\n${Buffer.concat(stdout).toString("utf8")}\nstderr:\n${Buffer.concat(stderr).toString("utf8")}`,
+          ),
+        );
+      });
+    });
+  }, 30_000);
 });

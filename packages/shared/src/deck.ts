@@ -1,15 +1,4 @@
-export const FIBONACCI_DECK = [
-  "0",
-  "1",
-  "2",
-  "3",
-  "5",
-  "8",
-  "13",
-  "21",
-  "?",
-  "coffee"
-] as const;
+export const FIBONACCI_DECK = ["0", "1", "2", "3", "5", "8", "13", "21", "?", "coffee"] as const;
 
 export type BuiltInVoteCard = (typeof FIBONACCI_DECK)[number];
 export type VoteCard = string;

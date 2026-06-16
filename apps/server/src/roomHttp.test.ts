@@ -11,34 +11,34 @@ function createStore() {
   return new RoomStore({
     idFactory: () => `ID_${(nextId += 1).toString().padStart(3, "0")}`,
     now: () => new Date("2026-06-15T12:00:00.000Z"),
-    roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`
+    roomIdFactory: () => `ROOM-${(nextRoom += 1).toString().padStart(4, "0")}`,
   });
 }
 
 function createApp() {
   const store = createStore();
   const app = buildHttpApp({
-    logger: false
+    logger: false,
   });
   const sockets = {
     notifyRoomChanged: vi.fn(),
-    notifyRoomClosed: vi.fn()
+    notifyRoomClosed: vi.fn(),
   };
   const hub = new RoomRealtimeHub({
     onRoomChanged: sockets.notifyRoomChanged,
-    store
+    store,
   });
 
   registerRoomHttpRoutes({
     app,
     hub,
     sockets,
-    store
+    store,
   });
 
   return {
     app,
-    sockets
+    sockets,
   };
 }
 
@@ -49,9 +49,9 @@ describe("registerRoomHttpRoutes", () => {
     const response = await app.inject({
       method: "POST",
       payload: {
-        hostName: "Mina"
+        hostName: "Mina",
       },
-      url: "/api/rooms"
+      url: "/api/rooms",
     });
 
     expect(response.statusCode).toBe(200);
@@ -59,7 +59,7 @@ describe("registerRoomHttpRoutes", () => {
       ok: true,
       roomId: "ROOM-0001",
       participantToken: "ID_002",
-      hostToken: "ID_002"
+      hostToken: "ID_002",
     });
     expect(sockets.notifyRoomChanged).toHaveBeenCalledWith("ROOM-0001");
 
@@ -71,13 +71,13 @@ describe("registerRoomHttpRoutes", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: "/api/missing"
+      url: "/api/missing",
     });
 
     expect(response.statusCode).toBe(404);
     expect(response.json()).toEqual({
       error: "Not found",
-      ok: false
+      ok: false,
     });
 
     await app.close();
@@ -89,21 +89,21 @@ describe("registerRoomHttpRoutes", () => {
     const createResponse = await app.inject({
       method: "POST",
       payload: {
-        hostName: "Mina"
+        hostName: "Mina",
       },
-      url: "/api/rooms"
+      url: "/api/rooms",
     });
     const createdRoom = createResponse.json();
 
     const response = await app.inject({
       method: "GET",
-      url: `/api/compat/rooms/${createdRoom.roomId}/join?displayName=Kai&_ts=123`
+      url: `/api/compat/rooms/${createdRoom.roomId}/join?displayName=Kai&_ts=123`,
     });
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
       ok: true,
-      roomId: createdRoom.roomId
+      roomId: createdRoom.roomId,
     });
     expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
 
@@ -116,40 +116,40 @@ describe("registerRoomHttpRoutes", () => {
     const createResponse = await app.inject({
       method: "POST",
       payload: {
-        hostName: "Mina"
+        hostName: "Mina",
       },
-      url: "/api/rooms"
+      url: "/api/rooms",
     });
     const createdRoom = createResponse.json();
 
     await app.inject({
       method: "POST",
       payload: {
-        story: "Improve onboarding"
+        story: "Improve onboarding",
       },
       headers: {
-        "x-host-token": createdRoom.hostToken
+        "x-host-token": createdRoom.hostToken,
       },
-      url: `/api/rooms/${createdRoom.roomId}/story`
+      url: `/api/rooms/${createdRoom.roomId}/story`,
     });
 
     await app.inject({
       method: "POST",
       payload: {
-        vote: "3"
+        vote: "3",
       },
       headers: {
-        "x-participant-token": createdRoom.participantToken
+        "x-participant-token": createdRoom.participantToken,
       },
-      url: `/api/rooms/${createdRoom.roomId}/votes`
+      url: `/api/rooms/${createdRoom.roomId}/votes`,
     });
 
     const response = await app.inject({
       method: "POST",
       headers: {
-        "x-host-token": createdRoom.hostToken
+        "x-host-token": createdRoom.hostToken,
       },
-      url: `/api/rooms/${createdRoom.roomId}/reveal`
+      url: `/api/rooms/${createdRoom.roomId}/reveal`,
     });
 
     expect(response.statusCode).toBe(200);
@@ -157,8 +157,8 @@ describe("registerRoomHttpRoutes", () => {
       ok: true,
       snapshot: {
         phase: "revealed",
-        roomId: createdRoom.roomId
-      }
+        roomId: createdRoom.roomId,
+      },
     });
     expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
 
@@ -171,16 +171,16 @@ describe("registerRoomHttpRoutes", () => {
     const response = await app.inject({
       method: "POST",
       payload: {},
-      url: "/api/rooms"
+      url: "/api/rooms",
     });
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({
       error: {
         code: "INVALID_PAYLOAD",
-        message: "Invalid hostName."
+        message: "Invalid hostName.",
       },
-      ok: false
+      ok: false,
     });
 
     await app.close();
@@ -192,24 +192,24 @@ describe("registerRoomHttpRoutes", () => {
     const createResponse = await app.inject({
       method: "POST",
       payload: {
-        hostName: "Mina"
+        hostName: "Mina",
       },
-      url: "/api/rooms"
+      url: "/api/rooms",
     });
     const createdRoom = createResponse.json();
 
     const response = await app.inject({
       method: "GET",
-      url: `/api/compat/rooms/${createdRoom.roomId}/join?displayName=Kai`
+      url: `/api/compat/rooms/${createdRoom.roomId}/join?displayName=Kai`,
     });
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({
       error: {
         code: "INVALID_PAYLOAD",
-        message: "Invalid _ts."
+        message: "Invalid _ts.",
       },
-      ok: false
+      ok: false,
     });
 
     await app.close();
@@ -221,31 +221,31 @@ describe("registerRoomHttpRoutes", () => {
     const createResponse = await app.inject({
       method: "POST",
       payload: {
-        hostName: "Mina"
+        hostName: "Mina",
       },
-      url: "/api/rooms"
+      url: "/api/rooms",
     });
     const createdRoom = createResponse.json();
 
     const joinResponse = await app.inject({
       method: "POST",
       payload: {
-        displayName: "Ana"
+        displayName: "Ana",
       },
-      url: `/api/rooms/${createdRoom.roomId}/join`
+      url: `/api/rooms/${createdRoom.roomId}/join`,
     });
     const joined = joinResponse.json();
 
     const postResponse = await app.inject({
       method: "POST",
       headers: {
-        "x-participant-token": createdRoom.participantToken
+        "x-participant-token": createdRoom.participantToken,
       },
       payload: {
         emoji: "🔥",
-        targetParticipantId: joined.snapshot.viewer.participantId
+        targetParticipantId: joined.snapshot.viewer.participantId,
       },
-      url: `/api/rooms/${createdRoom.roomId}/reactions/throw`
+      url: `/api/rooms/${createdRoom.roomId}/reactions/throw`,
     });
 
     expect(postResponse.statusCode).toBe(200);
@@ -255,18 +255,18 @@ describe("registerRoomHttpRoutes", () => {
         activeReactions: [
           {
             emoji: "🔥",
-            targetParticipantId: joined.snapshot.viewer.participantId
-          }
-        ]
-      }
+            targetParticipantId: joined.snapshot.viewer.participantId,
+          },
+        ],
+      },
     });
 
     const compatResponse = await app.inject({
       method: "GET",
       headers: {
-        "x-participant-token": joined.participantToken
+        "x-participant-token": joined.participantToken,
       },
-      url: `/api/compat/rooms/${createdRoom.roomId}/reactions/throw?targetParticipantId=${createdRoom.snapshot.viewer.participantId}&emoji=%F0%9F%92%80&_ts=123`
+      url: `/api/compat/rooms/${createdRoom.roomId}/reactions/throw?targetParticipantId=${createdRoom.snapshot.viewer.participantId}&emoji=%F0%9F%92%80&_ts=123`,
     });
 
     expect(compatResponse.statusCode).toBe(200);
@@ -277,10 +277,10 @@ describe("registerRoomHttpRoutes", () => {
           expect.objectContaining({
             emoji: "💀",
             throwerParticipantId: joined.snapshot.viewer.participantId,
-            targetParticipantId: createdRoom.snapshot.viewer.participantId
-          })
-        ])
-      }
+            targetParticipantId: createdRoom.snapshot.viewer.participantId,
+          }),
+        ]),
+      },
     });
     expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
 
@@ -293,22 +293,22 @@ describe("registerRoomHttpRoutes", () => {
     const createResponse = await app.inject({
       method: "POST",
       payload: {
-        hostName: "Mina"
+        hostName: "Mina",
       },
-      url: "/api/rooms"
+      url: "/api/rooms",
     });
     const createdRoom = createResponse.json();
 
     const response = await app.inject({
       method: "POST",
       headers: {
-        "x-participant-token": createdRoom.participantToken
+        "x-participant-token": createdRoom.participantToken,
       },
       payload: {
         emoji: "👏",
-        targetParticipantId: createdRoom.snapshot.viewer.participantId
+        targetParticipantId: createdRoom.snapshot.viewer.participantId,
       },
-      url: `/api/rooms/${createdRoom.roomId}/reactions/throw`
+      url: `/api/rooms/${createdRoom.roomId}/reactions/throw`,
     });
 
     expect(response.statusCode).toBe(409);
@@ -316,19 +316,19 @@ describe("registerRoomHttpRoutes", () => {
       ok: false,
       error: {
         code: "INVALID_REACTION",
-        message: "Pick another player."
-      }
+        message: "Pick another player.",
+      },
     });
 
     const badPayload = await app.inject({
       method: "POST",
       headers: {
-        "x-participant-token": createdRoom.participantToken
+        "x-participant-token": createdRoom.participantToken,
       },
       payload: {
-        targetParticipantId: createdRoom.snapshot.viewer.participantId
+        targetParticipantId: createdRoom.snapshot.viewer.participantId,
       },
-      url: `/api/rooms/${createdRoom.roomId}/reactions/throw`
+      url: `/api/rooms/${createdRoom.roomId}/reactions/throw`,
     });
 
     expect(badPayload.statusCode).toBe(400);
@@ -336,8 +336,8 @@ describe("registerRoomHttpRoutes", () => {
       ok: false,
       error: {
         code: "INVALID_PAYLOAD",
-        message: "Invalid emoji."
-      }
+        message: "Invalid emoji.",
+      },
     });
 
     await app.close();

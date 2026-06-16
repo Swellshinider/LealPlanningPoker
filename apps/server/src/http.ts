@@ -10,12 +10,12 @@ export interface HttpAppOptions {
 
 export function buildHttpApp(options: HttpAppOptions = {}) {
   const app = fastify({
-    logger: options.logger ?? false
+    logger: options.logger ?? false,
   });
 
   app.get("/healthz", async () => ({
     ok: true,
-    uptime: process.uptime()
+    uptime: process.uptime(),
   }));
 
   const indexPath = options.staticRoot ? join(options.staticRoot, "index.html") : undefined;
@@ -23,7 +23,7 @@ export function buildHttpApp(options: HttpAppOptions = {}) {
   if (hasStaticIndex && options.staticRoot) {
     app.register(fastifyStatic, {
       root: options.staticRoot,
-      index: false
+      index: false,
     });
   }
 
@@ -31,14 +31,14 @@ export function buildHttpApp(options: HttpAppOptions = {}) {
     if (request.url.startsWith("/api/")) {
       return reply.code(404).send({
         ok: false,
-        error: "Not found"
+        error: "Not found",
       });
     }
 
     if (!hasStaticIndex || request.method !== "GET") {
       return reply.code(404).send({
         ok: false,
-        error: "Not found"
+        error: "Not found",
       });
     }
 

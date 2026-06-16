@@ -15,7 +15,9 @@ export interface RoomActionFailureEnvelope {
   error: RoomErrorPayload;
 }
 
-export type RoomActionEnvelope<T extends object> = RoomActionSuccessEnvelope<T> | RoomActionFailureEnvelope;
+export type RoomActionEnvelope<T extends object> =
+  | RoomActionSuccessEnvelope<T>
+  | RoomActionFailureEnvelope;
 
 export interface CreateRoomRequest {
   hostName: string;

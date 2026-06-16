@@ -2,7 +2,7 @@ import { startTransition, useEffect, useRef, useState } from "react";
 import type {
   RoomSnapshot,
   ThrowableReactionEmoji,
-  VoteCard as VoteValue
+  VoteCard as VoteValue,
 } from "@lealplanningpoker/shared";
 import { buildRoomViewModel } from "./lib/roomView";
 import {
@@ -19,7 +19,7 @@ import {
   subscribeToRoom,
   syncRoom,
   throwReaction,
-  type RoomSubscription
+  type RoomSubscription,
 } from "./lib/roomTransport";
 import { resolveHostTokenAfterJoin, shouldRestoreStoredSessionTokens } from "./lib/session";
 import {
@@ -29,7 +29,7 @@ import {
   getThemeToggleTarget,
   parseThemeMode,
   resolveThemeMode,
-  type ThemeMode
+  type ThemeMode,
 } from "./lib/theme";
 import { JoinPanel } from "./components/JoinPanel";
 import { RoomBoard } from "./components/RoomBoard";
@@ -45,7 +45,7 @@ const STORAGE_KEYS = {
   displayName: "lpp.displayName",
   roomCode: "lpp.roomCode",
   participantToken: "lpp.participantToken",
-  hostToken: "lpp.hostToken"
+  hostToken: "lpp.hostToken",
 } as const;
 
 function readStorage(key: keyof typeof STORAGE_KEYS): string {
@@ -122,7 +122,10 @@ function clearRoomQuery(): void {
 }
 
 function extractRoomParticipant(snapshot: RoomSnapshot) {
-  return snapshot.participants.find((participant) => participant.id === snapshot.viewer.participantId) ?? null;
+  return (
+    snapshot.participants.find((participant) => participant.id === snapshot.viewer.participantId) ??
+    null
+  );
 }
 
 function asRoomRequestError(error: unknown): RoomRequestError {
@@ -147,27 +150,31 @@ export function App() {
   const shouldRestoreStoredSession = shouldRestoreStoredSessionTokens(
     initialRoomQuery,
     storedRoomCode,
-    storedParticipantToken
+    storedParticipantToken,
   );
   const activeSessionRef = useRef({
     roomCode: "",
     participantToken: "",
-    hostToken: ""
+    hostToken: "",
   });
 
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
   const [displayName, setDisplayName] = useState(() => readStorage("displayName") || "");
   const [roomCode, setRoomCode] = useState(() => initialRoomQuery || storedRoomCode || "");
   const [participantToken, setParticipantToken] = useState(() =>
-    shouldRestoreStoredSession ? storedParticipantToken : ""
+    shouldRestoreStoredSession ? storedParticipantToken : "",
   );
-  const [hostToken, setHostToken] = useState(() => (shouldRestoreStoredSession ? storedHostToken : ""));
+  const [hostToken, setHostToken] = useState(() =>
+    shouldRestoreStoredSession ? storedHostToken : "",
+  );
   const [storyDraft, setStoryDraft] = useState("");
   const [selectedVote, setSelectedVote] = useState<VoteValue | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [busy, setBusy] = useState(false);
   const [themePreference, setThemePreference] = useState<ThemeMode | null>(() => storedTheme);
-  const [theme, setTheme] = useState<ThemeMode>(() => resolveThemeMode(storedTheme, readSystemTheme()));
+  const [theme, setTheme] = useState<ThemeMode>(() =>
+    resolveThemeMode(storedTheme, readSystemTheme()),
+  );
 
   const viewModel = snapshot ? buildRoomViewModel(snapshot) : null;
   const roomLink = snapshot ? buildRoomLink(snapshot.roomId) : buildRoomLink(roomCode);
@@ -180,7 +187,7 @@ export function App() {
     activeSessionRef.current = {
       roomCode,
       participantToken,
-      hostToken
+      hostToken,
     };
 
     writeStorage("displayName", displayName);
@@ -196,7 +203,11 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (themePreference || typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    if (
+      themePreference ||
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    ) {
       return undefined;
     }
 
@@ -212,10 +223,13 @@ export function App() {
     };
   }, [themePreference]);
 
-  useEffect(() => () => {
-    clearNoticeTimer();
-    subscriptionRef.current?.close();
-  }, []);
+  useEffect(
+    () => () => {
+      clearNoticeTimer();
+      subscriptionRef.current?.close();
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!shouldRestoreStoredSession || !roomCode || !participantToken) {
@@ -297,7 +311,7 @@ export function App() {
         });
       },
       participantToken: nextParticipantToken,
-      roomId: nextRoomId
+      roomId: nextRoomId,
     });
   }
 
@@ -329,17 +343,24 @@ export function App() {
     writeStoredTheme(nextTheme);
   }
 
-  function handleSnapshotResponse(nextSnapshot: RoomSnapshot, nextParticipantToken = activeSessionRef.current.participantToken) {
+  function handleSnapshotResponse(
+    nextSnapshot: RoomSnapshot,
+    nextParticipantToken = activeSessionRef.current.participantToken,
+  ) {
     const previous = previousSnapshotRef.current;
     previousSnapshotRef.current = nextSnapshot;
     setSnapshot(nextSnapshot);
     setRoomCode(nextSnapshot.roomId);
     const nextViewModel = buildRoomViewModel(nextSnapshot);
     const selfParticipant = nextViewModel.participants.find(
-      (participant) => participant.id === nextSnapshot.viewer.participantId
+      (participant) => participant.id === nextSnapshot.viewer.participantId,
     );
     setSelectedVote(selfParticipant?.visibleVote ?? null);
-    if (!previous || previous.roomId !== nextSnapshot.roomId || previous.story !== nextSnapshot.story) {
+    if (
+      !previous ||
+      previous.roomId !== nextSnapshot.roomId ||
+      previous.story !== nextSnapshot.story
+    ) {
       setStoryDraft(nextSnapshot.story);
     }
     if (!displayNameRef.current && selfParticipant?.name) {
@@ -358,7 +379,7 @@ export function App() {
     setBusy(true);
     try {
       const response = await createRoom({
-        hostName: displayName
+        hostName: displayName,
       });
 
       setParticipantToken(response.participantToken);
@@ -389,11 +410,13 @@ export function App() {
     try {
       const response = await joinRoom(roomCode.trim().toUpperCase(), {
         displayName,
-        participantToken: participantToken || undefined
+        participantToken: participantToken || undefined,
       });
 
       setParticipantToken(response.participantToken);
-      setHostToken(resolveHostTokenAfterJoin(response.snapshot.viewer.isHost, response.participantToken));
+      setHostToken(
+        resolveHostTokenAfterJoin(response.snapshot.viewer.isHost, response.participantToken),
+      );
       handleSnapshotResponse(response.snapshot, response.participantToken);
       setDisplayName(extractRoomParticipant(response.snapshot)?.name ?? displayName);
       startRoomSubscription(response.roomId, response.participantToken);
@@ -419,7 +442,7 @@ export function App() {
     setBusy(true);
     try {
       const response = await renameParticipant(snapshot.roomId, participantToken, {
-        displayName
+        displayName,
       });
 
       handleSnapshotResponse(response.snapshot);
@@ -441,7 +464,7 @@ export function App() {
     setBusy(true);
     try {
       const response = await saveStory(snapshot.roomId, hostToken, {
-        story: storyDraft
+        story: storyDraft,
       });
 
       handleSnapshotResponse(response.snapshot);
@@ -464,7 +487,7 @@ export function App() {
     setBusy(true);
     try {
       const response = await submitVote(snapshot.roomId, participantToken, {
-        vote
+        vote,
       });
 
       handleSnapshotResponse(response.snapshot);
@@ -487,7 +510,7 @@ export function App() {
     setBusy(true);
     try {
       const response = await submitVote(snapshot.roomId, participantToken, {
-        vote: null
+        vote: null,
       });
       handleSnapshotResponse(response.snapshot);
     } catch (error) {
@@ -506,7 +529,7 @@ export function App() {
 
     void throwReaction(snapshot.roomId, participantToken, {
       emoji,
-      targetParticipantId
+      targetParticipantId,
     }).catch((error) => {
       const roomError = asRoomRequestError(error);
       showNotice("error", roomError.message);
@@ -588,7 +611,7 @@ export function App() {
     activeSessionRef.current = {
       roomCode: "",
       participantToken: "",
-      hostToken: ""
+      hostToken: "",
     };
     previousSnapshotRef.current = null;
     setSnapshot(null);
@@ -622,7 +645,9 @@ export function App() {
           onRoomCodeChange={setRoomCode}
           onToggleTheme={toggleTheme}
         />
-        {bannerText ? <div className={`floating-banner floating-banner--${bannerTone}`}>{bannerText}</div> : null}
+        {bannerText ? (
+          <div className={`floating-banner floating-banner--${bannerTone}`}>{bannerText}</div>
+        ) : null}
       </main>
     );
   }
@@ -652,7 +677,9 @@ export function App() {
         onVote={(vote) => void castVote(vote)}
         onClearVote={() => void clearVote()}
       />
-      {bannerText ? <div className={`floating-banner floating-banner--${bannerTone}`}>{bannerText}</div> : null}
+      {bannerText ? (
+        <div className={`floating-banner floating-banner--${bannerTone}`}>{bannerText}</div>
+      ) : null}
     </main>
   );
 }

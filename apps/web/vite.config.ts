@@ -6,8 +6,10 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@lealplanningpoker/shared": fileURLToPath(new URL("../../packages/shared/src/index.ts", import.meta.url))
-    }
+      "@lealplanningpoker/shared": fileURLToPath(
+        new URL("../../packages/shared/src/index.ts", import.meta.url),
+      ),
+    },
   },
   server: {
     host: "0.0.0.0",
@@ -15,17 +17,17 @@ export default defineConfig({
     proxy: {
       "/api": {
         target: "http://127.0.0.1:3000",
-        changeOrigin: true
+        changeOrigin: true,
       },
       "/socket.io": {
         target: "http://127.0.0.1:3000",
         changeOrigin: true,
-        ws: true
+        ws: true,
       },
       "/healthz": {
         target: "http://127.0.0.1:3000",
-        changeOrigin: true
-      }
-    }
-  }
+        changeOrigin: true,
+      },
+    },
+  },
 });

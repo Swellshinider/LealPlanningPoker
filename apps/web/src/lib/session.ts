@@ -5,7 +5,7 @@ export function resolveHostTokenAfterJoin(isHost: boolean, participantToken: str
 export function shouldRestoreStoredSessionTokens(
   roomCodeQuery: string,
   storedRoomCode: string,
-  participantToken: string
+  participantToken: string,
 ): boolean {
   if (!participantToken) {
     return false;

@@ -7,14 +7,14 @@ import {
   normalizeVoteCard,
   type RoomHistoryEntry,
   type ThrowableReactionEmoji,
-  type VoteCard as VoteValue
+  type VoteCard as VoteValue,
 } from "@lealplanningpoker/shared";
 import type { RoomParticipantView, RoomViewModel } from "../lib/roomView";
 import {
   deriveReactionPhase,
   filterExpiredReactions,
   getQuadraticPoint,
-  getReactionPanelGeometry
+  getReactionPanelGeometry,
 } from "../lib/reactionOverlay";
 import type { ThemeMode } from "../lib/theme";
 import { formatVoteLabel } from "../lib/uiText";
@@ -97,9 +97,9 @@ function getSeatGeometry(index: number, total: number): SeatGeometry {
     style: {
       "--seat-x": `${(x * 42).toFixed(3)}%`,
       "--seat-y": `${(y * 38).toFixed(3)}%`,
-      "--seat-delay": `${index * 42}ms`
+      "--seat-delay": `${index * 42}ms`,
     },
-    zoneClass
+    zoneClass,
   };
 }
 
@@ -142,15 +142,12 @@ function PlayerSeat({
   onThrowReaction,
   onToggleReactionPopover,
   registerHeadElement,
-  registerSeatElement
+  registerSeatElement,
 }: PlayerSeatProps) {
   const hasFaceDownCard = participant.hasVoted && !participant.tableVote;
   const hasFaceUpCard = Boolean(participant.tableVote);
   const initials = getPlayerInitials(participant.name);
-  const headClassName = [
-    "player-seat__head",
-    isHeadBumped ? "player-seat__head--bumped" : ""
-  ]
+  const headClassName = ["player-seat__head", isHeadBumped ? "player-seat__head--bumped" : ""]
     .filter(Boolean)
     .join(" ");
 
@@ -164,7 +161,7 @@ function PlayerSeat({
         participant.isHost ? "table-seat--host" : "",
         participant.connected ? "" : "table-seat--offline",
         hasFaceUpCard ? "has-face-up-card" : "",
-        hasFaceDownCard ? "has-face-down-card" : ""
+        hasFaceDownCard ? "has-face-down-card" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -274,7 +271,7 @@ export function RoomBoard({
   onThrowReaction,
   onCopyLink,
   onNewRoom,
-  onToggleTheme
+  onToggleTheme,
 }: RoomBoardProps) {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [customVoteDraft, setCustomVoteDraft] = useState("");
@@ -285,12 +282,13 @@ export function RoomBoard({
   const headElementsRef = useRef(new Map<string, HTMLElement>());
   const seatElementsRef = useRef(new Map<string, HTMLElement>());
   const normalizedCustomVote = useMemo(() => normalizeVoteCard(customVoteDraft), [customVoteDraft]);
-  const customVote = normalizedCustomVote && /^\d+$/.test(normalizedCustomVote) ? normalizedCustomVote : null;
+  const customVote =
+    normalizedCustomVote && /^\d+$/.test(normalizedCustomVote) ? normalizedCustomVote : null;
   const isCustomSelected = Boolean(selectedVote && !isBuiltInVoteCard(selectedVote));
   const tableParticipants = viewModel.participants.slice(0, MAX_TABLE_SEATS);
   const overflowParticipants = viewModel.participants.slice(MAX_TABLE_SEATS);
   const reactionTargets = viewModel.participants.filter(
-    (participant) => participant.connected && !participant.isSelf
+    (participant) => participant.connected && !participant.isSelf,
   );
   const visibleReactions = filterExpiredReactions(viewModel.activeReactions, nowMs);
 
@@ -313,7 +311,7 @@ export function RoomBoard({
     () => () => {
       clearReactionCloseTimer();
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -322,7 +320,7 @@ export function RoomBoard({
     }
 
     const targetStillVisible = reactionTargets.some(
-      (participant) => participant.id === activeReactionTargetId
+      (participant) => participant.id === activeReactionTargetId,
     );
     if (!targetStillVisible) {
       dismissReactionPopover();
@@ -379,9 +377,7 @@ export function RoomBoard({
     clearReactionCloseTimer();
     reactionCloseTimerRef.current = setTimeout(() => {
       reactionCloseTimerRef.current = null;
-      setActiveReactionTargetId((current) =>
-        current === targetParticipantId ? null : current
-      );
+      setActiveReactionTargetId((current) => (current === targetParticipantId ? null : current));
     }, REACTION_POPOVER_CLOSE_DELAY_MS);
   }
 
@@ -425,7 +421,7 @@ export function RoomBoard({
         const geometry = getReactionPanelGeometry({
           panelRect: stageElement.getBoundingClientRect(),
           targetHeadRect: targetHead.getBoundingClientRect(),
-          throwerSeatRect: throwerSeat.getBoundingClientRect()
+          throwerSeatRect: throwerSeat.getBoundingClientRect(),
         });
 
         return [
@@ -433,8 +429,8 @@ export function RoomBoard({
             geometry,
             phaseState,
             point: getQuadraticPoint(phaseState.progress, geometry),
-            reaction
-          }
+            reaction,
+          },
         ];
       })
     : [];
@@ -442,7 +438,7 @@ export function RoomBoard({
   const bumpedTargets = new Set(
     renderedReactions
       .filter(({ phaseState }) => phaseState.phase === "impact")
-      .map(({ reaction }) => reaction.targetParticipantId)
+      .map(({ reaction }) => reaction.targetParticipantId),
   );
 
   return (
@@ -454,7 +450,11 @@ export function RoomBoard({
             <strong>LealPlanningPoker</strong>
             <span>Room {viewModel.roomId}</span>
           </div>
-          <button className="button button--quiet button--compact" type="button" onClick={onNewRoom}>
+          <button
+            className="button button--quiet button--compact"
+            type="button"
+            onClick={onNewRoom}
+          >
             New room
           </button>
         </div>
@@ -464,7 +464,11 @@ export function RoomBoard({
           <button className="button button--quiet" type="button" onClick={onCopyLink}>
             Copy link
           </button>
-          <button className="button button--quiet" type="button" onClick={() => setQrModalOpen(true)}>
+          <button
+            className="button button--quiet"
+            type="button"
+            onClick={() => setQrModalOpen(true)}
+          >
             QR
           </button>
         </div>
@@ -482,7 +486,7 @@ export function RoomBoard({
         <div
           className={[
             "workspace-controls",
-            viewModel.isHost ? "" : "workspace-controls--profile-only"
+            viewModel.isHost ? "" : "workspace-controls--profile-only",
           ]
             .filter(Boolean)
             .join(" ")}
@@ -538,7 +542,12 @@ export function RoomBoard({
                   onChange={(event) => onDisplayNameChange(event.target.value)}
                 />
               </label>
-              <button className="button button--quiet" disabled={busy} type="button" onClick={onRename}>
+              <button
+                className="button button--quiet"
+                disabled={busy}
+                type="button"
+                onClick={onRename}
+              >
                 Save
               </button>
             </div>
@@ -551,7 +560,9 @@ export function RoomBoard({
               <p className="section-label">Vote table</p>
               <h2>{viewModel.participants.length} players</h2>
             </div>
-            <span className="phase-chip phase-chip--quiet">{tableParticipants.length} at table</span>
+            <span className="phase-chip phase-chip--quiet">
+              {tableParticipants.length} at table
+            </span>
           </div>
 
           <div ref={stageRef} className="reaction-stage">
@@ -560,7 +571,11 @@ export function RoomBoard({
                 <div className="poker-table__felt">
                   <span className="poker-table__brand">LEAL</span>
                   {viewModel.resultStats ? (
-                    <div className="table-results table-results--felt" aria-label="Round result" aria-live="polite">
+                    <div
+                      className="table-results table-results--felt"
+                      aria-label="Round result"
+                      aria-live="polite"
+                    >
                       <div className="table-result">
                         <span>Average</span>
                         <strong>{formatAverage(viewModel.resultStats.average)}</strong>
@@ -596,7 +611,7 @@ export function RoomBoard({
                     onToggleReactionPopover={() => {
                       clearReactionCloseTimer();
                       setActiveReactionTargetId((current) =>
-                        current === participant.id ? null : participant.id
+                        current === participant.id ? null : participant.id,
                       );
                     }}
                   />
@@ -630,7 +645,7 @@ export function RoomBoard({
                       onToggleReactionPopover={() => {
                         clearReactionCloseTimer();
                         setActiveReactionTargetId((current) =>
-                          current === participant.id ? null : participant.id
+                          current === participant.id ? null : participant.id,
                         );
                       }}
                     />
@@ -650,7 +665,7 @@ export function RoomBoard({
                         className="reaction-overlay__emoji reaction-overlay__emoji--flight"
                         style={{
                           left: `${point.x}px`,
-                          top: `${point.y}px`
+                          top: `${point.y}px`,
                         }}
                       >
                         {reaction.emoji}
@@ -663,7 +678,7 @@ export function RoomBoard({
                           className="reaction-overlay__emoji reaction-overlay__emoji--impact"
                           style={{
                             left: `${geometry.end.x}px`,
-                            top: `${geometry.end.y}px`
+                            top: `${geometry.end.y}px`,
                           }}
                         >
                           {reaction.emoji}
@@ -672,7 +687,7 @@ export function RoomBoard({
                           className="reaction-overlay__burst"
                           style={{
                             left: `${geometry.end.x}px`,
-                            top: `${geometry.end.y}px`
+                            top: `${geometry.end.y}px`,
                           }}
                         />
                       </>
@@ -682,14 +697,14 @@ export function RoomBoard({
                       <span
                         className={[
                           "reaction-overlay__linger",
-                          phaseState.phase === "fade" ? "reaction-overlay__linger--fade" : ""
+                          phaseState.phase === "fade" ? "reaction-overlay__linger--fade" : "",
                         ]
                           .filter(Boolean)
                           .join(" ")}
                         style={{
                           left: `${geometry.end.x}px`,
                           opacity: lingerOpacity,
-                          top: `${geometry.end.y - 38}px`
+                          top: `${geometry.end.y - 38}px`,
                         }}
                       >
                         {reaction.emoji}
@@ -766,7 +781,11 @@ export function RoomBoard({
                 onSelect={() => onVote(vote)}
               />
             ))}
-            <div className={["custom-vote-card", isCustomSelected ? "is-selected" : ""].filter(Boolean).join(" ")}>
+            <div
+              className={["custom-vote-card", isCustomSelected ? "is-selected" : ""]
+                .filter(Boolean)
+                .join(" ")}
+            >
               <label className="custom-vote-card__field">
                 <span>Custom</span>
                 <input

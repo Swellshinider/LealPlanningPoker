@@ -18,11 +18,13 @@ function createParticipant(index: number, overrides: Partial<Participant> = {}):
     tableVote: null,
     joinedAt: "2026-06-11T12:00:00.000Z",
     updatedAt: "2026-06-11T12:00:00.000Z",
-    ...overrides
+    ...overrides,
   };
 }
 
-function createProps(viewModelOverrides: Partial<RoomBoardProps["viewModel"]> = {}): RoomBoardProps {
+function createProps(
+  viewModelOverrides: Partial<RoomBoardProps["viewModel"]> = {},
+): RoomBoardProps {
   return {
     viewModel: {
       roomId: "ROOM01",
@@ -39,7 +41,7 @@ function createProps(viewModelOverrides: Partial<RoomBoardProps["viewModel"]> = 
       activeReactions: [],
       resultStats: null,
       voteSummary: [],
-      ...viewModelOverrides
+      ...viewModelOverrides,
     },
     history: [],
     displayName: "Mina",
@@ -60,7 +62,7 @@ function createProps(viewModelOverrides: Partial<RoomBoardProps["viewModel"]> = 
     onThrowReaction: () => undefined,
     onCopyLink: () => undefined,
     onNewRoom: () => undefined,
-    onToggleTheme: () => undefined
+    onToggleTheme: () => undefined,
   };
 }
 
@@ -88,7 +90,7 @@ describe("RoomBoard", () => {
 
   it("keeps the story panel visible for hosts even when editing is locked", () => {
     const markup = renderToStaticMarkup(
-      createElement(RoomBoard, createProps({ isHost: true, canSetStory: false }))
+      createElement(RoomBoard, createProps({ isHost: true, canSetStory: false })),
     );
 
     expect(markup).toContain("Story / ticket");
@@ -103,22 +105,22 @@ describe("RoomBoard", () => {
           participants: [
             createParticipant(1, {
               name: "Mina Lead",
-              hasVoted: true
+              hasVoted: true,
             }),
             createParticipant(2, {
               name: "Ana Bell",
               hasVoted: true,
               vote: "5",
               visibleVote: "5",
-              tableVote: "5"
+              tableVote: "5",
             }),
             createParticipant(3, {
               name: "Kai",
-              connected: false
-            })
-          ]
-        })
-      )
+              connected: false,
+            }),
+          ],
+        }),
+      ),
     );
 
     expect(markup).toContain("seat-ring");
@@ -150,10 +152,10 @@ describe("RoomBoard", () => {
             average: 4.5,
             confidence: 67,
             numericVoteCount: 3,
-            unknownVoteCount: 1
-          }
-        })
-      )
+            unknownVoteCount: 1,
+          },
+        }),
+      ),
     );
 
     expect(markup).toContain('aria-label="Round result"');
@@ -162,7 +164,9 @@ describe("RoomBoard", () => {
     expect(markup).toContain("Confidence");
     expect(markup).toContain(">67%</strong>");
     expect(markup.indexOf("LEAL")).toBeLessThan(markup.indexOf('aria-label="Round result"'));
-    expect(markup.indexOf('aria-label="Round result"')).toBeLessThan(markup.indexOf("Planning Poker"));
+    expect(markup.indexOf('aria-label="Round result"')).toBeLessThan(
+      markup.indexOf("Planning Poker"),
+    );
   });
 
   it("shows host round controls only to hosts and keeps their order", () => {
@@ -173,9 +177,9 @@ describe("RoomBoard", () => {
           isHost: true,
           canReveal: true,
           canReset: true,
-          canFinalize: true
-        })
-      )
+          canFinalize: true,
+        }),
+      ),
     );
 
     expect(markup).toContain("Clear votes");
@@ -202,10 +206,10 @@ describe("RoomBoard", () => {
           participants: [
             createParticipant(1, { isHost: true, isSelf: true, name: "You" }),
             createParticipant(2, { isSelf: false, name: "Ana" }),
-            createParticipant(3, { connected: false, isSelf: false, name: "Offline Kai" })
-          ]
-        })
-      )
+            createParticipant(3, { connected: false, isSelf: false, name: "Offline Kai" }),
+          ],
+        }),
+      ),
     );
 
     expect(markup.match(/data-reaction-trigger=/g)).toHaveLength(1);
