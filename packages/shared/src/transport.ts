@@ -45,6 +45,10 @@ export interface ThrowReactionRequest {
   emoji: ThrowableReactionEmoji;
 }
 
+export interface TransferHostRequest {
+  targetParticipantId: string;
+}
+
 export interface RoomClosedEvent {
   roomId: string;
   error: RoomErrorPayload;

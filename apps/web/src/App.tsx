@@ -19,6 +19,7 @@ import {
   subscribeToRoom,
   syncRoom,
   throwReaction,
+  transferHost,
   type RoomSubscription,
 } from "./lib/roomTransport";
 import { resolveHostTokenAfterJoin, shouldRestoreStoredSessionTokens } from "./lib/session";
@@ -549,6 +550,27 @@ export function App() {
     });
   }
 
+  async function changeHost(targetParticipantId: string) {
+    if (!snapshot || !participantToken) {
+      return;
+    }
+
+    const claimingHost = targetParticipantId === snapshot.viewer.participantId;
+    setBusy(true);
+    try {
+      const response = await transferHost(snapshot.roomId, participantToken, {
+        targetParticipantId,
+      });
+      handleSnapshotResponse(response.snapshot);
+      showNotice("success", claimingHost ? "You are now the host." : "Host transferred.");
+    } catch (error) {
+      const roomError = asRoomRequestError(error);
+      showNotice("error", roomError.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function revealRoomVotes() {
     if (!snapshot || !hostToken) {
       return;
@@ -690,6 +712,7 @@ export function App() {
         onSaveStory={() => void persistStory()}
         onStoryChange={setStoryDraft}
         onThrowReaction={sendReaction}
+        onTransferHost={(participantId) => void changeHost(participantId)}
         onToggleTheme={toggleTheme}
         onVote={(vote) => void castVote(vote)}
         onClearVote={() => void clearVote()}

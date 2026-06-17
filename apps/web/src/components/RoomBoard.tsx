@@ -47,6 +47,7 @@ export interface RoomBoardProps {
   onReset: () => void;
   onFinalize: () => void;
   onThrowReaction: (targetParticipantId: string, emoji: ThrowableReactionEmoji) => void;
+  onTransferHost: (targetParticipantId: string) => void;
   onCopyLink: () => void;
   onNewRoom: () => void;
   onToggleTheme: () => void;
@@ -70,10 +71,14 @@ interface PlayerSeatProps {
   participant: RoomParticipantView;
   variant: "ring" | "bench";
   geometry?: SeatGeometry;
+  busy: boolean;
+  hostActionLabel?: "Transfer host" | "Claim host";
+  hostActionVisibility?: "hover" | "always";
   isReactionTarget: boolean;
   isReactionPopoverOpen: boolean;
   isHeadBumped: boolean;
   onCloseReactionPopover: () => void;
+  onHostAction?: () => void;
   onOpenReactionPopover: () => void;
   onThrowReaction: (emoji: ThrowableReactionEmoji) => void;
   onToggleReactionPopover: () => void;
@@ -137,10 +142,14 @@ function PlayerSeat({
   participant,
   variant,
   geometry,
+  busy,
+  hostActionLabel,
+  hostActionVisibility = "hover",
   isReactionTarget,
   isReactionPopoverOpen,
   isHeadBumped,
   onCloseReactionPopover,
+  onHostAction,
   onOpenReactionPopover,
   onThrowReaction,
   onToggleReactionPopover,
@@ -249,6 +258,27 @@ function PlayerSeat({
           <span className="table-card-placeholder" aria-hidden="true" />
         )}
       </div>
+
+      {hostActionLabel && onHostAction ? (
+        <button
+          className={[
+            "button",
+            "button--quiet",
+            "button--compact",
+            "player-seat__host-action",
+            hostActionVisibility === "always"
+              ? "player-seat__host-action--visible"
+              : "player-seat__host-action--hover",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          disabled={busy}
+          type="button"
+          onClick={onHostAction}
+        >
+          {hostActionLabel}
+        </button>
+      ) : null}
     </article>
   );
 }
@@ -272,6 +302,7 @@ export function RoomBoard({
   onReset,
   onFinalize,
   onThrowReaction,
+  onTransferHost,
   onCopyLink,
   onNewRoom,
   onToggleTheme,
@@ -444,6 +475,27 @@ export function RoomBoard({
       .map(({ reaction }) => reaction.targetParticipantId),
   );
 
+  function getHostActionFor(participant: RoomParticipantView): {
+    label: "Transfer host" | "Claim host";
+    visibility: "hover" | "always";
+  } | null {
+    if (viewModel.isHost && participant.connected && !participant.isSelf) {
+      return {
+        label: "Transfer host",
+        visibility: "hover",
+      };
+    }
+
+    if (viewModel.canClaimHost && participant.isHost && !participant.connected) {
+      return {
+        label: "Claim host",
+        visibility: "always",
+      };
+    }
+
+    return null;
+  }
+
   return (
     <div className="room-workspace">
       <header className="workspace-topbar">
@@ -602,52 +654,25 @@ export function RoomBoard({
               </div>
 
               <div className="seat-ring">
-                {tableParticipants.map((participant, index) => (
-                  <PlayerSeat
-                    key={participant.id}
-                    geometry={getSeatGeometry(index, tableParticipants.length)}
-                    isHeadBumped={bumpedTargets.has(participant.id)}
-                    isReactionPopoverOpen={activeReactionTargetId === participant.id}
-                    isReactionTarget={participant.connected && !participant.isSelf}
-                    participant={participant}
-                    registerHeadElement={registerHeadElement}
-                    registerSeatElement={registerSeatElement}
-                    variant="ring"
-                    onCloseReactionPopover={() => scheduleReactionPopoverClose(participant.id)}
-                    onOpenReactionPopover={() => openReactionPopoverFor(participant.id)}
-                    onThrowReaction={(emoji) => {
-                      dismissReactionPopover();
-                      onThrowReaction(participant.id, emoji);
-                    }}
-                    onToggleReactionPopover={() => {
-                      clearReactionCloseTimer();
-                      setActiveReactionTargetId((current) =>
-                        current === participant.id ? null : participant.id,
-                      );
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
+                {tableParticipants.map((participant, index) => {
+                  const hostAction = getHostActionFor(participant);
 
-            {overflowParticipants.length > 0 ? (
-              <div className="overflow-bench" aria-label="Overflow players">
-                <div className="overflow-bench__header">
-                  <span className="section-label">Bench</span>
-                  <strong>{overflowParticipants.length} overflow players</strong>
-                </div>
-                <div className="overflow-bench__list">
-                  {overflowParticipants.map((participant) => (
+                  return (
                     <PlayerSeat
                       key={participant.id}
+                      busy={busy}
+                      geometry={getSeatGeometry(index, tableParticipants.length)}
+                      hostActionLabel={hostAction?.label}
+                      hostActionVisibility={hostAction?.visibility}
                       isHeadBumped={bumpedTargets.has(participant.id)}
                       isReactionPopoverOpen={activeReactionTargetId === participant.id}
                       isReactionTarget={participant.connected && !participant.isSelf}
                       participant={participant}
                       registerHeadElement={registerHeadElement}
                       registerSeatElement={registerSeatElement}
-                      variant="bench"
+                      variant="ring"
                       onCloseReactionPopover={() => scheduleReactionPopoverClose(participant.id)}
+                      onHostAction={() => onTransferHost(participant.id)}
                       onOpenReactionPopover={() => openReactionPopoverFor(participant.id)}
                       onThrowReaction={(emoji) => {
                         dismissReactionPopover();
@@ -660,7 +685,50 @@ export function RoomBoard({
                         );
                       }}
                     />
-                  ))}
+                  );
+                })}
+              </div>
+            </div>
+
+            {overflowParticipants.length > 0 ? (
+              <div className="overflow-bench" aria-label="Overflow players">
+                <div className="overflow-bench__header">
+                  <span className="section-label">Bench</span>
+                  <strong>{overflowParticipants.length} overflow players</strong>
+                </div>
+                <div className="overflow-bench__list">
+                  {overflowParticipants.map((participant) => {
+                    const hostAction = getHostActionFor(participant);
+
+                    return (
+                      <PlayerSeat
+                        key={participant.id}
+                        busy={busy}
+                        hostActionLabel={hostAction?.label}
+                        hostActionVisibility={hostAction?.visibility}
+                        isHeadBumped={bumpedTargets.has(participant.id)}
+                        isReactionPopoverOpen={activeReactionTargetId === participant.id}
+                        isReactionTarget={participant.connected && !participant.isSelf}
+                        participant={participant}
+                        registerHeadElement={registerHeadElement}
+                        registerSeatElement={registerSeatElement}
+                        variant="bench"
+                        onCloseReactionPopover={() => scheduleReactionPopoverClose(participant.id)}
+                        onHostAction={() => onTransferHost(participant.id)}
+                        onOpenReactionPopover={() => openReactionPopoverFor(participant.id)}
+                        onThrowReaction={(emoji) => {
+                          dismissReactionPopover();
+                          onThrowReaction(participant.id, emoji);
+                        }}
+                        onToggleReactionPopover={() => {
+                          clearReactionCloseTimer();
+                          setActiveReactionTargetId((current) =>
+                            current === participant.id ? null : participant.id,
+                          );
+                        }}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             ) : null}

@@ -61,6 +61,7 @@ describe("buildRoomViewModel", () => {
     const model = buildRoomViewModel(votingSnapshot);
 
     expect(model.isHost).toBe(false);
+    expect(model.canClaimHost).toBe(false);
     expect(model.canVote).toBe(true);
     expect(model.voteSummary).toEqual([]);
     expect(model.canReveal).toBe(false);
@@ -79,6 +80,7 @@ describe("buildRoomViewModel", () => {
     const model = buildRoomViewModel(revealedSnapshot);
 
     expect(model.isHost).toBe(true);
+    expect(model.canClaimHost).toBe(false);
     expect(model.canVote).toBe(false);
     expect(model.voteSummary).toEqual([
       { card: "3", count: 1 },
@@ -97,5 +99,17 @@ describe("buildRoomViewModel", () => {
     expect(model.activeReactions).toBe(votingSnapshot.activeReactions);
     expect(model.participants.every((participant) => participant.visibleVote !== null)).toBe(true);
     expect(model.participants.map((participant) => participant.tableVote)).toEqual(["8", "3"]);
+  });
+
+  it("allows claim-host UI only while the host participant is offline", () => {
+    const model = buildRoomViewModel({
+      ...votingSnapshot,
+      participants: votingSnapshot.participants.map((participant) =>
+        participant.id === "HOST_PARTICIPANT" ? { ...participant, connected: false } : participant,
+      ),
+    });
+
+    expect(model.isHost).toBe(false);
+    expect(model.canClaimHost).toBe(true);
   });
 });

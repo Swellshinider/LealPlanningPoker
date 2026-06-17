@@ -29,8 +29,9 @@ function createFakeSocket(id = "socket-1"): FakeSocket {
   return socket;
 }
 
-function createFakeIo(socket: FakeSocket) {
+function createFakeIo(...sockets: FakeSocket[]) {
   let connectionHandler: ((socket: FakeSocket) => void) | undefined;
+  const socketMap = new Map(sockets.map((socket) => [socket.id, socket]));
 
   return {
     io: {
@@ -40,10 +41,10 @@ function createFakeIo(socket: FakeSocket) {
         }
       },
       sockets: {
-        sockets: new Map([[socket.id, socket]]),
+        sockets: socketMap,
       },
     },
-    connect() {
+    connect(socket = sockets[0]) {
       if (!connectionHandler) {
         throw new Error("Connection handler was not registered.");
       }
@@ -262,6 +263,126 @@ describe("registerSocketHandlers", () => {
         code: "INVALID_REACTION",
         message: "Pick another player.",
       },
+    });
+  });
+
+  it("handles host transfers and broadcasts the updated snapshot to other sockets", () => {
+    const hostSocket = createFakeSocket("host-socket");
+    const viewerSocket = createFakeSocket("viewer-socket");
+    const { io, connect } = createFakeIo(hostSocket, viewerSocket);
+    const store = createStore();
+    registerSocketHandlers(io as never, store);
+    connect(hostSocket);
+    connect(viewerSocket);
+
+    const createAck = vi.fn();
+    hostSocket.handlers.get("room:create")?.({ hostName: "Mina" }, createAck);
+    const created = createAck.mock.calls[0]?.[0];
+
+    const joinAck = vi.fn();
+    viewerSocket.handlers.get("room:join")?.(
+      {
+        roomId: created.roomId,
+        displayName: "Ana",
+      },
+      joinAck,
+    );
+    const joined = joinAck.mock.calls[0]?.[0];
+
+    const transferAck = vi.fn();
+    hostSocket.handlers.get("host:transfer")?.(
+      {
+        roomId: created.roomId,
+        participantToken: created.participantToken,
+        targetParticipantId: joined.snapshot.viewer.participantId,
+      },
+      transferAck,
+    );
+
+    expect(transferAck).toHaveBeenCalledWith({
+      ok: true,
+      snapshot: expect.objectContaining({
+        hostName: "Ana",
+        viewer: {
+          participantId: created.snapshot.viewer.participantId,
+          isHost: false,
+        },
+      }),
+    });
+    expect(viewerSocket.emitted).toContainEqual({
+      event: "room:snapshot",
+      payload: expect.objectContaining({
+        hostName: "Ana",
+        viewer: {
+          participantId: joined.snapshot.viewer.participantId,
+          isHost: true,
+        },
+      }),
+    });
+  });
+
+  it("validates host:transfer payloads and supports offline host claims", () => {
+    const socket = createFakeSocket();
+    const { io, connect } = createFakeIo(socket);
+    const store = createStore();
+    registerSocketHandlers(io as never, store);
+    connect();
+
+    const createAck = vi.fn();
+    socket.handlers.get("room:create")?.({ hostName: "Mina" }, createAck);
+    const created = createAck.mock.calls[0]?.[0];
+
+    const malformedAck = vi.fn();
+    socket.handlers.get("host:transfer")?.(
+      {
+        roomId: created.roomId,
+        targetParticipantId: created.snapshot.viewer.participantId,
+      },
+      malformedAck,
+    );
+
+    expect(malformedAck).toHaveBeenCalledWith({
+      ok: false,
+      error: {
+        code: "INVALID_PAYLOAD",
+        message: "Invalid participantToken.",
+      },
+    });
+
+    const joinAck = vi.fn();
+    socket.handlers.get("room:join")?.(
+      {
+        roomId: created.roomId,
+        displayName: "Ana",
+      },
+      joinAck,
+    );
+    const joined = joinAck.mock.calls[0]?.[0];
+
+    store.leaveRoom({
+      roomId: created.roomId,
+      participantToken: created.participantToken,
+    });
+
+    const claimAck = vi.fn();
+    socket.handlers.get("host:transfer")?.(
+      {
+        roomId: created.roomId,
+        participantToken: joined.participantToken,
+        targetParticipantId: joined.snapshot.viewer.participantId,
+      },
+      claimAck,
+    );
+
+    expect(claimAck).toHaveBeenCalledWith({
+      ok: true,
+      snapshot: expect.objectContaining({
+        hostName: "Ana",
+        viewer: {
+          participantId: joined.snapshot.viewer.participantId,
+          isHost: true,
+        },
+      }),
     });
   });
 });

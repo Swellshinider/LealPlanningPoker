@@ -8,6 +8,7 @@ import type {
   RoomSnapshot,
   StoryRequest,
   ThrowReactionRequest,
+  TransferHostRequest,
   VoteRequest,
 } from "@lealplanningpoker/shared";
 
@@ -142,6 +143,26 @@ export async function throwReaction(
     compatQuery: {
       targetParticipantId: payload.targetParticipantId,
       emoji: payload.emoji,
+    },
+    headers: {
+      "x-participant-token": participantToken,
+    },
+  });
+}
+
+export async function transferHost(
+  roomId: string,
+  participantToken: string,
+  payload: TransferHostRequest,
+): Promise<{
+  snapshot: RoomSnapshot;
+}> {
+  return requestWithCompat({
+    path: `/api/rooms/${encodeURIComponent(roomId)}/host/transfer`,
+    compatPath: `/api/compat/rooms/${encodeURIComponent(roomId)}/host/transfer`,
+    body: payload,
+    compatQuery: {
+      targetParticipantId: payload.targetParticipantId,
     },
     headers: {
       "x-participant-token": participantToken,

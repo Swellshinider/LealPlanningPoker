@@ -19,6 +19,7 @@ export class RoomStoreError extends Error {
     | "ROOM_NOT_FOUND"
     | "PARTICIPANT_NOT_FOUND"
     | "NOT_HOST"
+    | "INVALID_HOST_TRANSFER"
     | "VOTES_LOCKED"
     | "ROUND_LOCKED"
     | "INVALID_VOTE"
@@ -32,6 +33,7 @@ export class RoomStoreError extends Error {
       | "ROOM_NOT_FOUND"
       | "PARTICIPANT_NOT_FOUND"
       | "NOT_HOST"
+      | "INVALID_HOST_TRANSFER"
       | "VOTES_LOCKED"
       | "ROUND_LOCKED"
       | "INVALID_VOTE"
@@ -137,6 +139,12 @@ export interface ThrowReactionInput {
   participantToken: string;
   targetParticipantId: string;
   emoji: ThrowableReactionEmoji;
+}
+
+export interface TransferHostInput {
+  roomId: string;
+  participantToken: string;
+  targetParticipantId: string;
 }
 
 export interface HostActionInput {
@@ -398,6 +406,64 @@ export class RoomStore {
     room.updatedAt = createdAt;
 
     return this.buildSnapshot(room, thrower.id);
+  }
+
+  transferHost(input: TransferHostInput): RoomSnapshot {
+    const room = this.getRoomOrThrow(input.roomId);
+    const actor = this.getParticipantByTokenOrThrow(room, input.participantToken);
+    const target = this.getParticipantOrThrow(room, input.targetParticipantId);
+    const currentHost = this.getParticipantOrThrow(room, room.hostParticipantId);
+
+    if (actor.id === currentHost.id) {
+      if (!actor.connected) {
+        throw new RoomStoreError(
+          "INVALID_HOST_TRANSFER",
+          "Only the connected host can transfer host.",
+        );
+      }
+      if (target.id === actor.id) {
+        throw new RoomStoreError(
+          "INVALID_HOST_TRANSFER",
+          "Choose another connected participant.",
+        );
+      }
+      if (!target.connected) {
+        throw new RoomStoreError(
+          "INVALID_HOST_TRANSFER",
+          "Only connected participants can become host.",
+        );
+      }
+    } else {
+      if (currentHost.connected) {
+        throw new RoomStoreError(
+          "INVALID_HOST_TRANSFER",
+          "Host can only be claimed while the current host is offline.",
+        );
+      }
+      if (!actor.connected) {
+        throw new RoomStoreError(
+          "INVALID_HOST_TRANSFER",
+          "Only connected participants can claim host.",
+        );
+      }
+      if (target.id !== actor.id) {
+        throw new RoomStoreError(
+          "INVALID_HOST_TRANSFER",
+          "You can only claim host for yourself.",
+        );
+      }
+    }
+
+    const now = this.nowIso();
+    currentHost.isHost = false;
+    currentHost.updatedAt = now;
+    target.isHost = true;
+    target.updatedAt = now;
+    room.hostParticipantId = target.id;
+    room.hostName = target.name;
+    room.updatedAt = now;
+
+    return this.buildSnapshot(room, actor.id);
   }
 
   revealVotes(input: HostActionInput): RoomSnapshot {
