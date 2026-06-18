@@ -282,6 +282,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- showNotice/startRoomSubscription are actions, not effect triggers
   }, [participantToken, roomCode, shouldRestoreStoredSession]);
 
   useEffect(() => {
@@ -295,6 +296,7 @@ export function App() {
     }
 
     void joinPlanningRoom();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only auto-join; deps intentionally empty
   }, []);
 
   function startRoomSubscription(nextRoomId: string, nextParticipantToken: string) {

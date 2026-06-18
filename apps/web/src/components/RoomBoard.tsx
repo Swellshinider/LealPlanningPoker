@@ -380,6 +380,7 @@ export function RoomBoard({
     if (!targetStillVisible) {
       dismissReactionPopover();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dismissReactionPopover only uses stable setState/refs
   }, [activeReactionTargetId, reactionTargets]);
 
   useEffect(() => {
@@ -398,6 +399,7 @@ export function RoomBoard({
     if (!targetStillVisible) {
       dismissHostAction();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dismissHostAction only uses stable setState/refs
   }, [activeHostActionParticipantId, viewModel.isHost, viewModel.participants]);
 
   useEffect(() => {
@@ -424,6 +426,7 @@ export function RoomBoard({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dismissReactionPopover only uses stable setState/refs
   }, [activeReactionTargetId]);
 
   useEffect(() => {
@@ -450,6 +453,7 @@ export function RoomBoard({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dismissHostAction only uses stable setState/refs
   }, [activeHostActionParticipantId]);
 
   function submitCustomVote() {
