@@ -1,0 +1,101 @@
+.app-shell--room {
+  padding: 0;
+}
+
+.room-workspace {
+  min-height: 100vh;
+  display: grid;
+  gap: 16px;
+  padding: 16px 16px 172px;
+  grid-template-rows: auto auto 1fr auto;
+}
+
+.room-hero {
+  width: min(100%, 1180px);
+  margin: 0 auto;
+  padding: 8px 2px 0;
+}
+
+.room-hero__copy {
+  min-width: 0;
+}
+
+.room-hero__copy p {
+  max-width: 62ch;
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.room-hero h1 {
+  max-width: 24ch;
+  margin-top: 6px;
+  font-size: clamp(1.9rem, 4vw, 3.8rem);
+  font-weight: 760;
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.room-hero__room-id {
+  color: var(--muted);
+  font-size: clamp(1.2rem, 2vw, 1.7rem);
+  font-weight: 720;
+  line-height: 1.15;
+}
+
+.workspace-main {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 1180px);
+  margin: 0 auto;
+}
+
+.workspace-controls {
+  display: grid;
+  grid-template-columns: minmax(300px, 1.2fr) minmax(260px, 0.8fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.workspace-controls--profile-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.story-panel,
+.profile-panel {
+  padding: 20px;
+}
+
+.room-workspace > .public-footer {
+  width: min(100%, 1180px);
+  margin: 0 auto;
+}
+
+@media (max-width: 1180px) {
+  .workspace-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .room-workspace {
+    min-height: 100vh;
+    gap: 10px;
+    padding: 10px 10px 218px;
+  }
+
+  .story-panel,
+  .profile-panel {
+    padding: 16px;
+  }
+
+  .room-hero h1 {
+    max-width: none;
+    font-size: clamp(2rem, 11vw, 3rem);
+  }
+
+  .room-hero__room-id {
+    font-size: 1.3rem;
+  }
+}
