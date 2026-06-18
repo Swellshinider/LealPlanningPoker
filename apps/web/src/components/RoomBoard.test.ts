@@ -78,7 +78,8 @@ describe("RoomBoard", () => {
   it("renders the theme toggle in the room header", () => {
     const markup = renderToStaticMarkup(createElement(RoomBoard, createProps()));
 
-    expect(markup).toContain('src="/branding/logo-header.png"');
+    expect(markup).toContain('src="/branding/logo-header-light.png"');
+    expect(markup).toContain('src="/branding/logo-header-dark.png"');
     expect(markup).toContain('aria-label="Switch to dark theme"');
     expect(markup).toContain('class="button button--quiet theme-toggle"');
     expect(markup).toContain('href="/help"');

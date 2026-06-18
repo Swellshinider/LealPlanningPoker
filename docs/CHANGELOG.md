@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [1.1.2] - 18-06-2026
 
+### Changed
+
+- Refreshed the app branding with a new favicon and header logo. The header logo is now theme-aware (light-background variant in light mode, dark-background variant in dark mode), while the favicon is a single icon shared across themes.
+
 ### Fixed
 
 - Disconnected players are now detected as offline in around 8 seconds (previously 30), so the host seat frees up for claiming much sooner.
