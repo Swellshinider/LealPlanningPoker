@@ -422,10 +422,7 @@ export class RoomStore {
         );
       }
       if (target.id === actor.id) {
-        throw new RoomStoreError(
-          "INVALID_HOST_TRANSFER",
-          "Choose another connected participant.",
-        );
+        throw new RoomStoreError("INVALID_HOST_TRANSFER", "Choose another connected participant.");
       }
       if (!target.connected) {
         throw new RoomStoreError(
@@ -447,10 +444,7 @@ export class RoomStore {
         );
       }
       if (target.id !== actor.id) {
-        throw new RoomStoreError(
-          "INVALID_HOST_TRANSFER",
-          "You can only claim host for yourself.",
-        );
+        throw new RoomStoreError("INVALID_HOST_TRANSFER", "You can only claim host for yourself.");
       }
     }
 

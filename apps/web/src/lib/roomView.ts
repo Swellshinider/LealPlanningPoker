@@ -67,11 +67,7 @@ export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
     story: snapshot.story,
     isHost,
     canClaimHost: Boolean(
-      viewer &&
-        hostParticipant &&
-        !viewer.isHost &&
-        viewer.connected &&
-        !hostParticipant.connected,
+      viewer && hostParticipant && !viewer.isHost && viewer.connected && !hostParticipant.connected,
     ),
     canVote: isVoting,
     canReveal: isHost && isVoting,

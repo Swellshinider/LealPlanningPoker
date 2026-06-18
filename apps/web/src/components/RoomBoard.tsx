@@ -574,9 +574,7 @@ export function RoomBoard({
       .map(({ reaction }) => reaction.targetParticipantId),
   );
 
-  const selfParticipantId = viewModel.participants.find(
-    (participant) => participant.isSelf,
-  )?.id;
+  const selfParticipantId = viewModel.participants.find((participant) => participant.isSelf)?.id;
 
   function getHostActionFor(participant: RoomParticipantView): {
     label: "Transfer host" | "Claim host";
@@ -781,7 +779,7 @@ export function RoomBoard({
                       onHostAction={() =>
                         onTransferHost(
                           hostAction?.label === "Claim host"
-                            ? selfParticipantId ?? participant.id
+                            ? (selfParticipantId ?? participant.id)
                             : participant.id,
                         )
                       }
@@ -830,12 +828,12 @@ export function RoomBoard({
                         onOpenHostAction={() => openHostActionFor(participant.id)}
                         onCloseReactionPopover={() => scheduleReactionPopoverClose(participant.id)}
                         onHostAction={() =>
-                        onTransferHost(
-                          hostAction?.label === "Claim host"
-                            ? selfParticipantId ?? participant.id
-                            : participant.id,
-                        )
-                      }
+                          onTransferHost(
+                            hostAction?.label === "Claim host"
+                              ? (selfParticipantId ?? participant.id)
+                              : participant.id,
+                          )
+                        }
                         onOpenReactionPopover={() => openReactionPopoverFor(participant.id)}
                         onThrowReaction={(emoji) => {
                           dismissReactionPopover();

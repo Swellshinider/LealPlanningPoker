@@ -137,7 +137,7 @@ describe("RoomStore", () => {
     ).toBe(true);
     expect(
       rejoined.snapshot.participants.find((participant) => participant.id === "ANA_PARTICIPANT")
-      ?.name,
+        ?.name,
     ).toBe("Ana Later");
   });
 
