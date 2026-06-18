@@ -871,8 +871,10 @@ textarea:focus-visible {
 
 .reaction-popover {
   position: absolute;
-  top: -18px;
-  left: calc(100% + 4px);
+  top: var(--reaction-popover-top, -18px);
+  right: var(--reaction-popover-right, auto);
+  bottom: var(--reaction-popover-bottom, auto);
+  left: var(--reaction-popover-left, calc(100% + 4px));
   z-index: 8;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -886,6 +888,7 @@ textarea:focus-visible {
   box-shadow:
     0 18px 40px rgba(16, 24, 40, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  transform: var(--reaction-popover-transform, none);
 }
 
 .reaction-popover[hidden] {
@@ -1025,10 +1028,12 @@ textarea:focus-visible {
 
 .table-seat--ring .player-seat__host-action {
   position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
+  top: var(--host-action-top, calc(100% + 10px));
+  right: var(--host-action-right, auto);
+  bottom: var(--host-action-bottom, auto);
+  left: var(--host-action-left, 50%);
   z-index: 4;
-  transform: translate(-50%, -4px);
+  transform: var(--host-action-hidden-transform, translate(-50%, -4px));
   transition:
     opacity 160ms ease,
     transform 160ms ease;
@@ -1041,6 +1046,7 @@ textarea:focus-visible {
 
 .table-seat:hover .player-seat__host-action--hover,
 .table-seat:focus-within .player-seat__host-action--hover,
+.player-seat__host-action--open,
 .player-seat__host-action--visible {
   opacity: 1;
   pointer-events: auto;
@@ -1048,8 +1054,23 @@ textarea:focus-visible {
 
 .table-seat:hover .player-seat__host-action--hover,
 .table-seat:focus-within .player-seat__host-action--hover,
+.table-seat--ring .player-seat__host-action--open,
 .table-seat--ring .player-seat__host-action--visible {
-  transform: translate(-50%, 0);
+  transform: var(--host-action-visible-transform, translate(-50%, 0));
+}
+
+.player-seat__host-action--suppressed,
+.table-seat:hover .player-seat__host-action--suppressed,
+.table-seat:focus-within .player-seat__host-action--suppressed {
+  opacity: 0;
+  pointer-events: none;
+  transform: var(--host-action-hidden-transform, translate(-50%, -4px));
+}
+
+/* Keep the centering transform on hover; the global .button:hover lift would
+   otherwise drop translateX(-50%) and shift the button sideways. */
+.table-seat--ring .player-seat__host-action:hover:not(:disabled) {
+  transform: var(--host-action-visible-transform, translate(-50%, 0));
 }
 
 .table-seat--ring .table-card-slot {
@@ -1079,6 +1100,50 @@ textarea:focus-visible {
   top: 50%;
   right: calc(100% + 8px);
   transform: translateY(-50%);
+}
+
+.table-seat--upper {
+  --reaction-popover-top: calc(100% + 6px);
+  --reaction-popover-left: 50%;
+  --reaction-popover-transform: translateX(-50%);
+  --host-action-top: calc(100% + 10px);
+  --host-action-left: 50%;
+  --host-action-hidden-transform: translate(-50%, -4px);
+  --host-action-visible-transform: translate(-50%, 0);
+}
+
+.table-seat--lower {
+  --reaction-popover-top: auto;
+  --reaction-popover-bottom: calc(100% + 6px);
+  --reaction-popover-left: 50%;
+  --reaction-popover-transform: translateX(-50%);
+  --host-action-top: auto;
+  --host-action-bottom: calc(100% + 10px);
+  --host-action-left: 50%;
+  --host-action-hidden-transform: translate(-50%, 4px);
+  --host-action-visible-transform: translate(-50%, 0);
+}
+
+.table-seat--left {
+  --reaction-popover-top: 50%;
+  --reaction-popover-left: calc(100% + 6px);
+  --reaction-popover-transform: translateY(-50%);
+  --host-action-top: 50%;
+  --host-action-left: calc(100% + 10px);
+  --host-action-hidden-transform: translate(-4px, -50%);
+  --host-action-visible-transform: translate(0, -50%);
+}
+
+.table-seat--right {
+  --reaction-popover-top: 50%;
+  --reaction-popover-right: calc(100% + 6px);
+  --reaction-popover-left: auto;
+  --reaction-popover-transform: translateY(-50%);
+  --host-action-top: 50%;
+  --host-action-right: calc(100% + 10px);
+  --host-action-left: auto;
+  --host-action-hidden-transform: translate(4px, -50%);
+  --host-action-visible-transform: translate(0, -50%);
 }
 
 .table-seat--bench .table-card-slot {
@@ -1970,6 +2035,29 @@ textarea:focus-visible {
     right: auto;
     bottom: auto;
     left: auto;
+    transform: none;
+  }
+
+  .table-seat--ring .reaction-popover {
+    top: calc(100% + 8px);
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .table-seat--ring .player-seat__host-action {
+    position: static;
+    justify-self: stretch;
+    margin-top: 6px;
+    transform: none;
+  }
+
+  .table-seat--ring .player-seat__host-action--hover,
+  .table-seat--ring .player-seat__host-action--visible,
+  .table-seat--ring .player-seat__host-action--open {
+    opacity: 1;
+    pointer-events: auto;
     transform: none;
   }
 

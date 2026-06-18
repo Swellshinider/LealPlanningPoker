@@ -6,7 +6,7 @@ import type {
 } from "@lealplanningpoker/shared";
 import { RoomStore, RoomStoreError } from "./roomStore";
 
-const DISCONNECT_GRACE_MS = 30_000;
+const DISCONNECT_GRACE_MS = 8_000;
 const KEEPALIVE_INTERVAL_MS = 15_000;
 
 interface ParticipantPresence {

@@ -12,4 +12,15 @@ describe("reaction popover hover behavior", () => {
     expect(roomBoardSource).toContain("setTimeout");
     expect(roomBoardSource).toContain("clearTimeout");
   });
+
+  it("uses a delayed close for transfer host so the pointer can move from the seat to the action", () => {
+    expect(roomBoardSource).toContain("HOST_ACTION_CLOSE_DELAY_MS");
+    expect(roomBoardSource).toContain("data-host-action-region");
+    expect(roomBoardSource).toContain("player-seat__host-action--open");
+  });
+
+  it("suppresses the transfer host action while the reaction popover is open on the same seat", () => {
+    expect(roomBoardSource).toContain("player-seat__host-action--suppressed");
+    expect(roomBoardSource).toContain("setActiveHostActionParticipantId((current) =>");
+  });
 });
