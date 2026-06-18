@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - Refreshed the app branding with a new favicon and header logo. The header logo is now theme-aware (light-background variant in light mode, dark-background variant in dark mode), while the favicon is a single icon shared across themes.
+- Decomposed the frontend into focused hooks and components without changing any behavior. `App.tsx` (previously all state and orchestration) now delegates to `useLocalStorageSession`, `useNotice`, `useTheme`, and `useRoomSession` hooks, and `RoomBoard.tsx` is now a thin coordinator over `RoomTopBar`, `RoomHero`, `StoryPanel`, `ProfilePanel`, `HostRoundControls`, `PokerTable`, `ReactionOverlay`, and `VoteDock` components plus a `useSeatInteraction` hook. Pure helpers moved into `lib/` (`roomUrl`, `roomRequest`, `seatGeometry`, `voteDeck`) with new unit tests.
+- Split the web stylesheet monolith into a structured CSS entrypoint with domain-specific files for theme tokens, shared primitives, public pages, room layout, poker table interactions, vote dock, and history styles without changing behavior.
 
 ### Fixed
 
