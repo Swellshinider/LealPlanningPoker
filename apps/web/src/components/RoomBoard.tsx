@@ -1,10 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  FIBONACCI_DECK,
   MAX_CUSTOM_VOTE_DIGITS,
   THROWABLE_REACTION_EMOJIS,
-  isBuiltInVoteCard,
-  normalizeVoteCard,
   type RoomHistoryEntry,
   type ThrowableReactionEmoji,
   type VoteCard as VoteValue,
@@ -19,6 +16,9 @@ import {
 } from "../lib/reactionOverlay";
 import type { ThemeMode } from "../lib/theme";
 import { formatVoteLabel } from "../lib/uiText";
+import { getSeatGeometry, getPlayerInitials, getPlayerStatus } from "../lib/seatGeometry";
+import type { SeatGeometry } from "../lib/seatGeometry";
+import { DECK, isCustomVoteSelected, resolveCustomVote } from "../lib/voteDeck";
 import { AppLogo } from "./AppLogo";
 import { HistoryPanel } from "./HistoryPanel";
 import { PublicFooter } from "./PublicFooter";
@@ -54,19 +54,7 @@ export interface RoomBoardProps {
   onToggleTheme: () => void;
 }
 
-const DECK: VoteValue[] = [...FIBONACCI_DECK];
 const MAX_TABLE_SEATS = 12;
-
-type SeatStyle = CSSProperties & {
-  "--seat-x": string;
-  "--seat-y": string;
-  "--seat-delay": string;
-};
-
-interface SeatGeometry {
-  style: SeatStyle;
-  zoneClass: string;
-}
 
 interface PlayerSeatProps {
   participant: RoomParticipantView;
@@ -88,46 +76,6 @@ interface PlayerSeatProps {
   onToggleReactionPopover: () => void;
   registerHeadElement: (participantId: string, element: HTMLElement | null) => void;
   registerSeatElement: (participantId: string, element: HTMLElement | null) => void;
-}
-
-function getSeatGeometry(index: number, total: number): SeatGeometry {
-  const angle = total === 1 ? 90 : -90 + (360 / total) * index;
-  const radians = (angle * Math.PI) / 180;
-  const x = Math.cos(radians);
-  const y = Math.sin(radians);
-  const normalizedAngle = ((angle % 360) + 360) % 360;
-  const zoneClass =
-    normalizedAngle >= 45 && normalizedAngle <= 135
-      ? "table-seat--lower"
-      : normalizedAngle >= 225 && normalizedAngle <= 315
-        ? "table-seat--upper"
-        : normalizedAngle > 135 && normalizedAngle < 225
-          ? "table-seat--left"
-          : "table-seat--right";
-
-  return {
-    style: {
-      "--seat-x": `${(x * 42).toFixed(3)}%`,
-      "--seat-y": `${(y * 38).toFixed(3)}%`,
-      "--seat-delay": `${index * 42}ms`,
-    },
-    zoneClass,
-  };
-}
-
-function getPlayerInitials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  const initials =
-    words.length > 1
-      ? `${words[0]?.[0] ?? ""}${words[1]?.[0] ?? ""}`
-      : (words[0] ?? "").slice(0, 2);
-
-  return initials.toUpperCase() || "?";
-}
-
-function getPlayerStatus(participant: RoomParticipantView): string {
-  const status = participant.connected ? "online" : "offline";
-  return participant.isHost ? `Host, ${status}` : status;
 }
 
 function formatAverage(value: number | null): string {
@@ -335,10 +283,8 @@ export function RoomBoard({
   const hostActionCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const headElementsRef = useRef(new Map<string, HTMLElement>());
   const seatElementsRef = useRef(new Map<string, HTMLElement>());
-  const normalizedCustomVote = useMemo(() => normalizeVoteCard(customVoteDraft), [customVoteDraft]);
-  const customVote =
-    normalizedCustomVote && /^\d+$/.test(normalizedCustomVote) ? normalizedCustomVote : null;
-  const isCustomSelected = Boolean(selectedVote && !isBuiltInVoteCard(selectedVote));
+  const customVote = useMemo(() => resolveCustomVote(customVoteDraft), [customVoteDraft]);
+  const isCustomSelected = isCustomVoteSelected(selectedVote);
   const tableParticipants = viewModel.participants.slice(0, MAX_TABLE_SEATS);
   const overflowParticipants = viewModel.participants.slice(MAX_TABLE_SEATS);
   const reactionTargets = viewModel.participants.filter(
