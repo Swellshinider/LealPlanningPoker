@@ -141,6 +141,160 @@ describe("RoomStore", () => {
     ).toBe("Ana Later");
   });
 
+  it("transfers host to another connected participant and moves host permissions to their token", () => {
+    const created = store.createRoom({ hostName: "Mina" });
+    const joined = store.joinRoom({
+      roomId: created.roomId,
+      displayName: "Ana",
+    });
+
+    const transferred = store.transferHost({
+      roomId: created.roomId,
+      participantToken: created.participantToken,
+      targetParticipantId: "ANA_PARTICIPANT",
+    });
+
+    expect(transferred.hostName).toBe("Ana");
+    expect(transferred.viewer).toEqual({
+      participantId: "HOST_PARTICIPANT",
+      isHost: false,
+    });
+    expect(
+      transferred.participants.find((participant) => participant.id === "HOST_PARTICIPANT")?.isHost,
+    ).toBe(false);
+    expect(
+      transferred.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.isHost,
+    ).toBe(true);
+
+    const claimedHostStory = store.setStory({
+      roomId: created.roomId,
+      hostToken: joined.participantToken,
+      story: "Improve onboarding",
+    });
+
+    expect(claimedHostStory.viewer).toEqual({
+      participantId: "ANA_PARTICIPANT",
+      isHost: true,
+    });
+    expectRoomError(
+      () =>
+        store.setStory({
+          roomId: created.roomId,
+          hostToken: created.participantToken,
+          story: "Try another story",
+        }),
+      "NOT_HOST",
+    );
+  });
+
+  it("allows connected participants to claim host only while the current host is offline", () => {
+    const created = store.createRoom({ hostName: "Mina" });
+    const joined = store.joinRoom({
+      roomId: created.roomId,
+      displayName: "Ana",
+    });
+
+    store.leaveRoom({
+      roomId: created.roomId,
+      participantToken: created.participantToken,
+    });
+
+    const claimed = store.transferHost({
+      roomId: created.roomId,
+      participantToken: joined.participantToken,
+      targetParticipantId: "ANA_PARTICIPANT",
+    });
+
+    expect(claimed.hostName).toBe("Ana");
+    expect(claimed.viewer).toEqual({
+      participantId: "ANA_PARTICIPANT",
+      isHost: true,
+    });
+    expect(
+      claimed.participants.find((participant) => participant.id === "HOST_PARTICIPANT")?.connected,
+    ).toBe(false);
+    expect(
+      claimed.participants.find((participant) => participant.id === "ANA_PARTICIPANT")?.isHost,
+    ).toBe(true);
+  });
+
+  it("rejects stale claims after the offline host reconnects", () => {
+    const created = store.createRoom({ hostName: "Mina" });
+    const joined = store.joinRoom({
+      roomId: created.roomId,
+      displayName: "Ana",
+    });
+
+    store.leaveRoom({
+      roomId: created.roomId,
+      participantToken: created.participantToken,
+    });
+    store.syncRoom({
+      roomId: created.roomId,
+      participantToken: created.participantToken,
+    });
+
+    expectRoomError(
+      () =>
+        store.transferHost({
+          roomId: created.roomId,
+          participantToken: joined.participantToken,
+          targetParticipantId: "ANA_PARTICIPANT",
+        }),
+      "INVALID_HOST_TRANSFER",
+    );
+  });
+
+  it("rejects self-transfers, offline transfer targets, and claiming host for another participant", () => {
+    const created = store.createRoom({ hostName: "Mina" });
+    const ana = store.joinRoom({
+      roomId: created.roomId,
+      displayName: "Ana",
+    });
+    const bob = store.joinRoom({
+      roomId: created.roomId,
+      displayName: "Bob",
+    });
+
+    expectRoomError(
+      () =>
+        store.transferHost({
+          roomId: created.roomId,
+          participantToken: created.participantToken,
+          targetParticipantId: "HOST_PARTICIPANT",
+        }),
+      "INVALID_HOST_TRANSFER",
+    );
+
+    store.leaveRoom({
+      roomId: created.roomId,
+      participantToken: ana.participantToken,
+    });
+    expectRoomError(
+      () =>
+        store.transferHost({
+          roomId: created.roomId,
+          participantToken: created.participantToken,
+          targetParticipantId: "ANA_PARTICIPANT",
+        }),
+      "INVALID_HOST_TRANSFER",
+    );
+
+    store.leaveRoom({
+      roomId: created.roomId,
+      participantToken: created.participantToken,
+    });
+    expectRoomError(
+      () =>
+        store.transferHost({
+          roomId: created.roomId,
+          participantToken: bob.participantToken,
+          targetParticipantId: "ANA_PARTICIPANT",
+        }),
+      "INVALID_HOST_TRANSFER",
+    );
+  });
+
   it("tracks votes during voting and hides other votes until reveal", () => {
     const created = store.createRoom({ hostName: "Mina" });
     const joined = store.joinRoom({

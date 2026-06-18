@@ -31,6 +31,7 @@ function createProps(
       hostName: "Mina",
       story: "Improve onboarding",
       isHost: false,
+      canClaimHost: false,
       canVote: true,
       canReveal: false,
       canReset: false,
@@ -60,6 +61,7 @@ function createProps(
     onReset: () => undefined,
     onFinalize: () => undefined,
     onThrowReaction: () => undefined,
+    onTransferHost: () => undefined,
     onCopyLink: () => undefined,
     onNewRoom: () => undefined,
     onToggleTheme: () => undefined,
@@ -229,5 +231,48 @@ describe("RoomBoard", () => {
     expect(markup).toContain("🍅");
     expect(markup).toContain("👎");
     expect(markup).toContain("💀");
+  });
+
+  it("shows Transfer host only for eligible connected non-self participants", () => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        RoomBoard,
+        createProps({
+          isHost: true,
+          participants: [
+            createParticipant(1, { isHost: true, isSelf: true, name: "You" }),
+            createParticipant(2, { isSelf: false, name: "Ana" }),
+            createParticipant(3, { isSelf: false, connected: false, name: "Offline Kai" }),
+          ],
+        }),
+      ),
+    );
+
+    expect(markup.match(/Transfer host/g)).toHaveLength(1);
+    expect(markup).not.toContain("Claim host");
+  });
+
+  it("shows Claim host only below the offline host seat when no connected host exists", () => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        RoomBoard,
+        createProps({
+          canClaimHost: true,
+          participants: [
+            createParticipant(1, {
+              isHost: true,
+              isSelf: false,
+              connected: false,
+              name: "Offline Mina",
+            }),
+            createParticipant(2, { isHost: false, isSelf: true, name: "Ana" }),
+            createParticipant(3, { isHost: false, isSelf: false, name: "Bob" }),
+          ],
+        }),
+      ),
+    );
+
+    expect(markup.match(/Claim host/g)).toHaveLength(1);
+    expect(markup).not.toContain("Transfer host");
   });
 });

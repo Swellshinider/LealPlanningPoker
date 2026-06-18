@@ -27,6 +27,7 @@ import { ThemeToggleButton } from "./ThemeToggleButton";
 import { VoteCard } from "./VoteCard";
 
 const REACTION_POPOVER_CLOSE_DELAY_MS = 140;
+const HOST_ACTION_CLOSE_DELAY_MS = 140;
 
 export interface RoomBoardProps {
   viewModel: RoomViewModel;
@@ -47,6 +48,7 @@ export interface RoomBoardProps {
   onReset: () => void;
   onFinalize: () => void;
   onThrowReaction: (targetParticipantId: string, emoji: ThrowableReactionEmoji) => void;
+  onTransferHost: (targetParticipantId: string) => void;
   onCopyLink: () => void;
   onNewRoom: () => void;
   onToggleTheme: () => void;
@@ -70,10 +72,17 @@ interface PlayerSeatProps {
   participant: RoomParticipantView;
   variant: "ring" | "bench";
   geometry?: SeatGeometry;
+  busy: boolean;
+  hostActionLabel?: "Transfer host" | "Claim host";
+  hostActionVisibility?: "hover" | "always";
+  isHostActionOpen: boolean;
   isReactionTarget: boolean;
   isReactionPopoverOpen: boolean;
   isHeadBumped: boolean;
+  onCloseHostAction: () => void;
   onCloseReactionPopover: () => void;
+  onHostAction?: () => void;
+  onOpenHostAction: () => void;
   onOpenReactionPopover: () => void;
   onThrowReaction: (emoji: ThrowableReactionEmoji) => void;
   onToggleReactionPopover: () => void;
@@ -137,10 +146,17 @@ function PlayerSeat({
   participant,
   variant,
   geometry,
+  busy,
+  hostActionLabel,
+  hostActionVisibility = "hover",
+  isHostActionOpen,
   isReactionTarget,
   isReactionPopoverOpen,
   isHeadBumped,
+  onCloseHostAction,
   onCloseReactionPopover,
+  onHostAction,
+  onOpenHostAction,
   onOpenReactionPopover,
   onThrowReaction,
   onToggleReactionPopover,
@@ -169,7 +185,10 @@ function PlayerSeat({
         .filter(Boolean)
         .join(" ")}
       style={geometry?.style}
+      data-host-action-region={hostActionLabel === "Transfer host" ? "true" : undefined}
       aria-label={`${participant.name} seat`}
+      onMouseEnter={hostActionLabel === "Transfer host" ? onOpenHostAction : undefined}
+      onMouseLeave={hostActionLabel === "Transfer host" ? onCloseHostAction : undefined}
     >
       <div className="player-seat__person" aria-hidden="true">
         <span className="player-seat__shadow" />
@@ -249,6 +268,33 @@ function PlayerSeat({
           <span className="table-card-placeholder" aria-hidden="true" />
         )}
       </div>
+
+      {hostActionLabel && onHostAction ? (
+        <button
+          className={[
+            "button",
+            "button--quiet",
+            "button--compact",
+            "player-seat__host-action",
+            isHostActionOpen ? "player-seat__host-action--open" : "",
+            isReactionPopoverOpen && hostActionLabel === "Transfer host"
+              ? "player-seat__host-action--suppressed"
+              : "",
+            hostActionVisibility === "always"
+              ? "player-seat__host-action--visible"
+              : "player-seat__host-action--hover",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          disabled={busy}
+          type="button"
+          onMouseEnter={hostActionLabel === "Transfer host" ? onOpenHostAction : undefined}
+          onMouseLeave={hostActionLabel === "Transfer host" ? onCloseHostAction : undefined}
+          onClick={onHostAction}
+        >
+          {hostActionLabel}
+        </button>
+      ) : null}
     </article>
   );
 }
@@ -272,6 +318,7 @@ export function RoomBoard({
   onReset,
   onFinalize,
   onThrowReaction,
+  onTransferHost,
   onCopyLink,
   onNewRoom,
   onToggleTheme,
@@ -279,9 +326,13 @@ export function RoomBoard({
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [customVoteDraft, setCustomVoteDraft] = useState("");
   const [activeReactionTargetId, setActiveReactionTargetId] = useState<string | null>(null);
+  const [activeHostActionParticipantId, setActiveHostActionParticipantId] = useState<string | null>(
+    null,
+  );
   const [nowMs, setNowMs] = useState(() => Date.now());
   const stageRef = useRef<HTMLDivElement | null>(null);
   const reactionCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hostActionCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const headElementsRef = useRef(new Map<string, HTMLElement>());
   const seatElementsRef = useRef(new Map<string, HTMLElement>());
   const normalizedCustomVote = useMemo(() => normalizeVoteCard(customVoteDraft), [customVoteDraft]);
@@ -313,6 +364,7 @@ export function RoomBoard({
   useEffect(
     () => () => {
       clearReactionCloseTimer();
+      clearHostActionCloseTimer();
     },
     [],
   );
@@ -328,7 +380,27 @@ export function RoomBoard({
     if (!targetStillVisible) {
       dismissReactionPopover();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dismissReactionPopover only uses stable setState/refs
   }, [activeReactionTargetId, reactionTargets]);
+
+  useEffect(() => {
+    if (!activeHostActionParticipantId) {
+      return;
+    }
+
+    const targetStillVisible = viewModel.isHost
+      ? viewModel.participants.some(
+          (participant) =>
+            participant.id === activeHostActionParticipantId &&
+            participant.connected &&
+            !participant.isSelf,
+        )
+      : false;
+    if (!targetStillVisible) {
+      dismissHostAction();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dismissHostAction only uses stable setState/refs
+  }, [activeHostActionParticipantId, viewModel.isHost, viewModel.participants]);
 
   useEffect(() => {
     if (!activeReactionTargetId || typeof document === "undefined") {
@@ -354,7 +426,35 @@ export function RoomBoard({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dismissReactionPopover only uses stable setState/refs
   }, [activeReactionTargetId]);
+
+  useEffect(() => {
+    if (!activeHostActionParticipantId || typeof document === "undefined") {
+      return undefined;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element) || !target.closest("[data-host-action-region='true']")) {
+        dismissHostAction();
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        dismissHostAction();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dismissHostAction only uses stable setState/refs
+  }, [activeHostActionParticipantId]);
 
   function submitCustomVote() {
     if (!customVote) {
@@ -371,8 +471,18 @@ export function RoomBoard({
     }
   }
 
+  function clearHostActionCloseTimer() {
+    if (hostActionCloseTimerRef.current) {
+      clearTimeout(hostActionCloseTimerRef.current);
+      hostActionCloseTimerRef.current = null;
+    }
+  }
+
   function openReactionPopoverFor(targetParticipantId: string) {
     clearReactionCloseTimer();
+    setActiveHostActionParticipantId((current) =>
+      current === targetParticipantId ? null : current,
+    );
     setActiveReactionTargetId(targetParticipantId);
   }
 
@@ -387,6 +497,26 @@ export function RoomBoard({
   function dismissReactionPopover() {
     clearReactionCloseTimer();
     setActiveReactionTargetId(null);
+  }
+
+  function openHostActionFor(targetParticipantId: string) {
+    clearHostActionCloseTimer();
+    setActiveHostActionParticipantId(targetParticipantId);
+  }
+
+  function scheduleHostActionClose(targetParticipantId: string) {
+    clearHostActionCloseTimer();
+    hostActionCloseTimerRef.current = setTimeout(() => {
+      hostActionCloseTimerRef.current = null;
+      setActiveHostActionParticipantId((current) =>
+        current === targetParticipantId ? null : current,
+      );
+    }, HOST_ACTION_CLOSE_DELAY_MS);
+  }
+
+  function dismissHostAction() {
+    clearHostActionCloseTimer();
+    setActiveHostActionParticipantId(null);
   }
 
   function registerSeatElement(participantId: string, element: HTMLElement | null) {
@@ -443,6 +573,29 @@ export function RoomBoard({
       .filter(({ phaseState }) => phaseState.phase === "impact")
       .map(({ reaction }) => reaction.targetParticipantId),
   );
+
+  const selfParticipantId = viewModel.participants.find((participant) => participant.isSelf)?.id;
+
+  function getHostActionFor(participant: RoomParticipantView): {
+    label: "Transfer host" | "Claim host";
+    visibility: "hover" | "always";
+  } | null {
+    if (viewModel.isHost && participant.connected && !participant.isSelf) {
+      return {
+        label: "Transfer host",
+        visibility: "hover",
+      };
+    }
+
+    if (viewModel.canClaimHost && participant.isHost && !participant.connected) {
+      return {
+        label: "Claim host",
+        visibility: "always",
+      };
+    }
+
+    return null;
+  }
 
   return (
     <div className="room-workspace">
@@ -602,52 +755,34 @@ export function RoomBoard({
               </div>
 
               <div className="seat-ring">
-                {tableParticipants.map((participant, index) => (
-                  <PlayerSeat
-                    key={participant.id}
-                    geometry={getSeatGeometry(index, tableParticipants.length)}
-                    isHeadBumped={bumpedTargets.has(participant.id)}
-                    isReactionPopoverOpen={activeReactionTargetId === participant.id}
-                    isReactionTarget={participant.connected && !participant.isSelf}
-                    participant={participant}
-                    registerHeadElement={registerHeadElement}
-                    registerSeatElement={registerSeatElement}
-                    variant="ring"
-                    onCloseReactionPopover={() => scheduleReactionPopoverClose(participant.id)}
-                    onOpenReactionPopover={() => openReactionPopoverFor(participant.id)}
-                    onThrowReaction={(emoji) => {
-                      dismissReactionPopover();
-                      onThrowReaction(participant.id, emoji);
-                    }}
-                    onToggleReactionPopover={() => {
-                      clearReactionCloseTimer();
-                      setActiveReactionTargetId((current) =>
-                        current === participant.id ? null : participant.id,
-                      );
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
+                {tableParticipants.map((participant, index) => {
+                  const hostAction = getHostActionFor(participant);
 
-            {overflowParticipants.length > 0 ? (
-              <div className="overflow-bench" aria-label="Overflow players">
-                <div className="overflow-bench__header">
-                  <span className="section-label">Bench</span>
-                  <strong>{overflowParticipants.length} overflow players</strong>
-                </div>
-                <div className="overflow-bench__list">
-                  {overflowParticipants.map((participant) => (
+                  return (
                     <PlayerSeat
                       key={participant.id}
+                      busy={busy}
+                      geometry={getSeatGeometry(index, tableParticipants.length)}
+                      hostActionLabel={hostAction?.label}
+                      hostActionVisibility={hostAction?.visibility}
+                      isHostActionOpen={activeHostActionParticipantId === participant.id}
                       isHeadBumped={bumpedTargets.has(participant.id)}
                       isReactionPopoverOpen={activeReactionTargetId === participant.id}
                       isReactionTarget={participant.connected && !participant.isSelf}
                       participant={participant}
+                      onCloseHostAction={() => scheduleHostActionClose(participant.id)}
                       registerHeadElement={registerHeadElement}
                       registerSeatElement={registerSeatElement}
-                      variant="bench"
+                      variant="ring"
+                      onOpenHostAction={() => openHostActionFor(participant.id)}
                       onCloseReactionPopover={() => scheduleReactionPopoverClose(participant.id)}
+                      onHostAction={() =>
+                        onTransferHost(
+                          hostAction?.label === "Claim host"
+                            ? (selfParticipantId ?? participant.id)
+                            : participant.id,
+                        )
+                      }
                       onOpenReactionPopover={() => openReactionPopoverFor(participant.id)}
                       onThrowReaction={(emoji) => {
                         dismissReactionPopover();
@@ -660,7 +795,59 @@ export function RoomBoard({
                         );
                       }}
                     />
-                  ))}
+                  );
+                })}
+              </div>
+            </div>
+
+            {overflowParticipants.length > 0 ? (
+              <div className="overflow-bench" aria-label="Overflow players">
+                <div className="overflow-bench__header">
+                  <span className="section-label">Bench</span>
+                  <strong>{overflowParticipants.length} overflow players</strong>
+                </div>
+                <div className="overflow-bench__list">
+                  {overflowParticipants.map((participant) => {
+                    const hostAction = getHostActionFor(participant);
+
+                    return (
+                      <PlayerSeat
+                        key={participant.id}
+                        busy={busy}
+                        hostActionLabel={hostAction?.label}
+                        hostActionVisibility={hostAction?.visibility}
+                        isHostActionOpen={activeHostActionParticipantId === participant.id}
+                        isHeadBumped={bumpedTargets.has(participant.id)}
+                        isReactionPopoverOpen={activeReactionTargetId === participant.id}
+                        isReactionTarget={participant.connected && !participant.isSelf}
+                        participant={participant}
+                        onCloseHostAction={() => scheduleHostActionClose(participant.id)}
+                        registerHeadElement={registerHeadElement}
+                        registerSeatElement={registerSeatElement}
+                        variant="bench"
+                        onOpenHostAction={() => openHostActionFor(participant.id)}
+                        onCloseReactionPopover={() => scheduleReactionPopoverClose(participant.id)}
+                        onHostAction={() =>
+                          onTransferHost(
+                            hostAction?.label === "Claim host"
+                              ? (selfParticipantId ?? participant.id)
+                              : participant.id,
+                          )
+                        }
+                        onOpenReactionPopover={() => openReactionPopoverFor(participant.id)}
+                        onThrowReaction={(emoji) => {
+                          dismissReactionPopover();
+                          onThrowReaction(participant.id, emoji);
+                        }}
+                        onToggleReactionPopover={() => {
+                          clearReactionCloseTimer();
+                          setActiveReactionTargetId((current) =>
+                            current === participant.id ? null : participant.id,
+                          );
+                        }}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             ) : null}

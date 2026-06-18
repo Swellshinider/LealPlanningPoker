@@ -56,6 +56,12 @@ export interface ThrowReactionPayload {
   emoji: ThrowableReactionEmoji;
 }
 
+export interface TransferHostPayload {
+  roomId: string;
+  participantToken: string;
+  targetParticipantId: string;
+}
+
 export interface HostRoomPayload {
   roomId: string;
   hostToken: string;
@@ -215,6 +221,25 @@ export function registerSocketHandlers(
             participantToken,
             targetParticipantId,
             emoji,
+          });
+          broadcastRoom(roomId, socket.id);
+          options.onRoomChanged?.(roomId);
+          return { snapshot };
+        });
+      },
+    );
+
+    socket.on(
+      "host:transfer",
+      (payload: TransferHostPayload, ack?: ActionAck<{ snapshot: RoomSnapshot }>) => {
+        respond(socket, ack, () => {
+          const roomId = requireStringField(payload, "roomId");
+          const participantToken = requireStringField(payload, "participantToken");
+          const targetParticipantId = requireStringField(payload, "targetParticipantId");
+          const snapshot = store.transferHost({
+            roomId,
+            participantToken,
+            targetParticipantId,
           });
           broadcastRoom(roomId, socket.id);
           options.onRoomChanged?.(roomId);

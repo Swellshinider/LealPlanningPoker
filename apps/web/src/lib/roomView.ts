@@ -30,6 +30,7 @@ export interface RoomViewModel {
   hostName: string;
   story: string;
   isHost: boolean;
+  canClaimHost: boolean;
   canVote: boolean;
   canReveal: boolean;
   canReset: boolean;
@@ -47,6 +48,8 @@ export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
     toParticipantView(snapshot, participant),
   );
   const isHost = snapshot.viewer.isHost;
+  const viewer = participants.find((participant) => participant.isSelf) ?? null;
+  const hostParticipant = participants.find((participant) => participant.isHost) ?? null;
   const isVoting = snapshot.phase === "voting";
   const isRevealed = snapshot.phase === "revealed";
   const isFinalized = snapshot.phase === "finalized";
@@ -63,6 +66,9 @@ export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
     hostName: snapshot.hostName,
     story: snapshot.story,
     isHost,
+    canClaimHost: Boolean(
+      viewer && hostParticipant && !viewer.isHost && viewer.connected && !hostParticipant.connected,
+    ),
     canVote: isVoting,
     canReveal: isHost && isVoting,
     canReset: isHost && (isRevealed || isFinalized),

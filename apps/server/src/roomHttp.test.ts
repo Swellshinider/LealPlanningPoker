@@ -39,6 +39,7 @@ function createApp() {
   return {
     app,
     sockets,
+    store,
   };
 }
 
@@ -280,6 +281,104 @@ describe("registerRoomHttpRoutes", () => {
             targetParticipantId: createdRoom.snapshot.viewer.participantId,
           }),
         ]),
+      },
+    });
+    expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
+
+    await app.close();
+  });
+
+  it("transfers host through the participant-token HTTP route and notifies room listeners", async () => {
+    const { app, sockets } = createApp();
+
+    const createResponse = await app.inject({
+      method: "POST",
+      payload: {
+        hostName: "Mina",
+      },
+      url: "/api/rooms",
+    });
+    const createdRoom = createResponse.json();
+
+    const joinResponse = await app.inject({
+      method: "POST",
+      payload: {
+        displayName: "Ana",
+      },
+      url: `/api/rooms/${createdRoom.roomId}/join`,
+    });
+    const joined = joinResponse.json();
+
+    const response = await app.inject({
+      method: "POST",
+      headers: {
+        "x-participant-token": createdRoom.participantToken,
+      },
+      payload: {
+        targetParticipantId: joined.snapshot.viewer.participantId,
+      },
+      url: `/api/rooms/${createdRoom.roomId}/host/transfer`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      ok: true,
+      snapshot: {
+        hostName: "Ana",
+        viewer: {
+          participantId: createdRoom.snapshot.viewer.participantId,
+          isHost: false,
+        },
+      },
+    });
+    expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
+
+    await app.close();
+  });
+
+  it("supports compatibility host claims while the host is offline", async () => {
+    const { app, sockets, store } = createApp();
+
+    const createResponse = await app.inject({
+      method: "POST",
+      payload: {
+        hostName: "Mina",
+      },
+      url: "/api/rooms",
+    });
+    const createdRoom = createResponse.json();
+
+    const joinResponse = await app.inject({
+      method: "POST",
+      payload: {
+        displayName: "Ana",
+      },
+      url: `/api/rooms/${createdRoom.roomId}/join`,
+    });
+    const joined = joinResponse.json();
+
+    store.leaveRoom({
+      roomId: createdRoom.roomId,
+      participantToken: createdRoom.participantToken,
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      headers: {
+        "x-participant-token": joined.participantToken,
+      },
+      url: `/api/compat/rooms/${createdRoom.roomId}/host/transfer?targetParticipantId=${joined.snapshot.viewer.participantId}&_ts=123`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      ok: true,
+      snapshot: {
+        hostName: "Ana",
+        viewer: {
+          participantId: joined.snapshot.viewer.participantId,
+          isHost: true,
+        },
       },
     });
     expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
