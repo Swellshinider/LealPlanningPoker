@@ -29,7 +29,8 @@ describe("JoinPanel", () => {
   it("renders the simplified landing page with shared branding and footer metadata", () => {
     const markup = renderToStaticMarkup(createElement(JoinPanel, createProps()));
 
-    expect(markup).toContain('src="/branding/logo-header.png"');
+    expect(markup).toContain('src="/branding/logo-header-light.png"');
+    expect(markup).toContain('src="/branding/logo-header-dark.png"');
     expect(markup).toContain('alt=""');
     expect(markup).toContain('href="/help"');
     expect(markup).toContain(">Help</a>");

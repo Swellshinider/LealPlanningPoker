@@ -173,6 +173,20 @@ textarea:focus-visible {
   object-fit: contain;
 }
 
+/* Show the logo variant that matches the active theme. The dark-bg logo is
+   hidden by default (light theme) and swapped in when dark theme is active. */
+.brand-mark .brand-mark__img--dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .brand-mark .brand-mark__img--light {
+  display: none;
+}
+
+:root[data-theme="dark"] .brand-mark .brand-mark__img--dark {
+  display: block;
+}
+
 .brand-lockup div {
   display: grid;
   gap: 1px;

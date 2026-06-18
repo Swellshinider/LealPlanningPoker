@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.3] - 18-06-2026
+
+### Changed
+
+- Refreshed the app branding with a new favicon and header logo. The header logo is now theme-aware (light-background variant in light mode, dark-background variant in dark mode), while the favicon is a single icon shared across themes.
+
 ## [1.1.2] - 18-06-2026
 
 ### Fixed
