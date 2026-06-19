@@ -65,9 +65,23 @@ CI runs the same gates on every PR. A failing gate blocks merge.
    git push origin vX.Y.Z
    ```
 4. Pushing the `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which
-   verifies that the pushed tag matches the root `package.json` version and
-   creates or updates the `vX.Y.Z` GitHub Release with GitHub-generated notes.
-5. Push the release commit to `main` if it is not already there so the version
+   runs the shared verification workflow (`pnpm lint`, `pnpm format:check`,
+   `pnpm typecheck`, `pnpm build`, `pnpm test`), verifies that the pushed tag
+   matches the root `package.json` version, and creates or updates the
+   `vX.Y.Z` GitHub Release with GitHub-generated notes.
+5. Stable tags such as `vX.Y.Z` then deploy the tagged commit to Railway
+   Production. Prerelease tags such as `vX.Y.Z-rc.1` publish a GitHub
+   prerelease but skip the Railway deploy step.
+6. Configure the repository before the first production deploy:
+   - GitHub Actions secret `RAILWAY_TOKEN`: Railway project token scoped to the
+     production environment.
+   - GitHub Actions variable `RAILWAY_SERVICE_NAME`: Railway service name or ID
+     for this app.
+   - Optional GitHub Actions variable `RAILWAY_HEALTHCHECK_URL`: if set, the
+     deploy job probes the deployed app after release.
+7. Disable Railway GitHub Autodeploy for the target service if it is enabled,
+   so GitHub Actions remains the only production deploy trigger.
+8. Push the release commit to `main` if it is not already there so the version
    bump stays in sync with the default branch.
 
 ## Commit messages
