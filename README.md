@@ -102,6 +102,24 @@ docker compose up --build
 
 The container serves the built frontend and API on port 3000.
 
+### Railway Production
+
+Stable release tags are the production deploy trigger for Railway.
+
+1. Bump the root `package.json` version and any shipped workspace package versions.
+2. Commit the release version update.
+3. Push a matching stable tag such as `v1.1.3`.
+
+That tag runs the shared verification workflow (`pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm build`, `pnpm test`), creates or updates the GitHub Release with generated notes, and then deploys the tagged commit to Railway Production. Prerelease tags such as `v1.1.3-rc.1` still publish GitHub prereleases but skip the Railway deploy job.
+
+To enable the deploy stage, configure these GitHub Actions values for the repository:
+
+- Secret `RAILWAY_TOKEN`: Railway project token scoped to Production deploys.
+- Variable `RAILWAY_SERVICE_NAME`: Railway service name or ID for the production app.
+- Optional variable `RAILWAY_HEALTHCHECK_URL`: if set, the deploy job probes `/healthz` after `railway up`.
+
+If Railway GitHub Autodeploy is enabled for the same service, disable it to avoid duplicate production deployments.
+
 ### Environment
 
 | Variable | Default | Description      |
@@ -125,7 +143,7 @@ Room state is stored in memory and expires after 4 hours of inactivity. Server r
 
 Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, branch model, and the pull request process.
 
-Before opening a PR, make sure `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all pass -- CI enforces the same gates.
+Before opening a PR, make sure `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all pass -- CI enforces the same gates.
 
 ## Security
 

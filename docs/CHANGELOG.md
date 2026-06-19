@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Added shared GitHub Actions verification and Railway Production deployment automation so stable `vX.Y.Z` tags now run the full CI gate set before publishing a GitHub Release and deploying the tagged commit.
+
 ## [1.1.2] - 18-06-2026
 
 ### Changed
