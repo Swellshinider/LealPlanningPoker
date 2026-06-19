@@ -3,7 +3,7 @@
 # LealPlanningPoker
 
 [![CI](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/codeql.yml)
+[![Deploy](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/release.yml/badge.svg)](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
