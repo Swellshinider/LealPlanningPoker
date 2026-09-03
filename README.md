@@ -2,11 +2,6 @@
 
 # LealPlanningPoker
 
-[![CI](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/ci.yml)
-[![Deploy](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/release.yml/badge.svg)](https://github.com/Swellshinider/LealPlanningPoker/actions/workflows/release.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-
 Self-hosted planning poker for agile teams. Create a room, share the link, vote, reveal together, and archive the result -- no accounts required.
 
 </center>
@@ -19,10 +14,7 @@ Self-hosted planning poker for agile teams. Create a room, share the link, vote,
 - [Development](#development)
 - [Production](#production)
 - [How it works](#how-it-works)
-- [Contributing](#contributing)
-- [Security](#security)
 - [Author](#author)
-- [License](#license)
 
 ## Features
 
@@ -40,8 +32,6 @@ Self-hosted planning poker for agile teams. Create a room, share the link, vote,
 **Prerequisites:** [Node.js](https://nodejs.org/) >= 22, [pnpm](https://pnpm.io/) >= 10
 
 ```bash
-git clone https://github.com/Swellshinider/LealPlanningPoker.git
-cd LealPlanningPoker
 pnpm install
 pnpm dev
 ```
@@ -82,7 +72,7 @@ pnpm lint         # Lint with ESLint
 pnpm format       # Format with Prettier
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contributor workflow.
+Before pushing, make sure `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all pass -- CI enforces the same gates.
 
 ## Production
 
@@ -96,37 +86,24 @@ docker run -p 3000:3000 lealplanningpoker
 Or with Docker Compose:
 
 ```bash
-cp .env.example .env   # optional: customize
 docker compose up --build
 ```
 
-The container serves the built frontend and API on port 3000.
+The container serves the built frontend and API on port 3000. Deploy the built image to your own server.
 
-### Railway Production
-
-Stable release tags are the production deploy trigger for Railway.
+### Releases
 
 1. Bump the root `package.json` version and any shipped workspace package versions.
 2. Commit the release version update.
 3. Push a matching stable tag such as `v1.1.3`.
 
-That tag runs the shared verification workflow (`pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm build`, `pnpm test`), creates or updates the GitHub Release with generated notes, and then deploys the tagged commit to Railway Production. Prerelease tags such as `v1.1.3-rc.1` still publish GitHub prereleases but skip the Railway deploy job.
-
-To enable the deploy stage, configure these GitHub Actions values for the repository:
-
-- Secret `RAILWAY_TOKEN`: Railway project token scoped to Production deploys.
-- Variable `RAILWAY_SERVICE_NAME`: Railway service name or ID for the production app.
-- Optional variable `RAILWAY_HEALTHCHECK_URL`: if set, the deploy job probes `/healthz` after `railway up`.
-
-If Railway GitHub Autodeploy is enabled for the same service, disable it to avoid duplicate production deployments.
+That tag runs the shared verification workflow (`pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm build`, `pnpm test`) and creates or updates the GitHub Release with generated notes. Prerelease tags such as `v1.1.3-rc.1` publish GitHub prereleases.
 
 ### Environment
 
 | Variable | Default | Description      |
 | -------- | ------- | ---------------- |
 | `PORT`   | `3000`  | HTTP listen port |
-
-See [`.env.example`](.env.example) for all available variables.
 
 ## How it works
 
@@ -139,20 +116,6 @@ See [`.env.example`](.env.example) for all available variables.
 
 Room state is stored in memory and expires after 4 hours of inactivity. Server restarts clear all active sessions.
 
-## Contributing
-
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, branch model, and the pull request process.
-
-Before opening a PR, make sure `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all pass -- CI enforces the same gates.
-
-## Security
-
-Found a security issue? Please report it privately -- see [SECURITY.md](SECURITY.md). Do not open a public issue.
-
 ## Author
 
-This project is maintained by [Eduardo Leal](https://github.com/Swellshinider). Feel free to reach out with questions or suggestions!
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
+This project is maintained by Eduardo Leal. Reach out at <eduardoleal.contact@gmail.com> with questions or suggestions.

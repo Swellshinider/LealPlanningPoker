@@ -1,4 +1,4 @@
-import { AUTHOR_NAME, COPYRIGHT_LABEL, REPO_URL } from "../lib/publicPages";
+import { AUTHOR_NAME, COPYRIGHT_LABEL } from "../lib/publicPages";
 
 export function PublicFooter() {
   return (
@@ -7,9 +7,6 @@ export function PublicFooter() {
         <strong>{AUTHOR_NAME}</strong>
         <span>{COPYRIGHT_LABEL}</span>
       </div>
-      <a className="public-footer__link" href={REPO_URL} target="_blank" rel="noreferrer">
-        {REPO_URL.replace("https://", "")}
-      </a>
     </footer>
   );
 }

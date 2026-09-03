@@ -21,7 +21,8 @@ describe("HelpPage", () => {
     expect(markup).toContain("Share the room code or link");
     expect(markup).toContain("Vote privately");
     expect(markup).toContain("Finalize the round");
-    expect(markup).toContain("github.com/Swellshinider/LealPlanningPoker/issues");
-    expect(markup).toContain("bug reports");
+    expect(markup).toContain("mailto:eduardoleal.contact@gmail.com");
+    expect(markup).not.toContain("github.com");
+    expect(markup).toContain("bug");
   });
 });
