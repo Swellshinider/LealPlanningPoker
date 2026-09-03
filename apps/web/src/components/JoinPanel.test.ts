@@ -40,7 +40,7 @@ describe("JoinPanel", () => {
       "Run focused estimation sessions without adding process overhead.",
     );
     expect(markup).toContain("Eduardo Leal");
-    expect(markup).toContain("2026 LealPlanningPoker contributors");
-    expect(markup).toContain("github.com/Swellshinider/LealPlanningPoker");
+    expect(markup).toContain("© 2026 LealPlanningPoker");
+    expect(markup).not.toContain("github.com");
   });
 });

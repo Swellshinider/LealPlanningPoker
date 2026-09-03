@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPublicPage, HELP_PATH, HOME_PATH, ISSUES_URL, REPO_URL } from "./publicPages";
+import { COPYRIGHT_LABEL, getPublicPage, HELP_PATH, HOME_PATH, SUPPORT_EMAIL } from "./publicPages";
 
 describe("publicPages", () => {
   it("classifies public pages from the pathname", () => {
@@ -8,8 +8,8 @@ describe("publicPages", () => {
     expect(getPublicPage("/something-else")).toBe("home");
   });
 
-  it("exports the canonical repository links", () => {
-    expect(REPO_URL).toBe("https://github.com/Swellshinider/LealPlanningPoker");
-    expect(ISSUES_URL).toBe("https://github.com/Swellshinider/LealPlanningPoker/issues");
+  it("exports the support contact and copyright label", () => {
+    expect(SUPPORT_EMAIL).toBe("eduardoleal.contact@gmail.com");
+    expect(COPYRIGHT_LABEL).toBe("© 2026 LealPlanningPoker");
   });
 });

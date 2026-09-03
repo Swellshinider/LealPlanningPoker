@@ -86,8 +86,8 @@ describe("RoomBoard", () => {
     expect(markup).toContain('target="_blank"');
     expect(markup).toContain('rel="noreferrer"');
     expect(markup).toContain(">Help</a>");
-    expect(markup).toContain("2026 LealPlanningPoker contributors");
-    expect(markup).toContain("github.com/Swellshinider/LealPlanningPoker");
+    expect(markup).toContain("© 2026 LealPlanningPoker");
+    expect(markup).not.toContain("github.com");
   });
 
   it("hides the story panel for non-host viewers", () => {

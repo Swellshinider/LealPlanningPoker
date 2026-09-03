@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Removed
+
+- Removed the Railway production deployment job from the release workflow; production images are now deployed manually to a private server.
+- Removed the public repository links from the web UI (footer link and the Help page "Open GitHub issues" call to action). The Help page now points to an email address for questions, suggestions, and bug reports.
+- Removed the open-source community files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `LICENSE`, and the GitHub issue templates) and trimmed the README to match the project's private status.
+
 ## [1.1.3] - 18-06-2026
 
 ### Added

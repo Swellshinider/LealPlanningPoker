@@ -1,4 +1,4 @@
-import { HELP_PATH, HOME_PATH, ISSUES_URL } from "../lib/publicPages";
+import { HELP_PATH, HOME_PATH, SUPPORT_EMAIL } from "../lib/publicPages";
 import type { ThemeMode } from "../lib/theme";
 import { AppLogo } from "./AppLogo";
 import { PublicFooter } from "./PublicFooter";
@@ -99,18 +99,12 @@ export function HelpPage({ theme, onToggleTheme }: HelpPageProps) {
             </div>
           </div>
           <p>
-            If something is unclear or you want to suggest an improvement, please create an issue in
-            the GitHub repo so the project can track questions, suggestions, and bug reports in one
-            place.
+            If something is unclear or you want to suggest an improvement, send an email describing
+            the question, suggestion, or bug and it will be looked at.
           </p>
           <div className="action-row">
-            <a
-              className="button button--primary button--link"
-              href={ISSUES_URL}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open GitHub issues
+            <a className="button button--primary button--link" href={`mailto:${SUPPORT_EMAIL}`}>
+              Email support
             </a>
           </div>
         </section>
