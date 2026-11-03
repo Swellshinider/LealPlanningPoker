@@ -23,13 +23,18 @@ describe("reaction styling", () => {
     expect(pokerTableStyles).toContain(':root[data-theme="dark"] .reaction-popover__emoji');
   });
 
-  it("repositions seat popovers inward for each table edge", () => {
-    expect(pokerTableStyles).toContain(".table-seat--upper {");
-    expect(pokerTableStyles).toContain("--reaction-popover-top: calc(100% + 6px);");
-    expect(pokerTableStyles).toContain(".table-seat--lower {");
+  it("keeps seat popovers off the card and the board for each seat placement", () => {
+    expect(pokerTableStyles).toContain(".table-seat--side {");
     expect(pokerTableStyles).toContain("--reaction-popover-bottom: calc(100% + 6px);");
-    expect(pokerTableStyles).toContain(".table-seat--right {");
+    expect(pokerTableStyles).toContain(".table-seat--corner.table-seat--inward-right {");
     expect(pokerTableStyles).toContain("--reaction-popover-right: calc(100% + 6px);");
+    expect(pokerTableStyles).toContain(".table-seat--center {");
+    expect(pokerTableStyles).toContain("--host-action-right: calc(50% + 46px);");
+  });
+
+  it("places corner and side cards next to the avatar toward the table centre", () => {
+    expect(pokerTableStyles).toContain(".table-seat--inward-right .table-card-slot {");
+    expect(pokerTableStyles).toContain(".table-seat--inward-left .table-card-slot {");
   });
 
   it("keeps ring-seat host actions visible inside the card on narrow layouts", () => {

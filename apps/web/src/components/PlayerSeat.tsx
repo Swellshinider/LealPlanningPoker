@@ -62,6 +62,7 @@ export function PlayerSeat({
         "table-seat",
         variant === "ring" ? "table-seat--ring" : "table-seat--bench",
         geometry?.zoneClass ?? "",
+        geometry?.placementClass ?? "",
         participant.isHost ? "table-seat--host" : "",
         participant.connected ? "" : "table-seat--offline",
         hasFaceUpCard ? "has-face-up-card" : "",

@@ -1,4 +1,5 @@
 import { getThemeToggleTarget, type ThemeMode } from "../lib/theme";
+import { MoonIcon, SunIcon } from "./icons";
 
 export interface ThemeToggleButtonProps {
   theme: ThemeMode;
@@ -17,9 +18,7 @@ export function ThemeToggleButton({ theme, onToggleTheme }: ThemeToggleButtonPro
       type="button"
       onClick={onToggleTheme}
     >
-      <span aria-hidden="true" className="theme-toggle__icon">
-        {theme === "dark" ? "\u2600" : "\u263E"}
-      </span>
+      {theme === "dark" ? <SunIcon /> : <MoonIcon />}
     </button>
   );
 }

@@ -19,6 +19,29 @@ describe("getSeatGeometry", () => {
   });
 });
 
+describe("getSeatGeometry placement", () => {
+  it("marks top and bottom seats as centre with no inward side", () => {
+    expect(getSeatGeometry(0, 1).placementClass).toBe("table-seat--center");
+    expect(getSeatGeometry(0, 4).placementClass).toBe("table-seat--center");
+    expect(getSeatGeometry(2, 4).placementClass).toBe("table-seat--center");
+  });
+
+  it("marks left and right seats as sides facing the table centre", () => {
+    expect(getSeatGeometry(1, 4).placementClass).toBe("table-seat--side table-seat--inward-left");
+    expect(getSeatGeometry(3, 4).placementClass).toBe("table-seat--side table-seat--inward-right");
+  });
+
+  it("marks diagonal seats as corners facing the table centre", () => {
+    const corners = [1, 3, 5, 7].map((index) => getSeatGeometry(index, 8).placementClass);
+    expect(corners).toEqual([
+      "table-seat--corner table-seat--inward-left",
+      "table-seat--corner table-seat--inward-left",
+      "table-seat--corner table-seat--inward-right",
+      "table-seat--corner table-seat--inward-right",
+    ]);
+  });
+});
+
 describe("getPlayerInitials", () => {
   it("takes the first two letters of a single name", () => {
     expect(getPlayerInitials("Ana")).toBe("AN");
