@@ -10,6 +10,8 @@ export type SeatStyle = CSSProperties & {
 export interface SeatGeometry {
   style: SeatStyle;
   zoneClass: string;
+  /** Where the seat sits on the table: centre (top/bottom), corner or side. */
+  placementClass: string;
 }
 
 export function getSeatGeometry(index: number, total: number): SeatGeometry {
@@ -27,6 +29,14 @@ export function getSeatGeometry(index: number, total: number): SeatGeometry {
           ? "table-seat--left"
           : "table-seat--right";
 
+  // Thresholds sit just under 0.5 so seats exactly at 30° or 60° land in the corner.
+  const placement = Math.abs(y) < 0.49 ? "side" : Math.abs(x) < 0.49 ? "center" : "corner";
+  // The card goes toward the table centre, so a seat on the left half puts it to its right.
+  const inward = x < -0.01 ? "table-seat--inward-right" : x > 0.01 ? "table-seat--inward-left" : "";
+  const placementClass = [`table-seat--${placement}`, placement === "center" ? "" : inward]
+    .filter(Boolean)
+    .join(" ");
+
   return {
     style: {
       "--seat-x": `${(x * 42).toFixed(3)}%`,
@@ -34,6 +44,7 @@ export function getSeatGeometry(index: number, total: number): SeatGeometry {
       "--seat-delay": `${index * 42}ms`,
     },
     zoneClass,
+    placementClass,
   };
 }
 

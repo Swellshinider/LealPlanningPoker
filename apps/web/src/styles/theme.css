@@ -1,33 +1,74 @@
 :root {
   color-scheme: light;
-  --bg: #f5f7f9;
+
+  /* Neutral ramp (graphite) */
+  --bg: #fafafa;
   --surface: #ffffff;
-  --surface-soft: #f9fafb;
-  --text: #101418;
-  --muted: #65717c;
-  --faint: #8b96a1;
-  --line: #dfe5eb;
-  --line-strong: #cbd5df;
+  --surface-soft: #f4f4f5;
+  --text: #171717;
+  --muted: #525252;
+  --faint: #737373;
+  --line: rgba(23, 23, 23, 0.1);
+  --line-strong: rgba(23, 23, 23, 0.16);
+  --placeholder: #a1a1a6;
+  --primary-hover: #333333;
+
+  /* Accent: the brand blue, used for selection and the key action */
   --accent: #1769e0;
   --accent-strong: #0f55b8;
-  --accent-soft: #e9f1ff;
+  --accent-soft: rgba(23, 105, 224, 0.08);
+  --accent-line: rgba(23, 105, 224, 0.28);
+  --on-accent: #ffffff;
+  --focus-ring: rgba(23, 105, 224, 0.3);
+  --field-focus-ring: rgba(23, 105, 224, 0.14);
+
+  /* Semantic */
   --success: #16835f;
-  --danger: #c23b3b;
+  --success-soft: rgba(22, 131, 95, 0.1);
+  --success-line: rgba(22, 131, 95, 0.32);
+  --danger: #dc2626;
   --warning: #a86700;
-  --shadow: 0 16px 40px rgba(16, 24, 40, 0.08);
-  --focus-ring: rgba(23, 105, 224, 0.2);
-  --field-focus-ring: rgba(23, 105, 224, 0.12);
-  --placeholder: #9aa4ae;
-  --primary-hover: #27303a;
-  --radius: 8px;
-  font-family:
-    Aptos,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
+
+  /* Depth */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+
+  /* Spacing, 4px grid */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Radius: inner = outer - padding */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Type */
+  --font-sans:
+    "Instrument Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.5rem;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --dur-enter: 400ms;
+
+  font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);
   font-synthesis: none;
@@ -36,23 +77,31 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #030507;
-  --surface: #0b1016;
-  --surface-soft: #121922;
-  --text: #eef4f8;
-  --muted: #a7b4c1;
-  --faint: #778593;
-  --line: #25313d;
-  --line-strong: #344352;
+  --bg: #141415;
+  --surface: #19191b;
+  --surface-soft: #232325;
+  --text: #ededed;
+  --muted: #a1a1a6;
+  --faint: #85858b;
+  --line: rgba(237, 237, 237, 0.08);
+  --line-strong: rgba(237, 237, 237, 0.14);
+  --placeholder: #6b6b70;
+  --primary-hover: #d4d4d4;
+
   --accent: #65a9ff;
   --accent-strong: #9fccff;
-  --accent-soft: #102a46;
-  --success: #55d6aa;
-  --danger: #ff7c7c;
+  --accent-soft: rgba(101, 169, 255, 0.14);
+  --accent-line: rgba(101, 169, 255, 0.36);
+  --on-accent: #05111f;
+  --focus-ring: rgba(101, 169, 255, 0.4);
+  --field-focus-ring: rgba(101, 169, 255, 0.2);
+
+  --success: #4cc38a;
+  --success-soft: rgba(76, 195, 138, 0.14);
+  --success-line: rgba(76, 195, 138, 0.4);
+  --danger: #e5484d;
   --warning: #f4b75b;
-  --shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
-  --focus-ring: rgba(101, 169, 255, 0.28);
-  --field-focus-ring: rgba(101, 169, 255, 0.18);
-  --placeholder: #667382;
-  --primary-hover: #d9e6f1;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
 }
