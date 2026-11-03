@@ -25,13 +25,10 @@ interface RoomSubscriber {
 
 export interface RoomRealtimeHubOptions {
   store: RoomStore;
-  onRoomChanged?: (roomId: string) => void;
 }
 
 export class RoomRealtimeHub {
   private readonly store: RoomStore;
-
-  private onRoomChanged?: (roomId: string) => void;
 
   private readonly subscriberById = new Map<string, RoomSubscriber>();
 
@@ -43,11 +40,6 @@ export class RoomRealtimeHub {
 
   constructor(options: RoomRealtimeHubOptions) {
     this.store = options.store;
-    this.onRoomChanged = options.onRoomChanged;
-  }
-
-  setOnRoomChanged(onRoomChanged?: (roomId: string) => void): void {
-    this.onRoomChanged = onRoomChanged;
   }
 
   async openStream(reply: FastifyReply, roomId: string, participantToken: string): Promise<void> {
@@ -65,7 +57,6 @@ export class RoomRealtimeHub {
 
     if (revived) {
       this.publishRoom(roomId, subscriber.id);
-      this.onRoomChanged?.(roomId);
     }
   }
 
@@ -84,7 +75,6 @@ export class RoomRealtimeHub {
 
     if (revived) {
       this.publishRoom(roomId);
-      this.onRoomChanged?.(roomId);
     }
   }
 
@@ -300,7 +290,6 @@ export class RoomRealtimeHub {
         participantToken,
       });
       this.publishRoom(roomId);
-      this.onRoomChanged?.(roomId);
     } catch (error) {
       if (!isRoomNotFound(error)) {
         this.notifyRoomClosed(roomId, toRoomError(error));

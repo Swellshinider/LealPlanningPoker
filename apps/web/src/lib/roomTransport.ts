@@ -472,7 +472,7 @@ function getApiBaseUrl(): string {
     return "";
   }
 
-  // In dev, the Vite dev server proxies /api and /socket.io to the backend
+  // In dev, the Vite dev server proxies /api to the backend
   // (see vite.config.ts), so we keep requests same-origin to avoid CORS.
   if (import.meta.env.DEV) {
     return "";

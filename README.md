@@ -107,11 +107,10 @@ The tag runs the shared verification workflow (`pnpm lint`, `pnpm format:check`,
 
 ### Environment
 
-| Variable   | Default   | Description                                                         |
-| ---------- | --------- | ------------------------------------------------------------------- |
-| `PORT`     | `3000`    | HTTP listen port                                                    |
-| `HOST`     | `0.0.0.0` | HTTP listen address                                                 |
-| `NODE_ENV` | unset     | `development` allows local and LAN origins for the Socket.IO server |
+| Variable | Default   | Description         |
+| -------- | --------- | ------------------- |
+| `PORT`   | `3000`    | HTTP listen port    |
+| `HOST`   | `0.0.0.0` | HTTP listen address |
 
 ## How it works
 

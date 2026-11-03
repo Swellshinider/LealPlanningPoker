@@ -13,7 +13,6 @@
   "dependencies": {
     "@fastify/static": "^7.0.4",
     "@lealplanningpoker/shared": "workspace:*",
-    "fastify": "^4.28.1",
-    "socket.io": "^4.7.5"
+    "fastify": "^4.28.1"
   }
 }

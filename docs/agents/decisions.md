@@ -14,4 +14,4 @@ Accepted decisions and open questions for LealPlanningPoker. Each decision cites
 
 ## Open questions
 
-- **Keep the Socket.IO server?** `apps/server` mounts `/socket.io` and bridges it to the SSE hub, but `apps/web` has no Socket.IO client and never connects to it. Options: keep it as a second client API, or remove it along with `socketHandlers.ts` and its Vite proxy entry. Needs a code decision; docs currently describe it as unused by the web app.
+None.

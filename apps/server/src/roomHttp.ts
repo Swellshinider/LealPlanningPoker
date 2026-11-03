@@ -12,7 +12,6 @@ import type {
 } from "@lealplanningpoker/shared";
 import { RoomStore, RoomStoreError } from "./roomStore";
 import { RoomRealtimeHub } from "./roomRealtimeHub";
-import type { SocketHandlerController } from "./socketHandlers";
 
 type RoomActionErrorCode = RoomStoreError["code"] | "INVALID_PAYLOAD" | "RATE_LIMITED";
 
@@ -47,16 +46,14 @@ export interface RegisterRoomHttpRoutesOptions {
   app: FastifyInstance;
   store: RoomStore;
   hub: RoomRealtimeHub;
-  sockets: SocketHandlerController;
 }
 
 export function registerRoomHttpRoutes(options: RegisterRoomHttpRoutesOptions): void {
-  const { app, store, hub, sockets } = options;
+  const { app, store, hub } = options;
   const rateLimiter = new HttpRoomRateLimiter();
 
   const notifyRoomChanged = (roomId: string) => {
     hub.publishRoom(roomId);
-    sockets.notifyRoomChanged(roomId);
   };
 
   app.get("/api/rooms/:roomId/events", async (request, reply) => {

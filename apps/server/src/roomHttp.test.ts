@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { RoomRealtimeHub } from "./roomRealtimeHub";
 import { buildHttpApp } from "./http";
 import { registerRoomHttpRoutes } from "./roomHttp";
@@ -20,32 +20,25 @@ function createApp() {
   const app = buildHttpApp({
     logger: false,
   });
-  const sockets = {
-    notifyRoomChanged: vi.fn(),
-    notifyRoomClosed: vi.fn(),
-  };
   const hub = new RoomRealtimeHub({
-    onRoomChanged: sockets.notifyRoomChanged,
     store,
   });
 
   registerRoomHttpRoutes({
     app,
     hub,
-    sockets,
     store,
   });
 
   return {
     app,
-    sockets,
     store,
   };
 }
 
 describe("registerRoomHttpRoutes", () => {
   it("creates rooms through POST /api/rooms", async () => {
-    const { app, sockets } = createApp();
+    const { app } = createApp();
 
     const response = await app.inject({
       method: "POST",
@@ -62,7 +55,6 @@ describe("registerRoomHttpRoutes", () => {
       participantToken: "ID_002",
       hostToken: "ID_002",
     });
-    expect(sockets.notifyRoomChanged).toHaveBeenCalledWith("ROOM-0001");
 
     await app.close();
   });
@@ -85,7 +77,7 @@ describe("registerRoomHttpRoutes", () => {
   });
 
   it("supports GET compatibility joins with the same room result shape", async () => {
-    const { app, sockets } = createApp();
+    const { app } = createApp();
 
     const createResponse = await app.inject({
       method: "POST",
@@ -106,13 +98,12 @@ describe("registerRoomHttpRoutes", () => {
       ok: true,
       roomId: createdRoom.roomId,
     });
-    expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
 
     await app.close();
   });
 
   it("accepts host reveal actions without a JSON request body", async () => {
-    const { app, sockets } = createApp();
+    const { app } = createApp();
 
     const createResponse = await app.inject({
       method: "POST",
@@ -161,7 +152,6 @@ describe("registerRoomHttpRoutes", () => {
         roomId: createdRoom.roomId,
       },
     });
-    expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
 
     await app.close();
   });
@@ -217,7 +207,7 @@ describe("registerRoomHttpRoutes", () => {
   });
 
   it("accepts reaction throws through both POST and compatibility GET routes", async () => {
-    const { app, sockets } = createApp();
+    const { app } = createApp();
 
     const createResponse = await app.inject({
       method: "POST",
@@ -283,13 +273,12 @@ describe("registerRoomHttpRoutes", () => {
         ]),
       },
     });
-    expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
 
     await app.close();
   });
 
   it("transfers host through the participant-token HTTP route and notifies room listeners", async () => {
-    const { app, sockets } = createApp();
+    const { app } = createApp();
 
     const createResponse = await app.inject({
       method: "POST",
@@ -331,13 +320,12 @@ describe("registerRoomHttpRoutes", () => {
         },
       },
     });
-    expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
 
     await app.close();
   });
 
   it("supports compatibility host claims while the host is offline", async () => {
-    const { app, sockets, store } = createApp();
+    const { app, store } = createApp();
 
     const createResponse = await app.inject({
       method: "POST",
@@ -381,7 +369,6 @@ describe("registerRoomHttpRoutes", () => {
         },
       },
     });
-    expect(sockets.notifyRoomChanged).toHaveBeenCalledWith(createdRoom.roomId);
 
     await app.close();
   });
