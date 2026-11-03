@@ -6,7 +6,7 @@ Technical reference for LealPlanningPoker. For setup and commands, see the [READ
 
 | Path              | Role                                                                                              |
 | ----------------- | ------------------------------------------------------------------------------------------------- |
-| `apps/server`     | Fastify 4 HTTP API, SSE hub, in-memory room store, and a Socket.IO server.                        |
+| `apps/server`     | Fastify 4 HTTP API, SSE hub, and in-memory room store.                                            |
 | `apps/web`        | React 18 + Vite 5 single-page app with plain CSS (`src/styles/`).                                 |
 | `packages/shared` | Types, deck definition, and pure domain logic (vote summary, visibility rules) used by both apps. |
 
@@ -77,25 +77,16 @@ Any other non-API path is served from `apps/web/dist` (the single-page app).
 2. **Polling fallback.** If the stream fails, the client polls `GET /api/rooms/:roomId/snapshot` every 3 s.
 3. **Compat fallback for writes.** If a `POST` fails to connect, the client retries the same action through the matching `/api/compat/` `GET` route.
 
-## Socket.IO server
-
-`apps/server/src/main.ts` also mounts a Socket.IO server at `/socket.io`, handled by `apps/server/src/socketHandlers.ts`. Events: `room:create`, `room:join`, `room:sync`, `participant:rename`, `vote:submit`, `reaction:throw`, `host:transfer`, `host:story:set`, `host:reveal`, `host:reset`, `host:finalize`. The server emits `room:snapshot`, `room:error`, and `room:closed`.
-
-Room changes are bridged in both directions between the SSE hub and the Socket.IO handlers, so a change made through one channel reaches clients on the other.
-
-**The web app does not use this channel.** It has no `socket.io-client` dependency. The server keeps it as an alternative client API. In development (`NODE_ENV=development`, or Node run with `--conditions=development`), Socket.IO CORS allows `localhost` and private-network origins.
-
 ## Dev and production serving
 
-- **Development:** `pnpm dev` runs the server on port 3000 and Vite on port 5173. Vite proxies `/api`, `/socket.io` (with WebSocket upgrade), and `/healthz` to `127.0.0.1:3000` (`apps/web/vite.config.ts`).
+- **Development:** `pnpm dev` runs the server on port 3000 and Vite on port 5173. Vite proxies `/api` and `/healthz` to `127.0.0.1:3000` (`apps/web/vite.config.ts`).
 - **Production:** the [Dockerfile](../Dockerfile) builds all workspaces on `node:22-slim` and runs `pnpm --filter @lealplanningpoker/server start`. Fastify serves the API and the built frontend on one port (default 3000).
 
 ## Environment variables
 
-| Variable   | Default   | Effect                                                         |
-| ---------- | --------- | -------------------------------------------------------------- |
-| `PORT`     | `3000`    | HTTP listen port                                               |
-| `HOST`     | `0.0.0.0` | HTTP listen address                                            |
-| `NODE_ENV` | unset     | `development` enables Socket.IO CORS for local and LAN origins |
+| Variable | Default   | Effect              |
+| -------- | --------- | ------------------- |
+| `PORT`   | `3000`    | HTTP listen port    |
+| `HOST`   | `0.0.0.0` | HTTP listen address |
 
 The static frontend directory is not configurable by environment; it resolves to `apps/web/dist`.

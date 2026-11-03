@@ -8,10 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Refreshed the project documentation to match the code. The README no longer claims history stores confidence scores, now lists host transfer, reactions and CSV export, documents `HOST`/`NODE_ENV`, room limits, and the release tag rule, and links to the new docs. Added `docs/architecture.md` (routes, transport, room lifecycle), `AGENTS.md` and `CLAUDE.md` for coding agents (no longer git-ignored), and `docs/agents/decisions.md`.
+- Refreshed the project documentation to match the code. The README no longer claims history stores confidence scores, now lists host transfer, reactions and CSV export, documents `HOST`, room limits, and the release tag rule, and links to the new docs. Added `docs/architecture.md` (routes, transport, room lifecycle), `AGENTS.md` and `CLAUDE.md` for coding agents (no longer git-ignored), and `docs/agents/decisions.md`.
+
+### Fixed
+
+- Open SSE streams now receive the `closed` event as soon as a room expires or closes after everyone goes offline. Before, that notice only ran through the Socket.IO path, so SSE clients only found out on the next update.
 
 ### Removed
 
+- Removed the unused Socket.IO server (`/socket.io`, `socketHandlers.ts`, the `socket.io` dependency, the dev-only CORS setup, and the Vite proxy entry). The web app only ever used SSE, polling, and the `/api/compat/` routes, so behavior for players is unchanged. `NODE_ENV` is no longer read by the server.
 - Removed the Railway production deployment job from the release workflow; production images are now deployed manually to a private server.
 - Removed the public repository links from the web UI (footer link and the Help page "Open GitHub issues" call to action). The Help page now points to an email address for questions, suggestions, and bug reports.
 - Removed the open-source community files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `LICENSE`, and the GitHub issue templates) and trimmed the README to match the project's private status.
