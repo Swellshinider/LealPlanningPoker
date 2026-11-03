@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Refreshed the project documentation to match the code. The README no longer claims history stores confidence scores, now lists host transfer, reactions and CSV export, documents `HOST`/`NODE_ENV`, room limits, and the release tag rule, and links to the new docs. Added `docs/architecture.md` (routes, transport, room lifecycle), `AGENTS.md` and `CLAUDE.md` for coding agents (no longer git-ignored), and `docs/agents/decisions.md`.
+
 ### Removed
 
 - Removed the Railway production deployment job from the release workflow; production images are now deployed manually to a private server.
