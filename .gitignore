@@ -9,5 +9,3 @@ coverage
 .env
 .env.*
 *.log
-AGENTS.md
-CLAUDE.md
