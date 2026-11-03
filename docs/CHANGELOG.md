@@ -6,8 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.2.0] - 03-11-2026
+
 ### Changed
 
+- Visual refresh of the web app: design tokens (neutral color ramp, 4px spacing scale, radii, type scale, motion), Instrument Sans and JetBrains Mono, quieter chrome without glass effects, gradients, uppercase labels or looping animations, a wood and felt texture on the table, and inline SVG icons for the theme toggle and close buttons.
+- Player cards now sit next to each avatar on corner and side seats, and the reaction popover and host action open without covering cards or the board.
 - Refreshed the project documentation to match the code. The README no longer claims history stores confidence scores, now lists host transfer, reactions and CSV export, documents `HOST`, room limits, and the release tag rule, and links to the new docs. Added `docs/architecture.md` (routes, transport, room lifecycle), `AGENTS.md` and `CLAUDE.md` for coding agents (no longer git-ignored), and `docs/agents/decisions.md`.
 
 ### Fixed
