@@ -1,6 +1,7 @@
 {
   "name": "lealplanningpoker",
   "private": true,
+  "license": "GPL-3.0-only",
   "version": "1.3.0",
   "type": "module",
   "packageManager": "pnpm@10.0.0",

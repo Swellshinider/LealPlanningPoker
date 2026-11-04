@@ -80,7 +80,14 @@ Any other non-API path is served from `apps/web/dist` (the single-page app).
 ## Dev and production serving
 
 - **Development:** `pnpm dev` runs the server on port 3000 and Vite on port 5173. Vite proxies `/api` and `/healthz` to `127.0.0.1:3000` (`apps/web/vite.config.ts`).
-- **Production:** the [Dockerfile](../Dockerfile) builds all workspaces on `node:22-slim` and runs `pnpm --filter @lealplanningpoker/server start`. Fastify serves the API and the built frontend on one port (default 3000).
+- **Production:** the [Dockerfile](../Dockerfile) is multi-stage on `node:22-slim`. A build stage compiles all workspaces; the runtime stage holds only the server's production dependencies plus the three `dist` folders, runs as the `node` user, and starts `node apps/server/dist/main.js` (no pnpm). Fastify serves the API and the built frontend on one port (default 3000). The image has a `HEALTHCHECK` on `GET /healthz`.
+
+## Deployment
+
+- **Image:** the Release workflow (`.github/workflows/release.yml`) pushes `ghcr.io/swellshinider/lealplanningpoker:<tag>` and `:latest` after the verification gates pass. CI (`ci.yml`) also builds the image and waits for it to become healthy.
+- **Compose layers:** `docker-compose.yml` builds from source; `docker-compose.prod.yml` swaps in the GHCR image (`TAG`); `docker-compose.tls.yml` adds Caddy (`docker/caddy/Caddyfile`) for HTTPS. Always pass explicit `-f` files in production, because plain `docker compose` loads only the base file.
+- **Taskfile:** `task install`, `task update` and `task uninstall` run those layers and add the TLS file when `SITE_ADDRESS` is set. The server is updated by running `task update` on it; there is no push-based deploy.
+- **Proxy:** Caddy forwards to `app:3000`. It flushes `text/event-stream` responses immediately, so the SSE room stream needs no extra proxy settings.
 
 ## Environment variables
 
@@ -89,4 +96,4 @@ Any other non-API path is served from `apps/web/dist` (the single-page app).
 | `PORT`   | `3000`    | HTTP listen port    |
 | `HOST`   | `0.0.0.0` | HTTP listen address |
 
-The static frontend directory is not configurable by environment; it resolves to `apps/web/dist`.
+The static frontend directory is not configurable by environment; it resolves to `apps/web/dist`. Deployment variables (`TAG`, `APP_PORT`, `SITE_ADDRESS`) are read by Compose and the Taskfile, not by the app; see `.env.example`.

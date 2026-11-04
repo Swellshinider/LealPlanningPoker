@@ -1,12 +1,20 @@
+# LealPlanningPoker - base stack (builds the image from this checkout).
+#
+# Plain `docker compose up` uses only this file. For published images layer
+# docker-compose.prod.yml; for HTTPS also layer docker-compose.tls.yml.
+# `task install` / `task update` pick the right files.
+
 services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
-    image: lealplanningpoker:latest
-    container_name: lealplanningpoker
-    ports:
-      - "3000:3000"
-    environment:
-      - PORT=3000
     restart: unless-stopped
+    # Non-root user, no extra Linux capabilities.
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    pids_limit: 512
+    # APP_PORT can be "127.0.0.1:3000" to keep the port on loopback behind Caddy.
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      PORT: 3000

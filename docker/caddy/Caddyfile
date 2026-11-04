@@ -1,0 +1,22 @@
+# Reverse proxy and TLS for LealPlanningPoker. Used only by
+# docker-compose.tls.yml. SITE_ADDRESS comes from .env.
+#
+# Public hostname (resolvable, port 443 reachable from the internet): Caddy
+# obtains and renews a Let's Encrypt certificate automatically.
+#
+# LAN-only hostname: uncomment `tls internal` so Caddy issues a certificate
+# from its own local CA, then trust that CA's root
+# (/data/caddy/pki/authorities/local/root.crt inside the caddy_data volume)
+# on every device that will open the app.
+
+{$SITE_ADDRESS} {
+	# tls internal
+
+	# Tell browsers to use HTTPS for this host for a year. Only keep this on
+	# if the site stays on HTTPS.
+	header Strict-Transport-Security "max-age=31536000"
+
+	# Caddy flushes text/event-stream responses immediately, so the SSE
+	# room stream works through the proxy without extra settings.
+	reverse_proxy app:3000
+}

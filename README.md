@@ -15,6 +15,7 @@ Self-hosted planning poker for agile teams. Create a room, share the link, vote,
 - [Production](#production)
 - [How it works](#how-it-works)
 - [Documentation](#documentation)
+- [License](#license)
 - [Author](#author)
 
 ## Features
@@ -80,22 +81,35 @@ pnpm format:check   # Check formatting without writing
 
 Before pushing, make sure `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all pass -- CI enforces the same gates.
 
+If you have [Task](https://taskfile.dev/) installed, `task` lists shortcuts for the same commands: `task setup`, `task dev`, and `task check`, which runs every CI gate in order.
+
 ## Production
 
-### Docker
+### Deploy with Docker
+
+**Requirements:** [Docker](https://www.docker.com/) with the Compose plugin and [Task](https://taskfile.dev/), on the server, plus a checkout of this repository (it holds the compose files and `Taskfile.yml`).
+
+The image is published to GHCR by the release workflow. The package is private, so log in once on the server with a token that can read packages:
 
 ```bash
-docker build -t lealplanningpoker .
-docker run -p 3000:3000 lealplanningpoker
+echo "$GHCR_TOKEN" | docker login ghcr.io -u <github-username> --password-stdin
 ```
 
-Or with Docker Compose:
+Then, from the checkout:
 
 ```bash
-docker compose up --build
+task install      # creates .env from .env.example, pulls the image, starts it
+task update       # pulls the image for TAG and restarts
+task uninstall    # stops and removes the stack
 ```
 
-The container serves the built frontend and API on port 3000, and exposes `GET /healthz` for health checks. Deploy the built image to your own server.
+The container serves the built frontend and API on port 3000 and exposes `GET /healthz`; Docker marks it healthy from that endpoint. It runs as a non-root user with no extra capabilities.
+
+- **Version:** `TAG=latest` in `.env` follows the newest release. Pin `TAG=v1.3.0` to upgrade only when you choose.
+- **HTTPS:** set `SITE_ADDRESS` (for example `poker.example.com`) and `APP_PORT=127.0.0.1:3000` in `.env`, then run `task install`. A Caddy container obtains and renews the certificate. For a LAN-only host, uncomment `tls internal` in `docker/caddy/Caddyfile`.
+- **Updates drop rooms.** Room state lives in memory, so every restart clears active rooms. Update when nobody is voting.
+
+To build from the checkout instead of pulling, run `task up` (`task down`, `task logs`) and open <http://localhost:3000>. Plain `docker compose up --build` does the same.
 
 ### Releases
 
@@ -103,14 +117,24 @@ The container serves the built frontend and API on port 3000, and exposes `GET /
 2. Commit the release version update.
 3. Push a tag that is exactly `v` plus the root `package.json` version, such as `v1.1.3`.
 
-The tag runs the shared verification workflow (`pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm build`, `pnpm test`) and creates or updates the GitHub Release with generated notes. The release job fails if the tag and the root version differ. A version containing `-`, such as `1.1.3-rc.1` (tag `v1.1.3-rc.1`), publishes a GitHub prerelease.
+The tag runs the shared verification workflow (`pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm build`, `pnpm test`), publishes the Docker image to GHCR as `ghcr.io/swellshinider/lealplanningpoker:<tag>` and `:latest`, and creates or updates the GitHub Release with generated notes. The publish job fails if the tag and the root version differ. A version containing `-`, such as `1.1.3-rc.1` (tag `v1.1.3-rc.1`), publishes a GitHub prerelease.
 
 ### Environment
+
+The app reads only `PORT` and `HOST`:
 
 | Variable | Default   | Description         |
 | -------- | --------- | ------------------- |
 | `PORT`   | `3000`    | HTTP listen port    |
 | `HOST`   | `0.0.0.0` | HTTP listen address |
+
+The deployment is configured through `.env` (see `.env.example`), read by Docker Compose and the Taskfile:
+
+| Variable       | Default  | Description                                                            |
+| -------------- | -------- | ---------------------------------------------------------------------- |
+| `TAG`          | `latest` | Published image tag used by `task install` and `task update`           |
+| `APP_PORT`     | `3000`   | Host port for the app. Use `127.0.0.1:3000` behind the HTTPS proxy     |
+| `SITE_ADDRESS` | empty    | Hostname for HTTPS. When set, `task install`/`update` also start Caddy |
 
 ## How it works
 
@@ -129,6 +153,10 @@ Room state is stored in memory. A room expires after 4 hours of inactivity, clos
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) -- release history
 - [AGENTS.md](AGENTS.md) -- instructions for AI coding agents
 - [docs/agents/decisions.md](docs/agents/decisions.md) -- accepted decisions and open questions
+
+## License
+
+Licensed under the [GNU General Public License v3.0](LICENSE) (GPL-3.0-only).
 
 ## Author
 
