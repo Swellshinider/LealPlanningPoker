@@ -24,5 +24,9 @@ describe("HelpPage", () => {
     expect(markup).toContain("mailto:eduardoleal.contact@gmail.com");
     expect(markup).not.toContain("github.com");
     expect(markup).toContain("bug");
+    expect(markup).toContain("Support the project");
+    expect(markup).toContain('href="https://ko-fi.com/swellshinider"');
+    expect(markup).toContain('href="https://livepix.gg/swellshinider"');
+    expect(markup).not.toContain("wait for the host");
   });
 });

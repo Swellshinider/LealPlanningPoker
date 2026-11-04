@@ -90,6 +90,32 @@ describe("RoomBoard", () => {
     expect(markup).not.toContain("github.com");
   });
 
+  it("invites the team only while the host is alone in the room", () => {
+    const alone = renderToStaticMarkup(
+      createElement(RoomBoard, createProps({ participants: [createParticipant(1)] })),
+    );
+    const together = renderToStaticMarkup(
+      createElement(
+        RoomBoard,
+        createProps({ participants: [createParticipant(1), createParticipant(2)] }),
+      ),
+    );
+
+    expect(alone).toContain("Invite your team");
+    expect(alone).toContain("Copy invite link");
+    expect(together).not.toContain("Invite your team");
+  });
+
+  it("marks the story as optional for the host", () => {
+    const markup = renderToStaticMarkup(
+      createElement(RoomBoard, createProps({ isHost: true, canSetStory: true })),
+    );
+
+    expect(markup).toContain("Story / ticket (optional)");
+    expect(markup).toContain("Save story");
+    expect(markup).not.toContain("Start voting");
+  });
+
   it("hides the story panel for non-host viewers", () => {
     const markup = renderToStaticMarkup(createElement(RoomBoard, createProps()));
 

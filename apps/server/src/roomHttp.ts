@@ -575,7 +575,6 @@ function statusForErrorCode(code: string): number {
     case "ROUND_LOCKED":
     case "INVALID_VOTE":
     case "INVALID_REACTION":
-    case "INVALID_STORY":
     case "INVALID_HOST_TRANSFER":
       return 409;
     default:

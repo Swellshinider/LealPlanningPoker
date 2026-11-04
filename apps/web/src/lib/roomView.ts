@@ -57,8 +57,7 @@ export function buildRoomViewModel(snapshot: RoomSnapshot): RoomViewModel {
   const resultVotes = snapshot.participants.map((participant) => participant.vote);
   const canSetStory =
     isHost &&
-    (snapshot.phase === "lobby" ||
-      isFinalized ||
+    (isFinalized ||
       (isVoting && snapshot.participants.every((participant) => !participant.hasVoted)));
 
   return {

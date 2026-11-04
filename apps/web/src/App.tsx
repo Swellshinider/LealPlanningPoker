@@ -36,6 +36,9 @@ export function App() {
             displayName={session.displayName}
             roomCode={session.roomCode}
             theme={theme}
+            invited={
+              Boolean(session.initialRoomQuery) && session.roomCode === session.initialRoomQuery
+            }
             autoFocusName={Boolean(session.roomCode) && !session.displayName.trim()}
             onCreateRoom={() => void roomSession.createPlanningRoom()}
             onDisplayNameChange={session.setDisplayName}

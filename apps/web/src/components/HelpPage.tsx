@@ -1,4 +1,4 @@
-import { HELP_PATH, HOME_PATH, SUPPORT_EMAIL } from "../lib/publicPages";
+import { HELP_PATH, HOME_PATH, KOFI_URL, LIVEPIX_URL, SUPPORT_EMAIL } from "../lib/publicPages";
 import type { ThemeMode } from "../lib/theme";
 import { AppLogo } from "./AppLogo";
 import { PublicFooter } from "./PublicFooter";
@@ -20,11 +20,13 @@ const HELP_STEPS = [
   },
   {
     title: "Join as a participant",
-    description: "Participants enter the room code, choose a display name, and wait for the host.",
+    description:
+      "Participants enter the room code and a display name, then land straight in the room.",
   },
   {
     title: "Vote privately",
-    description: "Each participant picks a planning card without revealing it to the group yet.",
+    description:
+      "Everyone can pick a planning card as soon as they join, without revealing it to the group yet.",
   },
   {
     title: "Reveal and discuss",
@@ -38,7 +40,7 @@ const HELP_STEPS = [
   {
     title: "Start the next round",
     description:
-      "Set the next story, clear votes, and repeat the process as long as the session lasts.",
+      "Optionally name the next story, start the next round, and repeat as long as the session lasts.",
   },
 ];
 
@@ -105,6 +107,37 @@ export function HelpPage({ theme, onToggleTheme }: HelpPageProps) {
           <div className="action-row">
             <a className="button button--primary button--link" href={`mailto:${SUPPORT_EMAIL}`}>
               Email support
+            </a>
+          </div>
+        </section>
+
+        <section className="workspace-panel help-cta">
+          <div className="panel-heading">
+            <div>
+              <p className="section-label">Donate</p>
+              <h2>Support the project</h2>
+            </div>
+          </div>
+          <p>
+            LealPlanningPoker is free. If it helps your team, you can chip in with a card on Ko-fi
+            or with Pix through Livepix.
+          </p>
+          <div className="action-row">
+            <a
+              className="button button--secondary button--link"
+              href={KOFI_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Ko-fi
+            </a>
+            <a
+              className="button button--secondary button--link"
+              href={LIVEPIX_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Pix (Livepix)
             </a>
           </div>
         </section>

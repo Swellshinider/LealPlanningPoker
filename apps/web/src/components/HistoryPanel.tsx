@@ -55,7 +55,7 @@ export function HistoryPanel({ history, roomId }: HistoryPanelProps) {
           {orderedHistory.map((entry) => (
             <article className="history-row" key={entry.id}>
               <div className="history-card__header">
-                <strong>{entry.story}</strong>
+                <strong>{entry.story || "Untitled round"}</strong>
                 <time dateTime={entry.finalizedAt}>{formatTimestamp(entry.finalizedAt)}</time>
               </div>
 

@@ -26,7 +26,7 @@ Room state lives only in server memory (`apps/server/src/roomStore.ts`). There i
 | SSE keepalive                          | Every 15 s                           | `roomRealtimeHub.ts`                  |
 | Room code alphabet                     | `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`   | `roomStore.ts` (`ROOM_CODE_ALPHABET`) |
 
-A room moves through the phases `lobby` → `voting` → `revealed` → `finalized` (`RoomPhase` in `packages/shared/src/room.ts`). Setting a story starts `voting`. Reset returns to `voting` if a story is set, otherwise to `lobby`. Votes of other players stay hidden until the round is revealed or finalized (`shouldRevealVoteForViewer`).
+A room starts in `voting` and moves through the phases `voting` → `revealed` → `finalized` (`RoomPhase` in `packages/shared/src/room.ts`). The story is optional and can be empty. Setting a story restarts `voting`, and reset always returns to `voting`. Votes of other players stay hidden until the round is revealed or finalized (`shouldRevealVoteForViewer`).
 
 When the host goes offline, any connected participant can claim host from the offline host's seat until the original host reconnects. The current host can also transfer host to another connected participant.
 

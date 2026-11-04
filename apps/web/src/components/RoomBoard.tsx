@@ -6,6 +6,7 @@ import {
 import type { RoomViewModel } from "../lib/roomView";
 import type { ThemeMode } from "../lib/theme";
 import { HistoryPanel } from "./HistoryPanel";
+import { InviteCard } from "./InviteCard";
 import { PokerTable } from "./PokerTable";
 import { ProfilePanel } from "./ProfilePanel";
 import { PublicFooter } from "./PublicFooter";
@@ -103,6 +104,10 @@ export function RoomBoard({
             onRename={onRename}
           />
         </div>
+
+        {viewModel.participants.length === 1 ? (
+          <InviteCard roomId={viewModel.roomId} roomLink={roomLink} onCopyLink={onCopyLink} />
+        ) : null}
 
         <PokerTable
           viewModel={viewModel}

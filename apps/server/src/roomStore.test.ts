@@ -38,13 +38,39 @@ describe("RoomStore", () => {
     store = createStore();
   });
 
-  it("creates a room with a host participant in lobby phase", () => {
+  it("lets the host vote right after creating a room, with no story set", () => {
+    const created = store.createRoom({ hostName: "Mina" });
+
+    const voted = store.submitVote({
+      roomId: created.roomId,
+      participantToken: created.hostToken,
+      vote: "5",
+    });
+
+    expect(voted.phase).toBe("voting");
+    expect(voted.story).toBe("");
+  });
+
+  it("accepts an empty story and keeps the room in voting", () => {
+    const created = store.createRoom({ hostName: "Mina" });
+
+    const snapshot = store.setStory({
+      roomId: created.roomId,
+      hostToken: created.hostToken,
+      story: "   ",
+    });
+
+    expect(snapshot.story).toBe("");
+    expect(snapshot.phase).toBe("voting");
+  });
+
+  it("creates a room with a host participant already in voting phase", () => {
     const result = store.createRoom({ hostName: "Mina" });
 
     expect(result.roomId).toBe("ROOM01");
     expect(result.hostToken).toBe("HOST_TOKEN");
     expect(result.participantToken).toBe("HOST_TOKEN");
-    expect(result.snapshot.phase).toBe("lobby");
+    expect(result.snapshot.phase).toBe("voting");
     expect(result.snapshot.hostName).toBe("Mina");
     expect(result.snapshot.viewer).toEqual({
       participantId: "HOST_PARTICIPANT",
