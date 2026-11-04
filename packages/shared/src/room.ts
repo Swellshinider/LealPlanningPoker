@@ -1,6 +1,6 @@
 import { FIBONACCI_DECK, isBuiltInVoteCard, type VoteCard } from "./deck.js";
 
-export type RoomPhase = "lobby" | "voting" | "revealed" | "finalized";
+export type RoomPhase = "voting" | "revealed" | "finalized";
 
 export const THROWABLE_REACTION_EMOJIS = ["👏", "🔥", "💯", "🍅", "👎", "💀"] as const;
 

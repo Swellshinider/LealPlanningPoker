@@ -148,7 +148,8 @@ textarea:focus-visible {
 }
 
 .section-label,
-.field__label {
+.field__label,
+.field__hint {
   margin: 0;
   color: var(--faint);
   font-size: var(--text-xs);

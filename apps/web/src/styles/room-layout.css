@@ -64,6 +64,26 @@
   padding: var(--space-6);
 }
 
+.invite-card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6);
+}
+
+.invite-card__code {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.invite-card__link {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--faint);
+  font-size: var(--text-xs);
+}
+
 .room-workspace > .public-footer {
   width: min(100%, 1180px);
   margin: 0 auto;

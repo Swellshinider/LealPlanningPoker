@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- "Invite your team" card with the room code and a copy-link button while the host is alone in a room.
+- "Support the project" links (Ko-fi and Pix through Livepix) in the footer and on the Help page.
+- The "Join" card has its own display name field. Opening an invite link now shows only the join form, with a "Create a new room instead" shortcut.
+
+### Changed
+
+- New rooms open straight in the voting phase, so everyone can pick a card as soon as they join. The story is optional and can be left empty; empty finalized rounds show as "Untitled round" in the archive.
+- The story button reads "Save story" (or "Start next round" after a finalized round) instead of "Start voting". The Help page steps were updated to match.
+
+### Removed
+
+- The `lobby` room phase and the `INVALID_STORY` error.
+
 ## [1.2.0] - 03-11-2026
 
 ### Changed

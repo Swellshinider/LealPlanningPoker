@@ -43,4 +43,28 @@ describe("JoinPanel", () => {
     expect(markup).toContain("© 2026 LealPlanningPoker");
     expect(markup).not.toContain("github.com");
   });
+
+  it("asks for a display name in both the create and join cards", () => {
+    const markup = renderToStaticMarkup(createElement(JoinPanel, createProps()));
+
+    expect(markup.match(/Display name/g)).toHaveLength(2);
+    expect(markup).toContain("Create room");
+  });
+
+  it("shows only the join form when opened from an invite link", () => {
+    const markup = renderToStaticMarkup(createElement(JoinPanel, createProps({ invited: true })));
+
+    expect(markup).toContain("You&#x27;re invited to room ROOM01");
+    expect(markup).toContain("Join room");
+    expect(markup).toContain("Create a new room instead");
+    expect(markup).not.toContain(">Create room<");
+    expect(markup).not.toContain("Room code");
+  });
+
+  it("links to the donation pages without exposing a Pix key", () => {
+    const markup = renderToStaticMarkup(createElement(JoinPanel, createProps()));
+
+    expect(markup).toContain('href="https://ko-fi.com/swellshinider"');
+    expect(markup).toContain('href="https://livepix.gg/swellshinider"');
+  });
 });

@@ -24,6 +24,11 @@
   align-items: stretch;
 }
 
+.landing-grid--single {
+  grid-template-columns: minmax(280px, 480px);
+  justify-content: center;
+}
+
 .join-panel {
   align-self: stretch;
   padding: var(--space-8);
@@ -115,6 +120,20 @@
 .public-footer__meta {
   display: grid;
   gap: 2px;
+}
+
+.public-footer__support {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.public-footer__support a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .public-footer__meta strong {

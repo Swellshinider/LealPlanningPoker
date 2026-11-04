@@ -24,7 +24,6 @@ export class RoomStoreError extends Error {
     | "ROUND_LOCKED"
     | "INVALID_VOTE"
     | "INVALID_REACTION"
-    | "INVALID_STORY"
     | "INVALID_DISPLAY_NAME"
     | "ROOM_FULL";
 
@@ -38,7 +37,6 @@ export class RoomStoreError extends Error {
       | "ROUND_LOCKED"
       | "INVALID_VOTE"
       | "INVALID_REACTION"
-      | "INVALID_STORY"
       | "INVALID_DISPLAY_NAME"
       | "ROOM_FULL",
     message: string,
@@ -210,7 +208,7 @@ export class RoomStore {
       hostParticipantId,
       hostName,
       story: "",
-      phase: "lobby",
+      phase: "voting",
       participants: new Map([[hostParticipantId, hostParticipant]]),
       participantTokens: new Map([[hostToken, hostParticipantId]]),
       history: [],
@@ -485,7 +483,7 @@ export class RoomStore {
     this.assertHost(participant);
 
     this.clearVotes(room);
-    room.phase = room.story.length > 0 ? "voting" : "lobby";
+    room.phase = "voting";
     room.updatedAt = this.nowIso();
 
     return this.buildSnapshot(room, participant.id);
@@ -720,12 +718,7 @@ export class RoomStore {
   }
 
   private normalizeStory(value: string): string {
-    const story = value.trim().replace(/\s+/g, " ");
-    if (!story) {
-      throw new RoomStoreError("INVALID_STORY", "Story text cannot be empty.");
-    }
-
-    return story.slice(0, 120);
+    return value.trim().replace(/\s+/g, " ").slice(0, 120);
   }
 
   private assertHost(participant: RoomParticipantRecord): void {
