@@ -1,0 +1,13 @@
+# Pulls the published image from GHCR instead of building from source. Layer
+# on top of the base file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# `task install` / `task update` run these. TAG selects the image: `latest`
+# follows the newest release, `vX.Y.Z` pins one. Images are only published by
+# the Release workflow, triggered by pushing a `v*.*.*` tag.
+
+services:
+  app:
+    image: ghcr.io/swellshinider/lealplanningpoker:${TAG:-latest}

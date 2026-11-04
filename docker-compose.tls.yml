@@ -1,0 +1,31 @@
+# Optional HTTPS via Caddy. Layer it last:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+#     -f docker-compose.tls.yml up -d
+#
+# Set SITE_ADDRESS in .env to the hostname the app is reached at and
+# APP_PORT=127.0.0.1:3000 to keep plain HTTP on loopback. `task install` and
+# `task update` add this file automatically when SITE_ADDRESS is set.
+# See docker/caddy/Caddyfile.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?SITE_ADDRESS must be set to the app hostname}
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Holds the issued certificate and, for `tls internal`, the local CA.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:

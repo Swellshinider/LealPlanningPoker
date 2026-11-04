@@ -12,10 +12,50 @@ jobs:
   verify:
     uses: ./.github/workflows/verify.yml
 
+  publish:
+    name: Publish image
+    runs-on: ubuntu-latest
+    needs: verify
+    # Prevent forks from publishing images
+    if: github.repository == 'Swellshinider/LealPlanningPoker'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches package.json version
+        run: |
+          version=$(jq -r '.version' package.json)
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "::error::Pushed tag ${GITHUB_REF_NAME} does not match package.json version tag v${version}"
+            exit 1
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: APP_VERSION=${{ github.ref_name }}
+          tags: |
+            ghcr.io/swellshinider/lealplanningpoker:${{ github.ref_name }}
+            ghcr.io/swellshinider/lealplanningpoker:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: verify
+    needs: publish
     # Prevent forks from publishing releases
     if: github.repository == 'Swellshinider/LealPlanningPoker'
     permissions:

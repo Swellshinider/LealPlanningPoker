@@ -1,0 +1,118 @@
+# Task runner. Install: https://taskfile.dev
+# Usage: task <name>   (e.g. `task check`, `task install`); `task` lists tasks
+version: "3"
+dotenv: [".env"]
+
+vars:
+  PROD_FILES: -f docker-compose.yml -f docker-compose.prod.yml
+  TLS_FILES: -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.tls.yml
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task --list --sort none
+
+  # Production: published images from GHCR
+  install:
+    desc: Install and start the published production stack (HTTPS when SITE_ADDRESS is set)
+    cmds:
+      - task: install:env
+      - task: "{{if .SITE_ADDRESS}}install:tls:run{{else}}install:run{{end}}"
+
+  install:env:
+    internal: true
+    status:
+      - test -f .env
+    cmds:
+      - cp .env.example .env
+      - echo "Created .env from .env.example. Edit it to pin TAG or set SITE_ADDRESS."
+
+  install:run:
+    internal: true
+    cmds:
+      - docker compose {{.PROD_FILES}} pull
+      - docker compose {{.PROD_FILES}} up -d
+
+  install:tls:run:
+    internal: true
+    cmds:
+      - docker compose {{.TLS_FILES}} pull
+      - docker compose {{.TLS_FILES}} up -d
+
+  update:
+    desc: Pull and restart the published stack at the configured TAG (drops in-memory rooms)
+    preconditions:
+      - sh: test -f .env
+        msg: "No .env found. Run `task install` from your checkout first."
+      - sh: test -f docker-compose.prod.yml
+        msg: "docker-compose.prod.yml not found. Run this from your LealPlanningPoker checkout."
+    cmds:
+      - task: "{{if .SITE_ADDRESS}}install:tls:run{{else}}install:run{{end}}"
+      - echo "Update complete. Running the image for TAG=${TAG:-latest}."
+
+  uninstall:
+    desc: Stop and remove the production stack
+    cmds:
+      - docker compose {{if .SITE_ADDRESS}}{{.TLS_FILES}}{{else}}{{.PROD_FILES}}{{end}} down
+
+  # Local Docker stack (builds from this checkout)
+  up:
+    desc: Build the image from this checkout and start it (http://localhost:3000)
+    cmds:
+      - docker compose up -d --build
+
+  down:
+    desc: Stop the local Docker stack
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: Tail logs of the Docker stack
+    cmds:
+      - docker compose logs -f
+
+  # Native development
+  setup:
+    desc: Install dependencies (pnpm)
+    cmds:
+      - pnpm install
+
+  dev:
+    desc: Run server (:3000) and web (:5173) with reload
+    cmds:
+      - pnpm dev
+
+  lint:
+    desc: Lint
+    cmds:
+      - pnpm lint
+
+  format:
+    desc: Format with Prettier
+    cmds:
+      - pnpm format
+
+  typecheck:
+    desc: Type-check all workspaces
+    cmds:
+      - pnpm typecheck
+
+  build:
+    desc: Build all workspaces
+    cmds:
+      - pnpm build
+
+  test:
+    desc: Run tests
+    cmds:
+      - pnpm test
+
+  check:
+    desc: Run every CI gate in order (lint, format, typecheck, build, test)
+    cmds:
+      - pnpm lint
+      - pnpm format:check
+      - pnpm typecheck
+      - pnpm build
+      - pnpm test

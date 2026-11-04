@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- GNU General Public License v3.0 (`LICENSE`, `license` field in `package.json`, README section). The repository is now public.
+- `Taskfile.yml` with `task install`, `update` and `uninstall` for the server, `task up`/`down`/`logs` for the local Docker stack, and `task setup`/`dev`/`check` shortcuts for development.
+- The release workflow publishes the Docker image to GHCR (`:<tag>` and `:latest`).
+- `docker-compose.prod.yml` (pulls the GHCR image, selected with `TAG`), an optional Caddy HTTPS overlay (`docker-compose.tls.yml`, `SITE_ADDRESS`) and `.env.example`.
+- CI builds the Docker image and checks `/healthz` on every pull request.
+
+### Changed
+
+- The Docker image is multi-stage: production dependencies only, runs as a non-root user, starts with `node` instead of pnpm, and has a healthcheck. The compose service drops all Linux capabilities.
+- The release tag/version check moved into the image publish job, so a mismatched tag publishes nothing.
+
 ## [1.3.0] - 04-11-2026
 
 ### Added
