@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.3.0] - 04-11-2026
+
 ### Added
 
 - "Invite your team" card with the room code and a copy-link button while the host is alone in a room.
