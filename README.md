@@ -105,7 +105,7 @@ task uninstall    # stops and removes the stack
 
 The container serves the built frontend and API on port 3000 and exposes `GET /healthz`; Docker marks it healthy from that endpoint. It runs as a non-root user with no extra capabilities.
 
-- **Version:** `TAG=latest` in `.env` follows the newest release. Pin `TAG=v1.3.0` to upgrade only when you choose.
+- **Version:** `TAG=latest` in `.env` follows the newest release. Pin `TAG=v1.4.0` to upgrade only when you choose.
 - **HTTPS:** set `SITE_ADDRESS` (for example `poker.example.com`) and `APP_PORT=127.0.0.1:3000` in `.env`, then run `task install`. A Caddy container obtains and renews the certificate. For a LAN-only host, uncomment `tls internal` in `docker/caddy/Caddyfile`.
 - **Updates drop rooms.** Room state lives in memory, so every restart clears active rooms. Update when nobody is voting.
 

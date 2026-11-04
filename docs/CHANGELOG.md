@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.4.0] - 04-11-2026
+
 ### Added
 
 - GNU General Public License v3.0 (`LICENSE`, `license` field in `package.json`, README section). The repository is now public.
